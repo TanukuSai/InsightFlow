@@ -168,10 +168,14 @@ export interface ImportSummary {
 export interface AdaptionConfigStatus {
   configured: boolean;
   api_key_set: boolean;
-  key_prefix?: string;
+  key_prefix?: string | null;
   sdk_version: string;
   message: string;
   public_operations_enabled: boolean;
+  daily_estimates_remaining?: number | null;
+  daily_runs_remaining?: number | null;
+  daily_estimates_limit?: number | null;
+  daily_runs_limit?: number | null;
 }
 
 export interface AdaptionEstimateRequest {
@@ -184,8 +188,8 @@ export interface AdaptionEstimateResponse {
   local_job_id: string;
   dataset_id: string;
   adaption_dataset_id?: string;
-  estimated_credits: number;
-  estimated_minutes: number;
+  estimated_credits?: number | null;
+  estimated_minutes?: number | null;
   column_mapping_used: Record<string, any>;
   message: string;
 }
@@ -210,6 +214,8 @@ export interface AdaptionJobResponse {
   estimated_minutes?: number;
   result_metadata: Record<string, any>;
   error_message?: string;
+  output_download_available?: boolean;
   created_at: string;
   completed_at?: string;
 }
+

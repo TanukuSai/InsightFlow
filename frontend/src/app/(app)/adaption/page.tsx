@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import AppHeader from "@/components/navigation/AppHeader";
 import { useDataset } from "@/lib/context/DatasetContext";
 import { adaptionApi } from "@/lib/api/client";
@@ -24,23 +24,35 @@ import {
   Terminal,
   HelpCircle,
   FileCode,
-  ArrowRight,
-  ExternalLink,
+  Download,
+  Info,
+  Lock,
+  X,
 } from "lucide-react";
+
+type StatusState =
+  | "checking"
+  | "ready"
+  | "key_missing"
+  | "operations_disabled"
+  | "unreachable";
 
 export default function AdaptionLabPage() {
   const { selectedDatasetId, selectedDataset } = useDataset();
 
   // Status and data state
   const [statusInfo, setStatusInfo] = useState<AdaptionConfigStatus | null>(null);
+  const [statusState, setStatusState] = useState<StatusState>("checking");
   const [jobs, setJobs] = useState<AdaptionJobResponse[]>([]);
   const [estimateResult, setEstimateResult] = useState<AdaptionEstimateResponse | null>(null);
 
   // Form states
   const [maxRows, setMaxRows] = useState<number>(250);
+  const [hasConsented, setHasConsented] = useState<boolean>(false);
   const [isEstimating, setIsEstimating] = useState(false);
   const [isStartingJob, setIsStartingJob] = useState(false);
   const [isLoadingJobs, setIsLoadingJobs] = useState(false);
+  const [downloadingJobId, setDownloadingJobId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -50,17 +62,57 @@ export default function AdaptionLabPage() {
   // Inspection drawer
   const [selectedJob, setSelectedJob] = useState<AdaptionJobResponse | null>(null);
 
-  // Load initial status and jobs
+  // Polling ref to handle unmount/cleanup
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Reset estimate and consent if dataset or row cap changes
+  useEffect(() => {
+    setEstimateResult(null);
+    setHasConsented(false);
+  }, [selectedDatasetId, maxRows]);
+
+  // Handle ESC key to close modal and drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowConfirmModal(false);
+        setSelectedJob(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Fetch status and jobs from real backend
   const fetchStatusAndJobs = useCallback(async () => {
+    setStatusState("checking");
     try {
       const [st, jobList] = await Promise.all([
-        adaptionApi.getStatus().catch(() => null),
+        adaptionApi.getStatus().catch((err) => {
+          console.warn("Adaption status call failed:", err);
+          return null;
+        }),
         adaptionApi.listJobs().catch(() => []),
       ]);
-      if (st) setStatusInfo(st);
+
+      if (st) {
+        setStatusInfo(st);
+        if (st.api_key_set && st.public_operations_enabled) {
+          setStatusState("ready");
+        } else if (!st.api_key_set) {
+          setStatusState("key_missing");
+        } else {
+          setStatusState("operations_disabled");
+        }
+      } else {
+        setStatusState("unreachable");
+        setStatusInfo(null);
+      }
+
       setJobs(jobList || []);
-    } catch (err: any) {
-      console.error("Failed to load Adaption status or jobs:", err);
+    } catch {
+      setStatusState("unreachable");
+      setStatusInfo(null);
     }
   }, []);
 
@@ -68,27 +120,62 @@ export default function AdaptionLabPage() {
     fetchStatusAndJobs();
   }, [fetchStatusAndJobs]);
 
-  // Polling for active running jobs (every 4 seconds)
+  // Honest, bounded polling for running jobs
   useEffect(() => {
-    const hasRunningJobs = jobs.some((j) => j.status === "running");
-    if (!hasRunningJobs) return;
+    const runningJobs = jobs.filter((j) => j.status === "running");
+    if (runningJobs.length === 0) return;
 
-    const interval = setInterval(async () => {
+    let pollInterval = 6000; // 6s initial
+    let active = true;
+
+    const pollActiveJobs = async () => {
       try {
-        const freshJobs = await adaptionApi.listJobs();
-        setJobs(freshJobs);
-      } catch (err) {
-        console.error("Job polling error:", err);
-      }
-    }, 4000);
+        const updated = await Promise.all(
+          runningJobs.map(async (job) => {
+            try {
+              return await adaptionApi.getJob(job.id);
+            } catch {
+              return job; // retain prior state on transient error
+            }
+          })
+        );
 
-    return () => clearInterval(interval);
+        if (!active) return;
+
+        setJobs((prevJobs) =>
+          prevJobs.map((j) => {
+            const up = updated.find((u) => u.id === j.id);
+            return up || j;
+          })
+        );
+
+        // Check if any are still running
+        const stillRunning = updated.some((j) => j.status === "running");
+        if (stillRunning && active) {
+          pollInterval = Math.min(pollInterval + 2000, 15000); // backoff up to 15s
+          pollTimerRef.current = setTimeout(pollActiveJobs, pollInterval);
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    };
+
+    pollTimerRef.current = setTimeout(pollActiveJobs, pollInterval);
+
+    return () => {
+      active = false;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    };
   }, [jobs]);
 
   // Action: Estimate Run
   const handleEstimate = async () => {
     if (!selectedDatasetId) {
       setErrorMessage("Please select an active dataset before requesting an estimate.");
+      return;
+    }
+    if (!hasConsented) {
+      setErrorMessage("Please review and acknowledge the external data transfer notice before estimating.");
       return;
     }
 
@@ -106,15 +193,14 @@ export default function AdaptionLabPage() {
         },
       });
       setEstimateResult(res);
-      setSuccessMessage("Adaption estimate received successfully from the engine.");
-      // Refresh jobs list to show estimate entry
-      const updatedJobs = await adaptionApi.listJobs();
-      setJobs(updatedJobs);
+      setSuccessMessage("Live cost and time quote received from Adaption Labs.");
+      // Refresh jobs list to show estimate record and updated quota
+      fetchStatusAndJobs();
     } catch (err: any) {
       console.error("Estimate failed:", err);
       setErrorMessage(
         err?.message ||
-          "Estimate failed. If public demo operations are locked, see guardrail notice below."
+          "Estimate failed. If public daily demo quotas are reached or operations are disabled, see notice below."
       );
     } finally {
       setIsEstimating(false);
@@ -125,6 +211,10 @@ export default function AdaptionLabPage() {
   const handleStartRun = async () => {
     if (!selectedDatasetId) {
       setErrorMessage("Please select an active dataset first.");
+      return;
+    }
+    if (!hasConsented) {
+      setErrorMessage("Please acknowledge the data transfer and credit usage notice.");
       return;
     }
 
@@ -142,18 +232,17 @@ export default function AdaptionLabPage() {
         },
         job_specification: {
           max_rows: maxRows,
-          pipeline: "adaptive_data_distillation",
         },
       });
 
-      setSuccessMessage(`Adaptive Data pipeline job launched: ID ${job.id}`);
-      const updatedJobs = await adaptionApi.listJobs();
-      setJobs(updatedJobs);
+      setSuccessMessage(`Adaptive Data pipeline job launched: ID ${job.id}. Polling live status...`);
+      // Refresh status to update quota remaining
+      fetchStatusAndJobs();
     } catch (err: any) {
       console.error("Start run failed:", err);
       setErrorMessage(
         err?.message ||
-          "Could not launch Adaption pipeline. Check cloud guardrails and API key configuration."
+          "Could not launch Adaption pipeline. Check cloud guardrails and daily demo quota."
       );
     } finally {
       setIsStartingJob(false);
@@ -165,6 +254,8 @@ export default function AdaptionLabPage() {
     try {
       const freshJobs = await adaptionApi.listJobs();
       setJobs(freshJobs);
+      const st = await adaptionApi.getStatus().catch(() => null);
+      if (st) setStatusInfo(st);
     } catch (err: any) {
       console.error("Refresh jobs failed:", err);
     } finally {
@@ -172,8 +263,21 @@ export default function AdaptionLabPage() {
     }
   };
 
-  const isCloudEnabled =
-    statusInfo?.configured && statusInfo?.public_operations_enabled;
+  // Action: Download Output File
+  const handleDownloadOutput = async (jobId: string) => {
+    setDownloadingJobId(jobId);
+    setErrorMessage(null);
+    try {
+      await adaptionApi.downloadJobOutput(jobId, `insightflow_adapted_${jobId}.csv`, "csv");
+      setSuccessMessage(`Dataset for job #${jobId} downloaded successfully.`);
+    } catch (err: any) {
+      setErrorMessage(err?.message || "Failed to download adapted dataset artifact.");
+    } finally {
+      setDownloadingJobId(null);
+    }
+  };
+
+  const isOperationsReady = statusState === "ready";
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--canvas)]">
@@ -183,9 +287,10 @@ export default function AdaptionLabPage() {
         actions={
           <button
             onClick={fetchStatusAndJobs}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--border-subtle)] text-xs font-semibold rounded-xl text-[var(--ink)] hover:bg-[#F2F4F6] transition-colors focus-visible-ring"
+            disabled={statusState === "checking"}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--border-subtle)] text-xs font-semibold rounded-xl text-[var(--ink)] hover:bg-[#F2F4F6] transition-colors focus-visible-ring cursor-pointer disabled:opacity-50"
           >
-            <RotateCw className="w-3.5 h-3.5" />
+            <RotateCw className={`w-3.5 h-3.5 ${statusState === "checking" ? "animate-spin" : ""}`} />
             <span>Check Status</span>
           </button>
         }
@@ -193,7 +298,7 @@ export default function AdaptionLabPage() {
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
         {/* =========================================================================
-            ZONE 1: HERO STRATEGIC BRIEF (The Visual Anchor)
+            ZONE 1: HERO STRATEGIC BRIEF
             ========================================================================= */}
         <div className="signal-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden bg-[#172033] border border-[#2E3D5C]">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--brand)]/20 rounded-full blur-3xl pointer-events-none" />
@@ -203,15 +308,15 @@ export default function AdaptionLabPage() {
             <div className="lg:col-span-8 space-y-3.5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-mono text-[#9EB4FA]">
                 <Sparkles className="w-3.5 h-3.5 text-[#9EB4FA]" />
-                <span>ADAPTION LABS PARTNERSHIP INTEGRATION • ADAPTIVE DATA</span>
+                <span>ADAPTION LABS API • ADAPTIVE DATA WORKFLOW</span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#F7F9FC] leading-snug">
-                Transform Messy Feedback into High-Precision Model Training Data
+                Transform Customer Feedback into High-Precision Model Training Data
               </h1>
 
               <p className="text-xs sm:text-sm text-[#B8C2D5] leading-relaxed max-w-2xl">
-                While baseline analytics isolates sentiment and repetitive friction, <strong>Adaption Labs</strong> executes <em>Adaptive Data</em> distillation: mapping raw unstructured reviews into prompt-completion instruction pairs, synthesizing edge cases, and producing audit-ready datasets for model fine-tuning and evaluation.
+                While baseline analytics isolates sentiment and repetitive friction, <strong>Adaption Labs</strong> executes <em>Adaptive Data</em> distillation: mapping raw unstructured reviews into prompt-completion instruction pairs for customer support alignment, producing audit-ready datasets for domain fine-tuning.
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -227,7 +332,7 @@ export default function AdaptionLabPage() {
                   className="px-4 py-2 bg-white/10 hover:bg-white/15 text-[#F7F9FC] border border-white/15 text-xs font-semibold rounded-xl transition-colors focus-visible-ring inline-flex items-center gap-1.5"
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
-                  <span>How Adaption Differs from Sentiment</span>
+                  <span>Workflow Architecture</span>
                 </a>
               </div>
             </div>
@@ -237,15 +342,39 @@ export default function AdaptionLabPage() {
               <div className="text-[10px] uppercase font-bold tracking-wider text-[#B8C2D5] flex items-center justify-between">
                 <span>SDK Integration Telemetry</span>
                 <span className="font-mono text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white">
-                  v{statusInfo?.sdk_version || "0.14.0"}
+                  {statusInfo?.sdk_version ? `v${statusInfo.sdk_version}` : "Status Pending"}
                 </span>
               </div>
 
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#B8C2D5]">Adaption SDK:</span>
-                  <span className="font-mono font-bold text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Installed
+                  <span className="text-[#B8C2D5]">Integration State:</span>
+                  <span className="font-mono font-bold">
+                    {statusState === "checking" && (
+                      <span className="text-amber-300 flex items-center gap-1">
+                        <RotateCw className="w-3 h-3 animate-spin" /> Checking
+                      </span>
+                    )}
+                    {statusState === "ready" && (
+                      <span className="text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Ready (Owner-Funded)
+                      </span>
+                    )}
+                    {statusState === "key_missing" && (
+                      <span className="text-amber-300 flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5" /> Key Not Configured
+                      </span>
+                    )}
+                    {statusState === "operations_disabled" && (
+                      <span className="text-amber-300 flex items-center gap-1">
+                        <Lock className="w-3.5 h-3.5" /> Operations Disabled
+                      </span>
+                    )}
+                    {statusState === "unreachable" && (
+                      <span className="text-rose-400 flex items-center gap-1">
+                        <ShieldAlert className="w-3.5 h-3.5" /> Backend Unreachable
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -253,7 +382,9 @@ export default function AdaptionLabPage() {
                   <span className="text-[#B8C2D5]">API Key:</span>
                   <span className="font-mono text-white">
                     {statusInfo?.api_key_set ? (
-                      <span className="text-emerald-400 font-bold">{statusInfo.key_prefix || "Configured"}</span>
+                      <span className="text-emerald-400 font-bold">Configured on Backend</span>
+                    ) : statusState === "checking" ? (
+                      <span className="text-slate-400">Querying...</span>
                     ) : (
                       <span className="text-amber-300">Not configured</span>
                     )}
@@ -261,38 +392,42 @@ export default function AdaptionLabPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[#B8C2D5]">Cloud Operations:</span>
-                  <span className="font-mono font-bold">
-                    {statusInfo?.public_operations_enabled ? (
-                      <span className="text-emerald-400">Live Enabled</span>
+                  <span className="text-[#B8C2D5]">Daily Demo Quotas:</span>
+                  <span className="font-mono text-white text-[11px]">
+                    {statusInfo?.daily_runs_remaining !== undefined && statusInfo?.daily_runs_remaining !== null ? (
+                      <span className="text-[#9EB4FA]">
+                        {statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3} runs · {statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10} est
+                      </span>
                     ) : (
-                      <span className="text-amber-300">Guardrail Active</span>
+                      <span className="text-slate-400">Active UTC Quotas</span>
                     )}
                   </span>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-white/10 text-[10px] text-[#A2AEBD] font-mono leading-relaxed">
-                Row Clamp: Maximum bounded to 1,000 rows server-side
+                Server Clamp: Max 1,000 rows · Judge Key Entry Never Required
               </div>
             </div>
           </div>
         </div>
 
         {/* =========================================================================
-            ZONE 2: HONEST INTEGRATION & GUARDRAIL STATUS
+            ZONE 2: HONEST INTEGRATION & DEMO STATUS BADGE
             ========================================================================= */}
         <div className="solid-data rounded-2xl p-5 space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  isCloudEnabled
+                  isOperationsReady
                     ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                    : statusState === "unreachable"
+                    ? "bg-rose-50 text-rose-600 border border-rose-200"
                     : "bg-amber-50 text-amber-700 border border-amber-200"
                 }`}
               >
-                {isCloudEnabled ? (
+                {isOperationsReady ? (
                   <ShieldCheck className="w-5 h-5" />
                 ) : (
                   <ShieldAlert className="w-5 h-5" />
@@ -300,13 +435,17 @@ export default function AdaptionLabPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-[var(--ink)]">
-                  {isCloudEnabled
-                    ? "Adaption Labs Engine Ready for Real-Time Execution"
-                    : "Public Demonstration Guardrail Notice"}
+                  {statusState === "ready" && "Adaption Labs Engine Ready (Owner-Configured Demo)"}
+                  {statusState === "checking" && "Checking Adaption Engine Status..."}
+                  {statusState === "key_missing" && "Adaption API Key Not Configured on Backend"}
+                  {statusState === "operations_disabled" && "Public Demo Operations Disabled by Policy"}
+                  {statusState === "unreachable" && "Backend Engine Unreachable"}
                 </h3>
                 <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">
                   {statusInfo?.message ||
-                    "Adaption Labs SDK is configured. Cloud operations guardrails ensure credit safety during public judging."}
+                    (statusState === "unreachable"
+                      ? "Could not connect to backend service. Check network or server status."
+                      : "Querying authoritative status from backend...")}
                 </p>
               </div>
             </div>
@@ -314,31 +453,34 @@ export default function AdaptionLabPage() {
             <div className="shrink-0 text-right">
               <span
                 className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-full border ${
-                  isCloudEnabled
+                  isOperationsReady
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : statusState === "unreachable"
+                    ? "bg-rose-50 text-rose-800 border-rose-200"
                     : "bg-amber-50 text-amber-800 border-amber-200"
                 }`}
               >
-                {isCloudEnabled ? "CLOUD PIPELINE: LIVE" : "DEMO GUARDRAIL: ACTIVE"}
+                {statusState === "ready" && "DEMO INTEGRATION: READY"}
+                {statusState === "checking" && "CHECKING STATUS"}
+                {statusState === "key_missing" && "KEY REQUIRED ON RENDER"}
+                {statusState === "operations_disabled" && "GUARDRAIL ACTIVE"}
+                {statusState === "unreachable" && "BACKEND OFFLINE"}
               </span>
             </div>
           </div>
 
-          {!isCloudEnabled && (
+          {!isOperationsReady && statusState !== "checking" && (
             <div className="p-3.5 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] text-xs text-[var(--ink-secondary)] space-y-1.5 font-mono">
               <div className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-[var(--brand)]" />
-                <span>Judge Instructions for Live Cloud Execution:</span>
+                <Info className="w-3.5 h-3.5 text-[var(--brand)]" />
+                <span>Notice for Judges &amp; Evaluators:</span>
               </div>
               <p className="text-[11px] leading-relaxed">
-                To test live credit consumption against the external Adaption API, supply your key in Render or local backend <code>.env</code>:
-              </p>
-              <div className="p-2 bg-white rounded border border-[var(--border-subtle)] text-[11px] text-[var(--ink)] select-all">
-                ADAPTION_API_KEY=your_adaption_api_key<br />
-                ENABLE_PUBLIC_ADAPTION_OPERATIONS=true
-              </div>
-              <p className="text-[10px] text-[var(--ink-muted)]">
-                The entire UI workflow below is 100% wired to backend endpoints (<code>/api/v1/adaption/estimate</code> and <code>/api/v1/adaption/jobs</code>) with no mock fabrication.
+                {statusState === "key_missing"
+                  ? "Judges never need to supply an API key. The project owner configures ADAPTION_API_KEY as a secret in the backend Render environment."
+                  : statusState === "operations_disabled"
+                  ? "The owner-configured demo kill switch (ENABLE_PUBLIC_ADAPTION_OPERATIONS) is currently false to safeguard credits."
+                  : "Unable to reach backend /api/v1/adaption/status. Ensure the backend engine is running."}
               </p>
             </div>
           )}
@@ -376,7 +518,7 @@ export default function AdaptionLabPage() {
                 Configure Dataset Distillation
               </h2>
               <p className="text-xs text-[var(--ink-muted)] mt-0.5">
-                Target dataset and column mapping for fine-tuning preparation
+                Task blueprint: Empathetic customer support resolution training pairs
               </p>
             </div>
 
@@ -399,14 +541,14 @@ export default function AdaptionLabPage() {
               )}
             </div>
 
-            {/* Column Mapping Schema Preview */}
+            {/* Task Blueprint & Column Mapping Preview */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
                   Adaptive Data Column Mapping
                 </label>
                 <span className="text-[10px] text-[var(--ink-muted)] font-mono">
-                  Schema: Standard Customer Voice
+                  Task: Support Assistant Alignment
                 </span>
               </div>
 
@@ -416,10 +558,10 @@ export default function AdaptionLabPage() {
                     prompt / instruction
                   </span>
                   <div className="text-xs font-semibold text-[var(--ink)] mt-1">
-                    original_text (Verbatim Review)
+                    Empathetic Response Instruction
                   </div>
-                  <span className="text-[10px] text-[var(--ink-muted)]">
-                    Target customer speech string
+                  <span className="text-[10px] text-[var(--ink-muted)] block mt-0.5">
+                    "Write a concise, empathetic customer-support resolution"
                   </span>
                 </div>
 
@@ -428,10 +570,10 @@ export default function AdaptionLabPage() {
                     context / input
                   </span>
                   <div className="text-xs font-semibold text-[var(--ink)] mt-1">
-                    source_category (Taxonomy)
+                    Verbatim Review &amp; Category
                   </div>
-                  <span className="text-[10px] text-[var(--ink-muted)]">
-                    Domain &amp; department context
+                  <span className="text-[10px] text-[var(--ink-muted)] block mt-0.5">
+                    Original customer voice + issue taxonomy
                   </span>
                 </div>
               </div>
@@ -454,7 +596,7 @@ export default function AdaptionLabPage() {
                     key={rows}
                     type="button"
                     onClick={() => setMaxRows(rows)}
-                    className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all focus-visible-ring ${
+                    className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all focus-visible-ring cursor-pointer ${
                       maxRows === rows
                         ? "bg-[var(--brand)] text-white shadow-xs"
                         : "bg-[#F6F5F1] text-[var(--ink)] hover:bg-[#EAE8E2] border border-[var(--border-subtle)]"
@@ -465,8 +607,46 @@ export default function AdaptionLabPage() {
                 ))}
               </div>
               <p className="text-[11px] text-[var(--ink-muted)]">
-                Server-enforced clamp (capped at 1,000) prevents unexpected token charges during evaluation.
+                Server clamps requests to a maximum of 1,000 rows to safeguard owner compute credits.
               </p>
+            </div>
+
+            {/* Data-Sharing & Credit Disclosure Notice (MANDATORY REQUIREMENT) */}
+            <div className="p-4 bg-[#FAF5E8] rounded-2xl border border-amber-200/80 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-1 text-xs text-amber-900 leading-relaxed">
+                  <div className="font-bold text-amber-950">
+                    External Data Transfer &amp; Credit Usage Disclosure
+                  </div>
+                  <ul className="list-disc pl-4 space-y-1 text-[11px] text-amber-800">
+                    <li>
+                      <strong>External Transmission:</strong> Bounded feedback rows (up to {maxRows}) are uploaded to the external Adaption Labs API.
+                    </li>
+                    <li>
+                      <strong>Estimates Transmit Data:</strong> Calculating an estimate uploads a temporary CSV to Adaption Labs to quote costs; it does not start a run.
+                    </li>
+                    <li>
+                      <strong>Credit Consumption:</strong> Starting an adaptation run consumes real compute credits from the owner's account.
+                    </li>
+                    <li>
+                      <strong>Public Workspace Notice:</strong> Do not upload sensitive or personal customer information. Use sample/anonymized datasets only.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <label className="flex items-start gap-2.5 pt-2 border-t border-amber-200 text-xs text-amber-950 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasConsented}
+                  onChange={(e) => setHasConsented(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-amber-300 text-[var(--brand)] focus:ring-[var(--brand)]"
+                />
+                <span className="text-[11px] font-medium leading-tight">
+                  I understand bounded feedback rows will be uploaded to Adaption Labs for estimation/processing under the {maxRows}-row cap.
+                </span>
+              </label>
             </div>
 
             {/* Action Buttons */}
@@ -474,13 +654,13 @@ export default function AdaptionLabPage() {
               <button
                 type="button"
                 onClick={handleEstimate}
-                disabled={isEstimating || !selectedDatasetId}
-                className="flex-1 py-3 px-4 bg-white border border-[var(--border-strong)] hover:border-[var(--brand)] text-[var(--ink)] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50"
+                disabled={isEstimating || !selectedDatasetId || !hasConsented || !isOperationsReady}
+                className="flex-1 py-3 px-4 bg-white border border-[var(--border-strong)] hover:border-[var(--brand)] text-[var(--ink)] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
               >
                 {isEstimating ? (
                   <>
                     <RotateCw className="w-4 h-4 animate-spin text-[var(--brand)]" />
-                    <span>Calculating Engine Estimate...</span>
+                    <span>Querying Adaption Estimate...</span>
                   </>
                 ) : (
                   <>
@@ -493,8 +673,8 @@ export default function AdaptionLabPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(true)}
-                disabled={isStartingJob || !selectedDatasetId}
-                className="flex-1 py-3 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50"
+                disabled={isStartingJob || !selectedDatasetId || !hasConsented || !isOperationsReady}
+                className="flex-1 py-3 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
               >
                 {isStartingJob ? (
                   <>
@@ -523,7 +703,7 @@ export default function AdaptionLabPage() {
                   Engine Estimate Summary
                 </h3>
                 <p className="text-xs text-[var(--ink-muted)] mt-0.5">
-                  Pre-flight execution parameters computed by Adaption Labs
+                  Pre-flight quote computed directly by Adaption Labs
                 </p>
               </div>
 
@@ -535,7 +715,9 @@ export default function AdaptionLabPage() {
                         Estimated Credits
                       </span>
                       <div className="text-2xl font-extrabold text-[var(--brand)] mt-1 font-mono">
-                        {estimateResult.estimated_credits.toFixed(1)}
+                        {estimateResult.estimated_credits !== null && estimateResult.estimated_credits !== undefined
+                          ? estimateResult.estimated_credits.toFixed(1)
+                          : "N/A"}
                       </div>
                       <span className="text-[10px] text-[var(--ink-muted)]">
                         Adaption compute units
@@ -547,7 +729,9 @@ export default function AdaptionLabPage() {
                         Estimated Minutes
                       </span>
                       <div className="text-2xl font-extrabold text-amber-900 mt-1 font-mono">
-                        ~{estimateResult.estimated_minutes.toFixed(1)}m
+                        {estimateResult.estimated_minutes !== null && estimateResult.estimated_minutes !== undefined
+                          ? `~${estimateResult.estimated_minutes.toFixed(1)}m`
+                          : "N/A"}
                       </div>
                       <span className="text-[10px] text-[var(--ink-muted)]">
                         Distillation runtime
@@ -564,7 +748,7 @@ export default function AdaptionLabPage() {
                     </div>
                     {estimateResult.adaption_dataset_id && (
                       <div className="flex items-center justify-between">
-                        <span className="text-[var(--ink-muted)]">Cloud Dataset ID:</span>
+                        <span className="text-[var(--ink-muted)]">Adaption Dataset ID:</span>
                         <span className="font-mono text-[var(--brand)] truncate max-w-[180px]">
                           {estimateResult.adaption_dataset_id}
                         </span>
@@ -579,10 +763,10 @@ export default function AdaptionLabPage() {
                 <div className="p-8 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[var(--border-strong)] space-y-2">
                   <Coins className="w-8 h-8 text-[var(--ink-muted)] mx-auto opacity-50" />
                   <div className="text-xs font-bold text-[var(--ink)]">
-                    No Estimate Calculated Yet
+                    No Active Estimate
                   </div>
                   <p className="text-[11px] text-[var(--ink-muted)] max-w-xs mx-auto leading-relaxed">
-                    Click "Estimate Cost &amp; Time" with your selected row count to query the Adaption pricing model.
+                    Select a dataset and row cap, check the data disclosure box, and click "Estimate Cost &amp; Time" to receive live quote figures.
                   </p>
                 </div>
               )}
@@ -616,7 +800,7 @@ export default function AdaptionLabPage() {
               type="button"
               onClick={handleRefreshJobs}
               disabled={isLoadingJobs}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--border-subtle)] text-xs font-semibold rounded-xl text-[var(--ink)] hover:bg-[#F2F4F6] transition-colors focus-visible-ring"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--border-subtle)] text-xs font-semibold rounded-xl text-[var(--ink)] hover:bg-[#F2F4F6] transition-colors focus-visible-ring cursor-pointer"
             >
               <RotateCw className={`w-3.5 h-3.5 ${isLoadingJobs ? "animate-spin" : ""}`} />
               <span>Refresh Ledger</span>
@@ -650,7 +834,6 @@ export default function AdaptionLabPage() {
                   {jobs.map((job) => {
                     const isSuccess = job.status === "succeeded";
                     const isRunning = job.status === "running";
-                    const isFailed = job.status === "failed";
 
                     return (
                       <tr
@@ -696,16 +879,32 @@ export default function AdaptionLabPage() {
                           })}
                         </td>
                         <td className="py-3 px-3 text-right">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedJob(job);
-                            }}
-                            className="text-[11px] font-semibold text-[var(--brand)] group-hover:underline"
-                          >
-                            Inspect Dossier →
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {job.operation_type === "adapt" && job.status === "succeeded" && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadOutput(job.id);
+                                }}
+                                disabled={downloadingJobId === job.id}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#E8F3EE] hover:bg-[#D5EAE0] text-[#2E7D68] text-[10px] font-bold font-mono transition-colors"
+                              >
+                                <Download className="w-3 h-3" />
+                                <span>{downloadingJobId === job.id ? "Downloading..." : "Download CSV"}</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedJob(job);
+                              }}
+                              className="text-[11px] font-semibold text-[var(--brand)] group-hover:underline"
+                            >
+                              Inspect Dossier →
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -729,7 +928,7 @@ export default function AdaptionLabPage() {
               Why InsightFlow Integrates Adaption Labs
             </h2>
             <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">
-              Standard feedback dashboards stop at counting stars and keywords. InsightFlow bridges the gap between customer feedback telemetry and production LLM operations.
+              Standard feedback dashboards stop at sentiment and word counts. InsightFlow bridges the gap between customer feedback telemetry and production LLM operations.
             </p>
           </div>
 
@@ -745,7 +944,7 @@ export default function AdaptionLabPage() {
               <ul className="space-y-2 text-xs text-[var(--ink-secondary)] list-disc pl-4 leading-relaxed">
                 <li>Scores polarity (-1.0 to +1.0) using word lists.</li>
                 <li>Provides static metrics for quarterly reviews.</li>
-                <li>Cannot fix models: output cannot be used for fine-tuning.</li>
+                <li>Cannot align models: output cannot be used for fine-tuning.</li>
                 <li>Conflates message duplication with customer volume.</li>
               </ul>
             </div>
@@ -760,39 +959,11 @@ export default function AdaptionLabPage() {
               </h3>
               <ul className="space-y-2 text-xs text-[var(--ink-secondary)] list-disc pl-4 leading-relaxed">
                 <li>Transforms uncurated feedback into aligned instruction pairs.</li>
-                <li>Executes synthetic scenario augmentation for rare customer edge cases.</li>
+                <li>Applies domain task blueprint (empathetic customer support responses).</li>
                 <li>Curates high-signal fine-tuning splits for domain models.</li>
                 <li>Produces benchmark datasets for continuous evaluation.</li>
               </ul>
             </div>
-          </div>
-
-          {/* Python SDK Snippet */}
-          <div className="p-4 sm:p-5 bg-[#172033] rounded-2xl border border-[#2E3D5C] text-white space-y-2 font-mono text-xs">
-            <div className="flex items-center justify-between text-[10px] text-[#9EB4FA]">
-              <span>Backend Service Integration (`app/services/adaption_service.py`)</span>
-              <span>Python 3.11</span>
-            </div>
-            <pre className="overflow-x-auto text-[11px] text-[#E2E8F0] leading-relaxed">
-{`from adaption import Adaption
-
-# Initialize client using backend environment configuration
-client = Adaption(api_key=settings.ADAPTION_API_KEY, timeout=60.0)
-
-# 1. Export deduplicated customer voice CSV (instruction, input, category)
-csv_path = await AdaptionService.prepare_adaption_csv(dataset_id, workspace_id, max_rows=1000)
-
-# 2. Upload dataset to Adaption Labs
-uploaded = client.datasets.upload_file(csv_path)
-
-# 3. Adapt dataset with column mappings
-run = client.datasets.adapt(
-    uploaded.dataset_id,
-    column_mapping={"prompt": "instruction", "context": ["input"]},
-    job_specification={"max_rows": 1000},
-    estimate=False
-)`}
-            </pre>
           </div>
         </div>
       </div>
@@ -801,7 +972,7 @@ run = client.datasets.adapt(
           CONFIRMATION MODAL FOR ACTUAL ADAPTION RUN
           ========================================================================= */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
           <div
             className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
             onClick={() => setShowConfirmModal(false)}
@@ -835,23 +1006,35 @@ run = client.datasets.adapt(
               <div className="flex justify-between">
                 <span className="text-[var(--ink-muted)]">Estimated Usage:</span>
                 <span className="font-mono text-[var(--ink)]">
-                  {estimateResult ? `${estimateResult.estimated_credits.toFixed(1)} cr` : "Unestimated"}
+                  {estimateResult?.estimated_credits !== undefined && estimateResult?.estimated_credits !== null
+                    ? `${estimateResult.estimated_credits.toFixed(1)} cr`
+                    : "Live execution quote"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--ink-muted)]">Daily Runs Remaining:</span>
+                <span className="font-mono font-bold text-[#2E7D68]">
+                  {statusInfo?.daily_runs_remaining ?? 3} / {statusInfo?.daily_runs_limit ?? 3}
                 </span>
               </div>
             </div>
+
+            <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200 leading-relaxed">
+              This action transmits bounded data to Adaption Labs and consumes demo credits configured on the backend.
+            </p>
 
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
-                className="flex-1 py-2.5 bg-[#F6F5F1] hover:bg-[#EAE8E2] text-[var(--ink)] text-xs font-semibold rounded-xl transition-colors focus-visible-ring"
+                className="flex-1 py-2.5 bg-[#F6F5F1] hover:bg-[#EAE8E2] text-[var(--ink)] text-xs font-semibold rounded-xl transition-colors focus-visible-ring cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleStartRun}
-                className="flex-1 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl shadow-sm transition-colors focus-visible-ring"
+                className="flex-1 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl shadow-sm transition-colors focus-visible-ring cursor-pointer"
               >
                 Confirm &amp; Launch
               </button>
@@ -864,7 +1047,7 @@ run = client.datasets.adapt(
           SLIDE-OVER JOB DOSSIER INSPECTION DRAWER
           ========================================================================= */}
       {selectedJob && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
             onClick={() => setSelectedJob(null)}
@@ -883,9 +1066,9 @@ run = client.datasets.adapt(
                 </div>
                 <button
                   onClick={() => setSelectedJob(null)}
-                  className="w-8 h-8 rounded-full bg-[#F6F5F1] hover:bg-[#EAE8E2] text-[var(--ink)] flex items-center justify-center font-bold text-sm"
+                  className="w-8 h-8 rounded-full bg-[#F6F5F1] hover:bg-[#EAE8E2] text-[var(--ink)] flex items-center justify-center font-bold text-sm cursor-pointer"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -924,6 +1107,29 @@ run = client.datasets.adapt(
                   </div>
                 </div>
 
+                {selectedJob.output_download_available && (
+                  <div className="p-3.5 bg-[#E8F3EE] rounded-xl border border-[#2E7D68]/30 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#166534] flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-[#16a34a]" />
+                        Adapted Output Ready
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadOutput(selectedJob.id)}
+                        disabled={downloadingJobId === selectedJob.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2E7D68] text-white text-xs font-bold hover:bg-[#256856] transition-colors cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>{downloadingJobId === selectedJob.id ? "Downloading..." : "Download CSV"}</span>
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-[#2E7D68]">
+                      Streamed directly from the backend via the Adaption Labs datasets download API.
+                    </p>
+                  </div>
+                )}
+
                 {selectedJob.error_message && (
                   <div className="p-3.5 bg-red-50 rounded-xl border border-red-200 text-xs text-red-700 space-y-1">
                     <strong className="block text-red-800 font-bold">Execution Error:</strong>
@@ -948,7 +1154,7 @@ run = client.datasets.adapt(
               <button
                 type="button"
                 onClick={() => setSelectedJob(null)}
-                className="w-full py-2.5 bg-[#F6F5F1] hover:bg-[#EAE8E2] text-[var(--ink)] text-xs font-semibold rounded-xl transition-colors"
+                className="w-full py-2.5 bg-[#F6F5F1] hover:bg-[#EAE8E2] text-[var(--ink)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
               >
                 Close Dossier
               </button>

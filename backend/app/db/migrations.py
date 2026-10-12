@@ -159,6 +159,13 @@ CREATE TABLE IF NOT EXISTS adaption_jobs (
     completed_at TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS ix_adaption_jobs_ws_ds ON adaption_jobs(workspace_id, dataset_id);
+
+CREATE TABLE IF NOT EXISTS adaption_daily_quotas (
+    date_str VARCHAR(16) PRIMARY KEY,
+    estimate_count INT DEFAULT 0,
+    run_count INT DEFAULT 0,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 """
 
 

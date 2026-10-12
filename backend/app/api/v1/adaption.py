@@ -1,10 +1,11 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.api.deps import get_current_user, get_session
 from app.core.security import AuthenticatedUser
 from app.models.adaption import AdaptionJob
+from app.models.dataset import Dataset
 from app.schemas.adaption import (
     AdaptionConfigStatus,
     AdaptionEstimateRequest,
@@ -13,7 +14,7 @@ from app.schemas.adaption import (
     AdaptionJobResponse,
 )
 from app.services.adaption_service import AdaptionService
-
+from app.services.adaption_quota_service import AdaptionQuotaService
 from app.core.config import settings
 from app.core.rate_limit import rate_limit_adaption
 
@@ -23,8 +24,9 @@ router = APIRouter()
 @router.get("/adaption/status", response_model=AdaptionConfigStatus)
 async def get_adaption_status(
     current_user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
 ):
-    status_info = AdaptionService.check_status()
+    status_info = await AdaptionService.check_status(db=db)
     return AdaptionConfigStatus(**status_info)
 
 
@@ -49,8 +51,30 @@ async def estimate_adaptation(
             detail="Adaption API key is not configured. Set ADAPTION_API_KEY in backend environment.",
         )
 
-    # 3. Row cap enforcement
-    bounded_max_rows = min(payload.max_rows or settings.ADAPTION_MAX_ROWS, settings.ADAPTION_MAX_ROWS)
+    # 3. Workspace dataset boundary check
+    stmt = select(Dataset).where(
+        Dataset.id == payload.dataset_id,
+        Dataset.workspace_id == current_user.workspace_id,
+    )
+    dataset = (await db.execute(stmt)).scalar_one_or_none()
+    if not dataset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found in this workspace.",
+        )
+
+    # 4. Defensive row cap enforcement
+    raw_rows = payload.max_rows
+    try:
+        int_rows = int(raw_rows) if raw_rows is not None else 250
+        if int_rows < 1:
+            int_rows = 250
+        bounded_max_rows = min(int_rows, settings.ADAPTION_MAX_ROWS)
+    except (ValueError, TypeError):
+        bounded_max_rows = 250
+
+    # 5. Atomic UTC-day demo quota reservation (protects owner credits before external call)
+    await AdaptionQuotaService.reserve_quota(db, operation="estimate")
 
     try:
         res = await AdaptionService.run_estimate(
@@ -94,24 +118,42 @@ async def start_adaption_run(
             detail="Adaption API key is not configured. Set ADAPTION_API_KEY in backend environment.",
         )
 
-    # 3. Enforce strict row cap clamp on job specification
+    # 3. Workspace dataset boundary check
+    stmt = select(Dataset).where(
+        Dataset.id == payload.dataset_id,
+        Dataset.workspace_id == current_user.workspace_id,
+    )
+    dataset = (await db.execute(stmt)).scalar_one_or_none()
+    if not dataset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found in this workspace.",
+        )
+
+    # 4. Defensive row cap enforcement (remove unsupported fields)
     spec = dict(payload.job_specification or {})
-    requested_rows = spec.get("max_rows", settings.ADAPTION_MAX_ROWS)
+    raw_rows = spec.get("max_rows")
     try:
-        requested_rows = int(requested_rows)
+        int_rows = int(raw_rows) if raw_rows is not None else 250
+        if int_rows < 1:
+            int_rows = 250
+        bounded_max_rows = min(int_rows, settings.ADAPTION_MAX_ROWS)
     except (ValueError, TypeError):
-        requested_rows = settings.ADAPTION_MAX_ROWS
-    spec["max_rows"] = min(requested_rows, settings.ADAPTION_MAX_ROWS)
+        bounded_max_rows = 250
+    clean_spec = {"max_rows": bounded_max_rows}
+
+    # 5. Atomic UTC-day demo quota reservation (protects owner credits before external call)
+    await AdaptionQuotaService.reserve_quota(db, operation="run")
 
     try:
         job = await AdaptionService.start_adaptation_run(
             dataset_id=payload.dataset_id,
             workspace_id=current_user.workspace_id,
             column_mapping=payload.column_mapping,
-            job_specification=spec,
+            job_specification=clean_spec,
             db=db,
         )
-        return job
+        return AdaptionJobResponse.model_validate(job)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -135,7 +177,19 @@ async def list_adaption_jobs(
         .order_by(AdaptionJob.created_at.desc())
     )
     jobs = (await db.execute(stmt)).scalars().all()
-    return jobs
+
+    # Synchronize any active running jobs with upstream status
+    synced_jobs = []
+    for job in jobs:
+        if job.status == "running" and job.adaption_dataset_id:
+            updated = await AdaptionService.get_job_status(job.id, current_user.workspace_id, db)
+            if updated:
+                job = updated
+        resp = AdaptionJobResponse.model_validate(job)
+        resp.output_download_available = bool(job.status == "succeeded" and job.adaption_dataset_id)
+        synced_jobs.append(resp)
+
+    return synced_jobs
 
 
 @router.get("/adaption/jobs/{job_id}", response_model=AdaptionJobResponse)
@@ -151,4 +205,34 @@ async def get_adaption_job(
     )
     if not job:
         raise HTTPException(status_code=404, detail="Adaption job not found")
-    return job
+
+    resp = AdaptionJobResponse.model_validate(job)
+    resp.output_download_available = bool(job.status == "succeeded" and job.adaption_dataset_id)
+    return resp
+
+
+@router.get("/adaption/jobs/{job_id}/download")
+async def download_adaption_job_output(
+    job_id: str,
+    format: str = "csv",
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    content, filename = await AdaptionService.download_adapted_dataset(
+        job_id=job_id,
+        workspace_id=current_user.workspace_id,
+        file_format=format,
+        db=db,
+    )
+    media_types = {
+        "csv": "text/csv",
+        "json": "application/json",
+        "jsonl": "application/x-ndjson",
+        "parquet": "application/octet-stream",
+    }
+    media_type = media_types.get(format, "text/csv")
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

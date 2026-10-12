@@ -10,20 +10,24 @@ class AdaptionConfigStatus(BaseModel):
     sdk_version: str
     message: str
     public_operations_enabled: bool = False
+    daily_estimates_remaining: Optional[int] = None
+    daily_runs_remaining: Optional[int] = None
+    daily_estimates_limit: Optional[int] = None
+    daily_runs_limit: Optional[int] = None
 
 
 class AdaptionEstimateRequest(BaseModel):
     dataset_id: str
     column_mapping: Optional[Dict[str, Any]] = None
-    max_rows: Optional[int] = Field(default=5000, le=10000)
+    max_rows: Optional[int] = Field(default=250, ge=1, le=1000)
 
 
 class AdaptionEstimateResponse(BaseModel):
     local_job_id: str
     dataset_id: str
     adaption_dataset_id: Optional[str] = None
-    estimated_credits: float
-    estimated_minutes: float
+    estimated_credits: Optional[float] = None
+    estimated_minutes: Optional[float] = None
     column_mapping_used: Dict[str, Any]
     message: str
 
@@ -50,5 +54,6 @@ class AdaptionJobResponse(BaseModel):
     estimated_minutes: Optional[float] = None
     result_metadata: Dict[str, Any]
     error_message: Optional[str] = None
+    output_download_available: bool = False
     created_at: datetime
     completed_at: Optional[datetime] = None

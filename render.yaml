@@ -25,4 +25,13 @@ services:
       - key: MAX_CSV_ROWS
         value: "20000"
       - key: ENABLE_PUBLIC_ADAPTION_OPERATIONS
-        value: "false"
+        value: "true"
+      - key: ADAPTION_API_KEY
+        sync: false
+      - key: ADAPTION_MAX_ROWS
+        value: "1000"
+      - key: ADAPTION_DAILY_ESTIMATE_LIMIT
+        value: "10"
+      - key: ADAPTION_DAILY_RUN_LIMIT
+        value: "3"
+

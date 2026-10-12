@@ -363,6 +363,53 @@ export const adaptionApi = {
   getJob: async (jobId: string): Promise<AdaptionJobResponse> => {
     return fetchJson<AdaptionJobResponse>(`/api/v1/adaption/jobs/${jobId}`);
   },
+
+  downloadJobOutput: async (
+    jobId: string,
+    filename: string = `adaption_output_${jobId}.csv`,
+    format: string = "csv"
+  ): Promise<void> => {
+    if (!API_BASE_URL) {
+      throw new ApiError(
+        "Production API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.",
+        500
+      );
+    }
+
+    const url = `${API_BASE_URL}/api/v1/adaption/jobs/${jobId}/download?format=${format}`;
+    const headers = new Headers();
+    headers.set("X-Workspace-Id", getActiveWorkspaceId());
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      let message = `Output download failed with status ${response.status}`;
+      try {
+        const errJson = await response.json();
+        message = errJson.detail || errJson.message || message;
+      } catch {}
+      throw new ApiError(message, response.status);
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(link);
+  },
+};
+
+// -------------------------------------------------------------
+// 9. HEALTH API
+// -------------------------------------------------------------
+export const healthApi = {
+  check: async (): Promise<{ status: string; database?: string; app?: string; environment?: string }> => {
+    return fetchJson<{ status: string; database?: string; app?: string; environment?: string }>("/health");
+  },
 };
 
 export { ApiError, API_BASE_URL, DEFAULT_WORKSPACE };
+

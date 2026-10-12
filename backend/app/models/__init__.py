@@ -6,6 +6,7 @@ from app.models.issue import Issue, IssueFeedback
 from app.models.recommendation import Recommendation
 from app.models.report import Report
 from app.models.adaption import AdaptionJob
+from app.models.adaption_quota import AdaptionDailyQuota
 
 __all__ = [
     "Workspace",
@@ -17,4 +18,5 @@ __all__ = [
     "Recommendation",
     "Report",
     "AdaptionJob",
+    "AdaptionDailyQuota",
 ]

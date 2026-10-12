@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     ADAPTION_API_KEY: str = ""
     ENABLE_PUBLIC_ADAPTION_OPERATIONS: bool = False
     ADAPTION_MAX_ROWS: int = 1000
+    ADAPTION_DAILY_ESTIMATE_LIMIT: int = 10
+    ADAPTION_DAILY_RUN_LIMIT: int = 3
 
     # Uploads & Resource Bounds
     MAX_UPLOAD_SIZE_MB: int = 10

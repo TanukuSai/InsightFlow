@@ -93,12 +93,41 @@ All endpoints are served under `/api/v1` and bound server-side to `PUBLIC_DEMO_W
 | `POST` | `/api/v1/reports` | Generate executive briefing | Rate limited (5/hr) |
 | `GET` | `/api/v1/reports/{id}/export` | Stream downloaded PDF / CSV / JSON file | Rate limited |
 | `GET` | `/api/v1/adaption/status` | Adaption SDK & key status check | Informative status |
-| `POST` | `/api/v1/adaption/estimate` | Estimate adaptation credits | **Disabled by default (403 Forbidden)** |
-| `POST` | `/api/v1/adaption/jobs` | Launch adaptation job | **Disabled by default (403 Forbidden)** |
+| `POST` | `/api/v1/adaption/estimate` | Estimate adaptation credits (atomic daily quota) | Rate limited, Max 1,000 rows, 10/day quota |
+| `POST` | `/api/v1/adaption/jobs` | Launch adaptation job (atomic daily quota) | Rate limited, Max 1,000 rows, 3/day quota |
+| `GET` | `/api/v1/adaption/jobs/{id}` | Inspect job status & upstream telemetry | Read rate limit |
+| `GET` | `/api/v1/adaption/jobs/{id}/download` | Stream completed adapted CSV output | Scoped to workspace & succeeded jobs |
 
 ---
 
-## 5. Local Development Setup
+## 5. Adaption Labs Integration (Owner-Funded Demo)
+
+InsightFlow integrates the **Adaption Labs Python SDK (`adaption>=0.14.0`)** for Adaptive Data ingestion, turning unstructured feedback into prompt-completion instruction pairs for customer support assistant alignment.
+
+### Judge-Friendly Architecture (Zero Key Entry)
+- **Judges never enter an API key**: The project owner funds and configures the integration via the backend Render environment secret.
+- **Credential Protection**: `ADAPTION_API_KEY` is strictly held on the backend. It is never exposed in browser bundles, network responses, client storage, or logs.
+- **Global Daily Demo Quotas** (UTC-day budget in database):
+  - `ADAPTION_DAILY_ESTIMATE_LIMIT=10` estimate attempts per UTC day.
+  - `ADAPTION_DAILY_RUN_LIMIT=3` adaptation run launches per UTC day.
+  - When quotas are exhausted, endpoints return `429 Too Many Requests` with a calculated `Retry-After` header until midnight UTC.
+- **Server-Side Row Clamping**: Bounded to at most `ADAPTION_MAX_ROWS=1000` (default 250). Negative, zero, or oversized row values are clamped safely.
+- **External Data Transfer Disclosure**: The UI explicitly discloses that bounded feedback rows are transmitted to the external Adaption Labs API for estimation and processing, requiring an explicit user consent checkbox before actions unlock.
+- **Honest Lifecycle & Verified Download**: Polling queries backend synchronization without fabricating statuses. Succeeded jobs stream output directly from Adaption via `GET /api/v1/adaption/jobs/{id}/download`.
+
+### Maintainer Release Checklist (Render Deployment)
+To activate live owner-funded Adaption operations on Render:
+1. Open the [Render Dashboard](https://dashboard.render.com/) for `insightflow-backend` (Service ID: `srv-db6id7rl550s73b21ndg`).
+2. Navigate to the **Environment** tab.
+3. Add environment secret: `ADAPTION_API_KEY = <your-private-adaption-key>`.
+4. Set `ENABLE_PUBLIC_ADAPTION_OPERATIONS = true`.
+5. Ensure `ADAPTION_MAX_ROWS = 1000`, `ADAPTION_DAILY_ESTIMATE_LIMIT = 10`, `ADAPTION_DAILY_RUN_LIMIT = 3`.
+6. Save Changes and trigger a Manual Deploy.
+7. Open the deployed frontend `/adaption` page and verify the status badge displays **DEMO INTEGRATION: READY**.
+
+---
+
+## 6. Local Development Setup
 
 ### Backend (FastAPI + SQLite)
 ```bash
@@ -134,15 +163,15 @@ npm run dev
 
 ---
 
-## 6. Testing & Quality Verification
+## 7. Testing & Quality Verification
 
 Run the automated backend test suite:
 ```bash
 cd backend
 python -m pytest tests -v
 ```
-**Current Test Status**: **22 passed** across:
-- `test_adaption.py` — Adaption status, kill switch enforcement (403), key check (503), row cap.
+**Current Test Status**: **28 passed (100%)** across:
+- `test_adaption.py` — Adaption status, secret protection, kill switch enforcement (403), key check (503), row cap clamping, atomic UTC-day quota exhaustion (429 with `Retry-After`), and verified output download workflow.
 - `test_security.py` — Public demo workspace binding, canonical dataset protection (403), deletion disabled, rate limiting (429).
 - `test_csv_import.py` — File upload caps (422), schema validation, duplicate deduplication.
 - `test_api_integration.py` — End-to-end dataset lifecycle, feedback browsing, analysis, and report generation.
@@ -154,3 +183,4 @@ cd frontend
 npm run build
 ```
 Builds statically and dynamically with strict TypeScript validation.
+
