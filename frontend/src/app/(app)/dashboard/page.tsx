@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/components/navigation/AppHeader";
 import DataFieldCanvas from "@/components/background/DataFieldCanvas";
-import { dashboardApi, issuesApi, feedbackApi } from "@/lib/api/client";
-import { DashboardData, Issue, Feedback } from "@/lib/api/types";
+import { dashboardApi, issuesApi, feedbackApi, adaptionApi } from "@/lib/api/client";
+import { DashboardData, Issue, Feedback, AdaptionJobResponse, AdaptionConfigStatus } from "@/lib/api/types";
 
 import { useDataset } from "@/lib/context/DatasetContext";
-import { Sparkles, ArrowRight, Database } from "lucide-react";
+import { Sparkles, ArrowRight, Database, Cpu, CheckCircle2, MessageSquare, Layers } from "lucide-react";
 
 // Category colors for the Signal Observatory palette (strictly distinct from sentiment)
 const CATEGORY_COLORS: Record<string, { bar: string; text: string; bg: string; border: string }> = {
@@ -25,6 +25,8 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [recentFeedbacks, setRecentFeedbacks] = useState<Feedback[]>([]);
+  const [latestAdaptionJob, setLatestAdaptionJob] = useState<AdaptionJobResponse | null>(null);
+  const [adaptionStatus, setAdaptionStatus] = useState<AdaptionConfigStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [flippedKpi, setFlippedKpi] = useState<number | null>(null);
@@ -46,6 +48,23 @@ export default function DashboardPage() {
       setData(dashRes);
       setIssues(issueList);
       setRecentFeedbacks(fbList.items || []);
+
+      // Non-blocking query for latest Adaption status and job
+      adaptionApi
+        .listJobs()
+        .then((jobs) => {
+          if (jobs && jobs.length > 0) {
+            setLatestAdaptionJob(jobs[0]);
+          } else {
+            setLatestAdaptionJob(null);
+          }
+        })
+        .catch(() => setLatestAdaptionJob(null));
+
+      adaptionApi
+        .getStatus()
+        .then((st) => setAdaptionStatus(st))
+        .catch(() => setAdaptionStatus(null));
     } catch (err: any) {
       console.error("Dashboard load failed:", err);
       setError(err?.message || "Failed to load dashboard data from API");
@@ -769,29 +788,84 @@ export default function DashboardPage() {
         </div>
 
         {/* =========================================================================
-            ZONE D.5: ADAPTION LABS CALLOUT (Adaptive Data Pipeline)
+            ZONE D.5: PURPOSE-DRIVEN EDITORIAL ADAPTION WORKFLOW CALLOUT
             ========================================================================= */}
-        <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-[#172033] to-[#202C43] border border-[#2E3D5C] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-md relative overflow-hidden">
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-[var(--brand)]/20 to-transparent pointer-events-none" />
-          <div className="space-y-1.5 relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-[10px] font-mono text-[#9EB4FA]">
-              <Sparkles className="w-3 h-3 text-[#9EB4FA]" />
-              <span>FEATURED INTEGRATION • ADAPTION LABS</span>
+        <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#E2E3DD] shadow-xs space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-5 border-b border-[#E2E3DD]">
+            <div className="space-y-1.5 max-w-2xl">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E9EDFC] text-[10px] font-mono font-bold text-[#3656C8]">
+                <Sparkles className="w-3 h-3 text-[#3656C8]" />
+                <span>NEXT STEP · ADAPTION LABS SUPPORT WORKFLOW</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-extrabold text-[#20252D] tracking-tight">
+                Next step: prepare feedback for a support assistant
+              </h3>
+              <p className="text-xs text-[#4D5765] leading-relaxed">
+                InsightFlow isolates friction points and customer quote patterns above. With Adaption Labs, you can format these real customer experiences into high-signal support response training pairs.
+              </p>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              Transform Ingested Customer Voice into Model Training &amp; Eval Data
-            </h3>
-            <p className="text-xs text-[#B8C2D5] leading-relaxed">
-              Use Adaption Labs to execute <em>Adaptive Data</em> distillation: mapping raw reviews into structured prompt-instruction pairs, synthesizing rare edge-case feedback, and curating fine-tuning datasets.
-            </p>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/adaption"
+                className="px-5 py-2.5 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-xs transition-all focus-visible-ring inline-flex items-center gap-2 group cursor-pointer"
+              >
+                <span>Open Adaption Lab</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
           </div>
-          <Link
-            href="/adaption"
-            className="px-5 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl shadow-sm transition-all focus-visible-ring shrink-0 inline-flex items-center gap-2 relative z-10 group"
-          >
-            <span>Open Adaption Lab</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+
+          {/* Three-step visual sequence + live dataset context */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">1. Customer Signals</span>
+                <MessageSquare className="w-3.5 h-3.5 text-[#3656C8]" />
+              </div>
+              <div className="text-xs font-bold text-[#20252D]">
+                Grounded Verbatims
+              </div>
+              <p className="text-[11px] text-[#4D5765] leading-relaxed">
+                Source: <strong>{data?.dataset_name || "Active Dataset"}</strong> ({totalRows.toLocaleString()} rows ingested).
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">2. Support Blueprint</span>
+                <Layers className="w-3.5 h-3.5 text-[#7C3AED]" />
+              </div>
+              <div className="text-xs font-bold text-[#20252D]">
+                Prompt + Context Mapping
+              </div>
+              <p className="text-[11px] text-[#4D5765] leading-relaxed">
+                Formats raw feedback + category taxonomy into empathetic response instruction pairs.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">3. Run with Adaption</span>
+                <Cpu className="w-3.5 h-3.5 text-[#2E7D68]" />
+              </div>
+              <div className="text-xs font-bold text-[#20252D]">
+                {latestAdaptionJob ? (
+                  <span className="inline-flex items-center gap-1 text-[#2E7D68]">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Latest: {latestAdaptionJob.status.toUpperCase()}
+                  </span>
+                ) : (
+                  "Ready to Configure"
+                )}
+              </div>
+              <p className="text-[11px] text-[#4D5765] leading-relaxed">
+                {adaptionStatus?.daily_runs_remaining !== undefined && adaptionStatus?.daily_runs_remaining !== null
+                  ? `${adaptionStatus.daily_runs_remaining}/${adaptionStatus.daily_runs_limit ?? 3} demo runs remaining today (UTC).`
+                  : "Estimate compute, run bounded pipeline, and download output."}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* =========================================================================

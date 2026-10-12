@@ -13,21 +13,18 @@ import {
   Sparkles,
   ShieldCheck,
   ShieldAlert,
-  Clock,
   Coins,
   Cpu,
-  Layers,
   CheckCircle2,
   AlertTriangle,
   Play,
   RotateCw,
-  Terminal,
-  HelpCircle,
-  FileCode,
   Download,
-  Info,
   Lock,
   X,
+  ChevronDown,
+  ChevronRight,
+  Database,
 } from "lucide-react";
 
 type StatusState =
@@ -55,6 +52,9 @@ export default function AdaptionLabPage() {
   const [downloadingJobId, setDownloadingJobId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Technical details accordion in drawer
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
 
   // Confirmation dialog
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -125,7 +125,7 @@ export default function AdaptionLabPage() {
     const runningJobs = jobs.filter((j) => j.status === "running");
     if (runningJobs.length === 0) return;
 
-    let pollInterval = 6000; // 6s initial
+    let pollInterval = 6000;
     let active = true;
 
     const pollActiveJobs = async () => {
@@ -135,7 +135,7 @@ export default function AdaptionLabPage() {
             try {
               return await adaptionApi.getJob(job.id);
             } catch {
-              return job; // retain prior state on transient error
+              return job;
             }
           })
         );
@@ -149,10 +149,9 @@ export default function AdaptionLabPage() {
           })
         );
 
-        // Check if any are still running
         const stillRunning = updated.some((j) => j.status === "running");
         if (stillRunning && active) {
-          pollInterval = Math.min(pollInterval + 2000, 15000); // backoff up to 15s
+          pollInterval = Math.min(pollInterval + 2000, 15000);
           pollTimerRef.current = setTimeout(pollActiveJobs, pollInterval);
         }
       } catch (err) {
@@ -194,7 +193,6 @@ export default function AdaptionLabPage() {
       });
       setEstimateResult(res);
       setSuccessMessage("Live cost and time quote received from Adaption Labs.");
-      // Refresh jobs list to show estimate record and updated quota
       fetchStatusAndJobs();
     } catch (err: any) {
       console.error("Estimate failed:", err);
@@ -235,8 +233,7 @@ export default function AdaptionLabPage() {
         },
       });
 
-      setSuccessMessage(`Adaptive Data pipeline job launched: ID ${job.id}. Polling live status...`);
-      // Refresh status to update quota remaining
+      setSuccessMessage(`Adaptive Data pipeline job launched: ID ${job.id}. Tracking live progress...`);
       fetchStatusAndJobs();
     } catch (err: any) {
       console.error("Start run failed:", err);
@@ -283,7 +280,7 @@ export default function AdaptionLabPage() {
     <div className="flex flex-col min-h-screen bg-[var(--canvas)]">
       <AppHeader
         title="Adaption Lab"
-        subtitle="Adaptive Data Ingestion, Distillation & LLM Alignment via Adaption Labs"
+        subtitle="Adaptive Data Ingestion & Support Assistant Alignment"
         actions={
           <button
             onClick={fetchStatusAndJobs}
@@ -296,163 +293,28 @@ export default function AdaptionLabPage() {
         }
       />
 
-      <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
+      <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
         {/* =========================================================================
-            ZONE 1: HERO STRATEGIC BRIEF
+            HEADER & REAL INTEGRATION STATUS
             ========================================================================= */}
-        <div className="signal-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden bg-[#172033] border border-[#2E3D5C]">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--brand)]/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-[#7C3AED]/15 rounded-full blur-2xl pointer-events-none" />
-
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div className="lg:col-span-8 space-y-3.5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-mono text-[#9EB4FA]">
-                <Sparkles className="w-3.5 h-3.5 text-[#9EB4FA]" />
-                <span>ADAPTION LABS API • ADAPTIVE DATA WORKFLOW</span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#F7F9FC] leading-snug">
-                Transform Customer Feedback into High-Precision Model Training Data
-              </h1>
-
-              <p className="text-xs sm:text-sm text-[#B8C2D5] leading-relaxed max-w-2xl">
-                While baseline analytics isolates sentiment and repetitive friction, <strong>Adaption Labs</strong> executes <em>Adaptive Data</em> distillation: mapping raw unstructured reviews into prompt-completion instruction pairs for customer support alignment, producing audit-ready datasets for domain fine-tuning.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <a
-                  href="#configuration-section"
-                  className="px-4 py-2 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl shadow-md transition-all focus-visible-ring inline-flex items-center gap-1.5"
-                >
-                  <Cpu className="w-3.5 h-3.5" />
-                  <span>Configure Adaptive Run ↓</span>
-                </a>
-                <a
-                  href="#architecture-section"
-                  className="px-4 py-2 bg-white/10 hover:bg-white/15 text-[#F7F9FC] border border-white/15 text-xs font-semibold rounded-xl transition-colors focus-visible-ring inline-flex items-center gap-1.5"
-                >
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  <span>Workflow Architecture</span>
-                </a>
-              </div>
+        <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>ADAPTION LABS · SUPPORT DATA WORKFLOW</span>
             </div>
-
-            {/* Quick Status Pill */}
-            <div className="lg:col-span-4 bg-[#202C43]/90 border border-[#2E3D5C] rounded-2xl p-5 backdrop-blur-md space-y-3">
-              <div className="text-[10px] uppercase font-bold tracking-wider text-[#B8C2D5] flex items-center justify-between">
-                <span>SDK Integration Telemetry</span>
-                <span className="font-mono text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white">
-                  {statusInfo?.sdk_version ? `v${statusInfo.sdk_version}` : "Status Pending"}
-                </span>
-              </div>
-
-              <div className="space-y-2.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#B8C2D5]">Integration State:</span>
-                  <span className="font-mono font-bold">
-                    {statusState === "checking" && (
-                      <span className="text-amber-300 flex items-center gap-1">
-                        <RotateCw className="w-3 h-3 animate-spin" /> Checking
-                      </span>
-                    )}
-                    {statusState === "ready" && (
-                      <span className="text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Ready (Owner-Funded)
-                      </span>
-                    )}
-                    {statusState === "key_missing" && (
-                      <span className="text-amber-300 flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5" /> Key Not Configured
-                      </span>
-                    )}
-                    {statusState === "operations_disabled" && (
-                      <span className="text-amber-300 flex items-center gap-1">
-                        <Lock className="w-3.5 h-3.5" /> Operations Disabled
-                      </span>
-                    )}
-                    {statusState === "unreachable" && (
-                      <span className="text-rose-400 flex items-center gap-1">
-                        <ShieldAlert className="w-3.5 h-3.5" /> Backend Unreachable
-                      </span>
-                    )}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[#B8C2D5]">API Key:</span>
-                  <span className="font-mono text-white">
-                    {statusInfo?.api_key_set ? (
-                      <span className="text-emerald-400 font-bold">Configured on Backend</span>
-                    ) : statusState === "checking" ? (
-                      <span className="text-slate-400">Querying...</span>
-                    ) : (
-                      <span className="text-amber-300">Not configured</span>
-                    )}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[#B8C2D5]">Daily Demo Quotas:</span>
-                  <span className="font-mono text-white text-[11px]">
-                    {statusInfo?.daily_runs_remaining !== undefined && statusInfo?.daily_runs_remaining !== null ? (
-                      <span className="text-[#9EB4FA]">
-                        {statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3} runs · {statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10} est
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">Active UTC Quotas</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-white/10 text-[10px] text-[#A2AEBD] font-mono leading-relaxed">
-                Server Clamp: Max 1,000 rows · Judge Key Entry Never Required
-              </div>
-            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--ink)] tracking-tight">
+              Turn customer feedback into support-training data
+            </h1>
+            <p className="text-xs text-[var(--ink-secondary)] max-w-2xl leading-relaxed">
+              Select a feedback sample, estimate usage with Adaption Labs, then launch adaptation and download the resulting dataset when complete.
+            </p>
           </div>
-        </div>
 
-        {/* =========================================================================
-            ZONE 2: HONEST INTEGRATION & DEMO STATUS BADGE
-            ========================================================================= */}
-        <div className="solid-data rounded-2xl p-5 space-y-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  isOperationsReady
-                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                    : statusState === "unreachable"
-                    ? "bg-rose-50 text-rose-600 border border-rose-200"
-                    : "bg-amber-50 text-amber-700 border border-amber-200"
-                }`}
-              >
-                {isOperationsReady ? (
-                  <ShieldCheck className="w-5 h-5" />
-                ) : (
-                  <ShieldAlert className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-[var(--ink)]">
-                  {statusState === "ready" && "Adaption Labs Engine Ready (Owner-Configured Demo)"}
-                  {statusState === "checking" && "Checking Adaption Engine Status..."}
-                  {statusState === "key_missing" && "Adaption API Key Not Configured on Backend"}
-                  {statusState === "operations_disabled" && "Public Demo Operations Disabled by Policy"}
-                  {statusState === "unreachable" && "Backend Engine Unreachable"}
-                </h3>
-                <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">
-                  {statusInfo?.message ||
-                    (statusState === "unreachable"
-                      ? "Could not connect to backend service. Check network or server status."
-                      : "Querying authoritative status from backend...")}
-                </p>
-              </div>
-            </div>
-
-            <div className="shrink-0 text-right">
+          <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-2">
               <span
-                className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-full border ${
+                className={`text-[11px] font-mono font-bold px-3 py-1 rounded-full border inline-flex items-center gap-1.5 ${
                   isOperationsReady
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : statusState === "unreachable"
@@ -460,255 +322,263 @@ export default function AdaptionLabPage() {
                     : "bg-amber-50 text-amber-800 border-amber-200"
                 }`}
               >
-                {statusState === "ready" && "DEMO INTEGRATION: READY"}
-                {statusState === "checking" && "CHECKING STATUS"}
-                {statusState === "key_missing" && "KEY REQUIRED ON RENDER"}
-                {statusState === "operations_disabled" && "GUARDRAIL ACTIVE"}
-                {statusState === "unreachable" && "BACKEND OFFLINE"}
+                {statusState === "ready" && (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>READY (Owner-Funded Demo)</span>
+                  </>
+                )}
+                {statusState === "checking" && (
+                  <>
+                    <RotateCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>CHECKING STATUS</span>
+                  </>
+                )}
+                {statusState === "key_missing" && (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    <span>KEY NOT CONFIGURED</span>
+                  </>
+                )}
+                {statusState === "operations_disabled" && (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>OPERATIONS DISABLED</span>
+                  </>
+                )}
+                {statusState === "unreachable" && (
+                  <>
+                    <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                    <span>BACKEND OFFLINE</span>
+                  </>
+                )}
               </span>
             </div>
-          </div>
 
-          {!isOperationsReady && statusState !== "checking" && (
-            <div className="p-3.5 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] text-xs text-[var(--ink-secondary)] space-y-1.5 font-mono">
-              <div className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-[var(--brand)]" />
-                <span>Notice for Judges &amp; Evaluators:</span>
-              </div>
-              <p className="text-[11px] leading-relaxed">
-                {statusState === "key_missing"
-                  ? "Judges never need to supply an API key. The project owner configures ADAPTION_API_KEY as a secret in the backend Render environment."
-                  : statusState === "operations_disabled"
-                  ? "The owner-configured demo kill switch (ENABLE_PUBLIC_ADAPTION_OPERATIONS) is currently false to safeguard credits."
-                  : "Unable to reach backend /api/v1/adaption/status. Ensure the backend engine is running."}
-              </p>
+            <div className="text-[11px] font-mono text-[var(--ink-muted)]">
+              {statusInfo?.daily_runs_remaining !== undefined && statusInfo?.daily_runs_remaining !== null ? (
+                <span>
+                  Demo Quota: <strong className="text-[var(--ink)]">{statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3}</strong> runs · <strong className="text-[var(--ink)]">{statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10}</strong> estimates today (UTC)
+                </span>
+              ) : (
+                <span>Judges never enter an API key</span>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Global Feedback Banners */}
         {errorMessage && (
-          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5 shadow-xs">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-            <div>
-              <strong>Action Notice: </strong> {errorMessage}
+            <div className="space-y-0.5">
+              <strong className="block font-bold">Action Notice:</strong>
+              <div>{errorMessage}</div>
             </div>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5">
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5 shadow-xs">
             <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
             <div>{successMessage}</div>
           </div>
         )}
 
         {/* =========================================================================
-            ZONE 3: ADAPTIVE DATA RUN CONFIGURATION & ESTIMATION
+            BALANCED FIRST-VIEWPORT 2-COLUMN WORKFLOW
+            Left (7 cols): Prepare Run & Actions | Right (5 cols): Estimate & Recent Runs
             ========================================================================= */}
-        <div id="configuration-section" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left 7 Columns: Pipeline Controls */}
-          <div className="lg:col-span-7 solid-data rounded-3xl p-6 sm:p-7 space-y-6">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
-                <Layers className="w-3 h-3" />
-                <span>PIPELINE SPECIFICATION</span>
-              </div>
-              <h2 className="text-base font-bold text-[var(--ink)] mt-1">
-                Configure Dataset Distillation
-              </h2>
-              <p className="text-xs text-[var(--ink-muted)] mt-0.5">
-                Task blueprint: Empathetic customer support resolution training pairs
-              </p>
-            </div>
-
-            {/* Target Dataset Preview */}
-            <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[var(--border-subtle)] space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[var(--ink)]">Source Dataset:</span>
-                <span className="font-mono text-[var(--ink-muted)] text-[11px]">
-                  ID: {selectedDatasetId || "None selected"}
-                </span>
-              </div>
-              {selectedDataset ? (
-                <div className="text-xs text-[var(--ink-secondary)]">
-                  <strong>{selectedDataset.name}</strong> • {selectedDataset.row_count.toLocaleString()} valid rows ingested
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* ---------------------------------------------------------------------
+              LEFT COLUMN: STEP 1 TO STEP 3 RUN CONFIGURATION
+              --------------------------------------------------------------------- */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-5">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
+                  STEP 1 · SOURCE &amp; SAFETY BOUND
                 </div>
-              ) : (
-                <div className="text-xs text-amber-600">
-                  No active dataset selected. Please choose one in the top header.
-                </div>
-              )}
-            </div>
-
-            {/* Task Blueprint & Column Mapping Preview */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
-                  Adaptive Data Column Mapping
-                </label>
-                <span className="text-[10px] text-[var(--ink-muted)] font-mono">
-                  Task: Support Assistant Alignment
-                </span>
+                <h2 className="text-base font-bold text-[var(--ink)] mt-0.5">
+                  Prepare feedback sample
+                </h2>
+                <p className="text-xs text-[var(--ink-muted)]">
+                  Bound source dataset rows to safeguard demonstration credits
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3 bg-white rounded-xl border border-[var(--border-subtle)]">
-                  <span className="text-[10px] font-bold uppercase font-mono text-[var(--brand)] block">
-                    prompt / instruction
+              {/* Source Dataset Summary */}
+              <div className="p-4 rounded-2xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+                    <Database className="w-3.5 h-3.5 text-[var(--brand)]" />
+                    Selected Workspace Dataset:
                   </span>
-                  <div className="text-xs font-semibold text-[var(--ink)] mt-1">
-                    Empathetic Response Instruction
+                  <span className="font-mono text-[11px] text-[var(--ink-muted)]">
+                    {selectedDatasetId || "None"}
+                  </span>
+                </div>
+                {selectedDataset ? (
+                  <div className="text-xs text-[var(--ink-secondary)]">
+                    <strong>{selectedDataset.name}</strong> • {selectedDataset.row_count.toLocaleString()} valid rows ingested
                   </div>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mt-0.5">
-                    "Write a concise, empathetic customer-support resolution"
-                  </span>
-                </div>
-
-                <div className="p-3 bg-white rounded-xl border border-[var(--border-subtle)]">
-                  <span className="text-[10px] font-bold uppercase font-mono text-[#7C3AED] block">
-                    context / input
-                  </span>
-                  <div className="text-xs font-semibold text-[var(--ink)] mt-1">
-                    Verbatim Review &amp; Category
-                  </div>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mt-0.5">
-                    Original customer voice + issue taxonomy
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bounded Row Cap Selector */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <label className="font-bold text-[var(--ink)]">
-                  Row Cap Safety Bound:
-                </label>
-                <span className="font-mono text-[var(--brand)] font-bold">
-                  {maxRows} Rows Max
-                </span>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2">
-                {[100, 250, 500, 1000].map((rows) => (
-                  <button
-                    key={rows}
-                    type="button"
-                    onClick={() => setMaxRows(rows)}
-                    className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all focus-visible-ring cursor-pointer ${
-                      maxRows === rows
-                        ? "bg-[var(--brand)] text-white shadow-xs"
-                        : "bg-[#F6F5F1] text-[var(--ink)] hover:bg-[#EAE8E2] border border-[var(--border-subtle)]"
-                    }`}
-                  >
-                    {rows} rows
-                  </button>
-                ))}
-              </div>
-              <p className="text-[11px] text-[var(--ink-muted)]">
-                Server clamps requests to a maximum of 1,000 rows to safeguard owner compute credits.
-              </p>
-            </div>
-
-            {/* Data-Sharing & Credit Disclosure Notice (MANDATORY REQUIREMENT) */}
-            <div className="p-4 bg-[#FAF5E8] rounded-2xl border border-amber-200/80 space-y-3">
-              <div className="flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <div className="space-y-1 text-xs text-amber-900 leading-relaxed">
-                  <div className="font-bold text-amber-950">
-                    External Data Transfer &amp; Credit Usage Disclosure
-                  </div>
-                  <ul className="list-disc pl-4 space-y-1 text-[11px] text-amber-800">
-                    <li>
-                      <strong>External Transmission:</strong> Bounded feedback rows (up to {maxRows}) are uploaded to the external Adaption Labs API.
-                    </li>
-                    <li>
-                      <strong>Estimates Transmit Data:</strong> Calculating an estimate uploads a temporary CSV to Adaption Labs to quote costs; it does not start a run.
-                    </li>
-                    <li>
-                      <strong>Credit Consumption:</strong> Starting an adaptation run consumes real compute credits from the owner's account.
-                    </li>
-                    <li>
-                      <strong>Public Workspace Notice:</strong> Do not upload sensitive or personal customer information. Use sample/anonymized datasets only.
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <label className="flex items-start gap-2.5 pt-2 border-t border-amber-200 text-xs text-amber-950 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={hasConsented}
-                  onChange={(e) => setHasConsented(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-amber-300 text-[var(--brand)] focus:ring-[var(--brand)]"
-                />
-                <span className="text-[11px] font-medium leading-tight">
-                  I understand bounded feedback rows will be uploaded to Adaption Labs for estimation/processing under the {maxRows}-row cap.
-                </span>
-              </label>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={handleEstimate}
-                disabled={isEstimating || !selectedDatasetId || !hasConsented || !isOperationsReady}
-                className="flex-1 py-3 px-4 bg-white border border-[var(--border-strong)] hover:border-[var(--brand)] text-[var(--ink)] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
-              >
-                {isEstimating ? (
-                  <>
-                    <RotateCw className="w-4 h-4 animate-spin text-[var(--brand)]" />
-                    <span>Querying Adaption Estimate...</span>
-                  </>
                 ) : (
-                  <>
-                    <Coins className="w-4 h-4 text-[var(--brand)]" />
-                    <span>Estimate Cost &amp; Time</span>
-                  </>
+                  <div className="text-xs text-amber-700">
+                    No active dataset selected. Select one in the top header selector.
+                  </div>
                 )}
-              </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(true)}
-                disabled={isStartingJob || !selectedDatasetId || !hasConsented || !isOperationsReady}
-                className="flex-1 py-3 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
-              >
-                {isStartingJob ? (
-                  <>
-                    <RotateCw className="w-4 h-4 animate-spin" />
-                    <span>Launching Pipeline...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>Run Adaption Pipeline</span>
-                  </>
-                )}
-              </button>
+              {/* Row Cap Selector */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <label className="font-bold text-[var(--ink)]">
+                    Sample limit for Adaption Labs:
+                  </label>
+                  <span className="font-mono text-[var(--brand)] font-bold">
+                    {maxRows} rows maximum
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  {[100, 250, 500, 1000].map((rows) => (
+                    <button
+                      key={rows}
+                      type="button"
+                      onClick={() => setMaxRows(rows)}
+                      className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all focus-visible-ring cursor-pointer ${
+                        maxRows === rows
+                          ? "bg-[var(--brand)] text-white shadow-xs"
+                          : "bg-[#F6F5F1] text-[var(--ink)] hover:bg-[#EAE8E2] border border-[var(--border-subtle)]"
+                      }`}
+                    >
+                      {rows} rows
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-[var(--ink-muted)]">
+                  Clamped server-side to 1,000 rows to ensure predictable execution.
+                </p>
+              </div>
+
+              {/* Task Blueprint Preview */}
+              <div className="p-4 rounded-2xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)]">
+                    Task Blueprint (Support Assistant Alignment)
+                  </span>
+                  <span className="text-[10px] font-mono text-[var(--brand)]">Prompt + Context</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 bg-white rounded-xl border border-[var(--border-subtle)]">
+                    <span className="text-[10px] font-bold uppercase font-mono text-[var(--brand)] block">
+                      prompt
+                    </span>
+                    <div className="text-xs font-medium text-[var(--ink)] mt-0.5">
+                      "Write a concise, empathetic customer-support resolution"
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-[var(--border-subtle)]">
+                    <span className="text-[10px] font-bold uppercase font-mono text-[#7C3AED] block">
+                      context
+                    </span>
+                    <div className="text-xs font-medium text-[var(--ink)] mt-0.5">
+                      Verbatim feedback quote + source category
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* External Data Transfer & Consent Notice */}
+              <div className="p-4 rounded-2xl bg-[#FAF5E8] border border-amber-200/80 space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="space-y-1 text-xs text-amber-950 leading-relaxed">
+                    <div className="font-bold">
+                      External Data Transfer Notice
+                    </div>
+                    <p className="text-[11px] text-amber-800">
+                      Bounded rows (up to {maxRows}) are transmitted to the external Adaption Labs API for estimation and adaptation. Estimates upload a quote sample; actual runs consume owner demo credits.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-2.5 pt-2 border-t border-amber-200 text-xs text-amber-950 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hasConsented}
+                    onChange={(e) => setHasConsented(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-[var(--brand)] focus:ring-[var(--brand)]"
+                  />
+                  <span className="text-[11px] font-medium leading-tight">
+                    I acknowledge that up to {maxRows} feedback rows will be uploaded to Adaption Labs for processing.
+                  </span>
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={handleEstimate}
+                  disabled={isEstimating || !selectedDatasetId || !hasConsented || !isOperationsReady}
+                  className="flex-1 py-3 px-4 bg-white border border-[var(--border-strong)] hover:border-[var(--brand)] text-[var(--ink)] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
+                >
+                  {isEstimating ? (
+                    <>
+                      <RotateCw className="w-4 h-4 animate-spin text-[var(--brand)]" />
+                      <span>Querying Estimate...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Coins className="w-4 h-4 text-[var(--brand)]" />
+                      <span>Estimate Cost &amp; Time</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(true)}
+                  disabled={isStartingJob || !selectedDatasetId || !hasConsented || !isOperationsReady}
+                  className="flex-1 py-3 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
+                >
+                  {isStartingJob ? (
+                    <>
+                      <RotateCw className="w-4 h-4 animate-spin" />
+                      <span>Launching Run...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>Run with Adaption Labs</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Right 5 Columns: Estimation Results Box */}
+          {/* ---------------------------------------------------------------------
+              RIGHT COLUMN: STEP 2 ESTIMATE & STEP 3 RECENT ACTIVITY LEDGER
+              --------------------------------------------------------------------- */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="solid-data rounded-3xl p-6 sm:p-7 space-y-5">
+            {/* Computation Forecast Card */}
+            <div className="p-6 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-4">
               <div>
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono">
-                  <Clock className="w-3 h-3" />
-                  <span>COMPUTATION FORECAST</span>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono">
+                  STEP 2 · USAGE ESTIMATE
                 </div>
-                <h3 className="text-base font-bold text-[var(--ink)] mt-1">
-                  Engine Estimate Summary
+                <h3 className="text-base font-bold text-[var(--ink)] mt-0.5">
+                  Computation forecast
                 </h3>
-                <p className="text-xs text-[var(--ink-muted)] mt-0.5">
-                  Pre-flight quote computed directly by Adaption Labs
+                <p className="text-xs text-[var(--ink-muted)]">
+                  Live pre-flight quote returned by Adaption Labs
                 </p>
               </div>
 
               {estimateResult ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-4 rounded-2xl bg-[#E9EDFC] border border-[var(--brand)]/20">
                       <span className="text-[10px] font-bold uppercase font-mono text-[var(--brand)] block">
@@ -734,120 +604,84 @@ export default function AdaptionLabPage() {
                           : "N/A"}
                       </div>
                       <span className="text-[10px] text-[var(--ink-muted)]">
-                        Distillation runtime
+                        Expected runtime
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[var(--ink-muted)]">Local Tracking ID:</span>
-                      <span className="font-mono font-bold text-[var(--ink)]">
-                        {estimateResult.local_job_id}
-                      </span>
+                  <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] text-[11px] text-[var(--ink-secondary)] space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-[var(--ink-muted)]">Job:</span>
+                      <span className="font-mono font-bold text-[var(--ink)]">{estimateResult.local_job_id}</span>
                     </div>
-                    {estimateResult.adaption_dataset_id && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[var(--ink-muted)]">Adaption Dataset ID:</span>
-                        <span className="font-mono text-[var(--brand)] truncate max-w-[180px]">
-                          {estimateResult.adaption_dataset_id}
-                        </span>
-                      </div>
-                    )}
-                    <div className="pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--ink-secondary)]">
-                      {estimateResult.message}
+                    <div className="flex justify-between">
+                      <span className="text-[var(--ink-muted)]">Sample Bound:</span>
+                      <span className="font-mono text-[var(--ink)]">{maxRows} rows</span>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-8 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[var(--border-strong)] space-y-2">
-                  <Coins className="w-8 h-8 text-[var(--ink-muted)] mx-auto opacity-50" />
+                <div className="p-6 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[var(--border-strong)] space-y-2">
+                  <Coins className="w-7 h-7 text-[var(--ink-muted)] mx-auto opacity-40" />
                   <div className="text-xs font-bold text-[var(--ink)]">
-                    No Active Estimate
+                    No quote requested yet
                   </div>
                   <p className="text-[11px] text-[var(--ink-muted)] max-w-xs mx-auto leading-relaxed">
-                    Select a dataset and row cap, check the data disclosure box, and click "Estimate Cost &amp; Time" to receive live quote figures.
+                    Check the data disclosure on the left and click "Estimate Cost &amp; Time" to receive live quote figures.
                   </p>
                 </div>
               )}
+            </div>
 
-              <div className="p-3.5 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] text-[11px] text-[var(--ink-muted)] flex items-start gap-2">
-                <HelpCircle className="w-3.5 h-3.5 text-[var(--brand)] shrink-0 mt-0.5" />
-                <span>
-                  Estimates analyze row lengths, token count distributions, and synthesis passes without committing compute charges.
-                </span>
+            {/* Recent Activity Ledger Card */}
+            <div className="p-6 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono">
+                    STEP 3 · RUN ACTIVITY
+                  </div>
+                  <h3 className="text-base font-bold text-[var(--ink)] mt-0.5">
+                    Recent pipeline runs ({jobs.length})
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRefreshJobs}
+                  disabled={isLoadingJobs}
+                  className="p-1.5 rounded-lg text-[var(--ink-muted)] hover:bg-[#F2F4F6] transition-colors cursor-pointer"
+                  title="Refresh activity"
+                >
+                  <RotateCw className={`w-3.5 h-3.5 ${isLoadingJobs ? "animate-spin" : ""}`} />
+                </button>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* =========================================================================
-            ZONE 4: PIPELINE JOBS & RUN HISTORY TABLE
-            ========================================================================= */}
-        <div className="solid-data rounded-3xl p-6 sm:p-7 space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
-                <Terminal className="w-3.5 h-3.5" />
-                <span>EXECUTION LEDGER</span>
-              </div>
-              <h2 className="text-base font-bold text-[var(--ink)] mt-0.5">
-                Adaption Labs Pipeline Runs ({jobs.length})
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleRefreshJobs}
-              disabled={isLoadingJobs}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--border-subtle)] text-xs font-semibold rounded-xl text-[var(--ink)] hover:bg-[#F2F4F6] transition-colors focus-visible-ring cursor-pointer"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${isLoadingJobs ? "animate-spin" : ""}`} />
-              <span>Refresh Ledger</span>
-            </button>
-          </div>
-
-          {jobs.length === 0 ? (
-            <div className="p-10 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[var(--border-strong)] space-y-2">
-              <p className="text-xs font-bold text-[var(--ink)]">
-                No Adaption jobs recorded yet in this workspace.
-              </p>
-              <p className="text-[11px] text-[var(--ink-muted)]">
-                Run an estimate or launch an Adaptive Data pipeline above to see tracking logs.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--border-subtle)] text-[10px] font-bold text-[var(--ink-muted)] uppercase tracking-wider font-mono">
-                    <th className="py-3 px-3">Job ID</th>
-                    <th className="py-3 px-3">Type</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3">Est. Credits</th>
-                    <th className="py-3 px-3">Est. Time</th>
-                    <th className="py-3 px-3">Created</th>
-                    <th className="py-3 px-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border-subtle)]">
-                  {jobs.map((job) => {
+              {jobs.length === 0 ? (
+                <div className="p-6 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[var(--border-strong)] space-y-1.5">
+                  <Cpu className="w-7 h-7 text-[var(--ink-muted)] mx-auto opacity-40" />
+                  <div className="text-xs font-bold text-[var(--ink)]">
+                    No runs recorded yet
+                  </div>
+                  <p className="text-[11px] text-[var(--ink-muted)]">
+                    Launch an estimate or pipeline run to see tracking records here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  {jobs.slice(0, 5).map((job) => {
                     const isSuccess = job.status === "succeeded";
                     const isRunning = job.status === "running";
 
                     return (
-                      <tr
+                      <div
                         key={job.id}
-                        className="hover:bg-[#F6F5F1]/80 transition-colors cursor-pointer group"
                         onClick={() => setSelectedJob(job)}
+                        className="p-3.5 rounded-2xl bg-[#F6F5F1] hover:bg-[#EDEBE5] border border-[var(--border-subtle)] space-y-2 cursor-pointer transition-all group"
                       >
-                        <td className="py-3 px-3 font-mono font-bold text-[var(--ink)]">
-                          {job.id}
-                        </td>
-                        <td className="py-3 px-3 font-mono uppercase text-[10px] text-[var(--ink-secondary)]">
-                          {job.operation_type}
-                        </td>
-                        <td className="py-3 px-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-mono font-bold text-[var(--ink)]">
+                            #{job.id}
+                          </span>
                           <span
                             className={`inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border ${
                               isSuccess
@@ -860,27 +694,29 @@ export default function AdaptionLabPage() {
                             {isRunning && <RotateCw className="w-2.5 h-2.5 animate-spin" />}
                             {job.status.toUpperCase()}
                           </span>
-                        </td>
-                        <td className="py-3 px-3 font-mono">
-                          {job.estimated_credits !== null && job.estimated_credits !== undefined
-                            ? `${job.estimated_credits.toFixed(1)} cr`
-                            : "—"}
-                        </td>
-                        <td className="py-3 px-3 font-mono text-[var(--ink-muted)]">
-                          {job.estimated_minutes !== null && job.estimated_minutes !== undefined
-                            ? `~${job.estimated_minutes.toFixed(1)}m`
-                            : "—"}
-                        </td>
-                        <td className="py-3 px-3 text-[var(--ink-muted)] font-mono text-[11px]">
-                          {new Date(job.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}
-                        </td>
-                        <td className="py-3 px-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {job.operation_type === "adapt" && job.status === "succeeded" && (
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-[var(--ink-muted)]">
+                          <span className="capitalize font-mono">
+                            {job.operation_type === "adapt" ? "Adaptation Run" : "Cost Estimate"}
+                          </span>
+                          <span className="font-mono">
+                            {job.estimated_credits !== null && job.estimated_credits !== undefined
+                              ? `${job.estimated_credits.toFixed(1)} cr`
+                              : "—"}
+                          </span>
+                        </div>
+
+                        <div className="pt-1.5 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
+                          <span className="text-[var(--ink-muted)] font-mono text-[10px]">
+                            {new Date(job.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {job.operation_type === "adapt" && isSuccess && job.output_download_available && (
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -888,81 +724,22 @@ export default function AdaptionLabPage() {
                                   handleDownloadOutput(job.id);
                                 }}
                                 disabled={downloadingJobId === job.id}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#E8F3EE] hover:bg-[#D5EAE0] text-[#2E7D68] text-[10px] font-bold font-mono transition-colors"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#E8F3EE] hover:bg-[#D5EAE0] text-[#2E7D68] text-[10px] font-bold font-mono transition-colors"
                               >
                                 <Download className="w-3 h-3" />
-                                <span>{downloadingJobId === job.id ? "Downloading..." : "Download CSV"}</span>
+                                <span>{downloadingJobId === job.id ? "..." : "CSV"}</span>
                               </button>
                             )}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedJob(job);
-                              }}
-                              className="text-[11px] font-semibold text-[var(--brand)] group-hover:underline"
-                            >
-                              Inspect Dossier →
-                            </button>
+                            <span className="text-[var(--brand)] font-semibold group-hover:underline flex items-center gap-0.5">
+                              Details →
+                            </span>
                           </div>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* =========================================================================
-            ZONE 5: ARCHITECTURAL DEEP DIVE FOR JUDGES
-            ========================================================================= */}
-        <div id="architecture-section" className="solid-data rounded-3xl p-6 sm:p-8 space-y-6">
-          <div className="border-b border-[var(--border-subtle)] pb-4">
-            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
-              <FileCode className="w-3.5 h-3.5" />
-              <span>SYSTEM ARCHITECTURE FOR JUDGES</span>
-            </div>
-            <h2 className="text-base sm:text-lg font-bold text-[var(--ink)] mt-1">
-              Why InsightFlow Integrates Adaption Labs
-            </h2>
-            <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">
-              Standard feedback dashboards stop at sentiment and word counts. InsightFlow bridges the gap between customer feedback telemetry and production LLM operations.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Column A: Baseline Sentiment Limitations */}
-            <div className="p-5 rounded-2xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-3">
-              <span className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)] block">
-                Standard Feedback Dashboards
-              </span>
-              <h3 className="text-sm font-bold text-[var(--ink)]">
-                Rule-Based Lexicon Sentiment
-              </h3>
-              <ul className="space-y-2 text-xs text-[var(--ink-secondary)] list-disc pl-4 leading-relaxed">
-                <li>Scores polarity (-1.0 to +1.0) using word lists.</li>
-                <li>Provides static metrics for quarterly reviews.</li>
-                <li>Cannot align models: output cannot be used for fine-tuning.</li>
-                <li>Conflates message duplication with customer volume.</li>
-              </ul>
-            </div>
-
-            {/* Column B: Adaptive Data Advantage */}
-            <div className="p-5 rounded-2xl bg-[#E9EDFC] border border-[var(--brand)]/30 space-y-3">
-              <span className="text-[10px] font-bold uppercase font-mono text-[var(--brand)] block">
-                Adaption Labs Ingestion
-              </span>
-              <h3 className="text-sm font-bold text-[var(--ink)]">
-                Adaptive Data Pipeline
-              </h3>
-              <ul className="space-y-2 text-xs text-[var(--ink-secondary)] list-disc pl-4 leading-relaxed">
-                <li>Transforms uncurated feedback into aligned instruction pairs.</li>
-                <li>Applies domain task blueprint (empathetic customer support responses).</li>
-                <li>Curates high-signal fine-tuning splits for domain models.</li>
-                <li>Produces benchmark datasets for continuous evaluation.</li>
-              </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -988,11 +765,11 @@ export default function AdaptionLabPage() {
                 Launch Adaption Pipeline Run?
               </h3>
               <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
-                This will submit a bounded extraction ({maxRows} rows maximum) to Adaption Labs for Adaptive Data distillation.
+                This will submit a bounded extraction ({maxRows} rows maximum) to Adaption Labs for Adaptive Data processing.
               </p>
             </div>
 
-            <div className="p-3.5 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] space-y-1.5 text-xs">
+            <div className="p-3.5 bg-[#F6F5F1] rounded-2xl border border-[var(--border-subtle)] space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-[var(--ink-muted)]">Target Dataset:</span>
                 <span className="font-bold text-[var(--ink)] truncate max-w-[200px]">
@@ -1008,7 +785,7 @@ export default function AdaptionLabPage() {
                 <span className="font-mono text-[var(--ink)]">
                   {estimateResult?.estimated_credits !== undefined && estimateResult?.estimated_credits !== null
                     ? `${estimateResult.estimated_credits.toFixed(1)} cr`
-                    : "Live execution quote"}
+                    : "Standard run"}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1019,7 +796,7 @@ export default function AdaptionLabPage() {
               </div>
             </div>
 
-            <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200 leading-relaxed">
+            <p className="text-[11px] text-amber-900 bg-[#FAF5E8] p-3 rounded-xl border border-amber-200 leading-relaxed">
               This action transmits bounded data to Adaption Labs and consumes demo credits configured on the backend.
             </p>
 
@@ -1058,7 +835,7 @@ export default function AdaptionLabPage() {
               <div className="flex items-center justify-between pb-4 border-b border-[var(--border-subtle)]">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono">
-                    Adaption Job Dossier
+                    Adaption Job Details
                   </div>
                   <h3 className="text-base font-extrabold text-[var(--ink)] font-mono">
                     #{selectedJob.id}
@@ -1073,31 +850,21 @@ export default function AdaptionLabPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] space-y-1">
+                <div className="p-3.5 bg-[#F6F5F1] rounded-2xl border border-[var(--border-subtle)] space-y-1">
                   <div className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)]">
-                    Status &amp; Operation
+                    Operation &amp; Status
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold uppercase text-[var(--ink)]">
-                      {selectedJob.operation_type}
+                      {selectedJob.operation_type === "adapt" ? "Adaptation Pipeline Run" : "Cost Estimate"}
                     </span>
-                    <span className="font-mono text-xs font-bold capitalize">
+                    <span className="font-mono text-xs font-bold capitalize text-[var(--brand)]">
                       {selectedJob.status}
                     </span>
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] space-y-1">
-                  <div className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)]">
-                    External Adaption Identifiers
-                  </div>
-                  <div className="text-xs font-mono space-y-1 text-[var(--ink)]">
-                    <div>Dataset: {selectedJob.adaption_dataset_id || "None"}</div>
-                    <div>Run: {selectedJob.adaption_run_id || "None"}</div>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] space-y-1">
+                <div className="p-3.5 bg-[#F6F5F1] rounded-2xl border border-[var(--border-subtle)] space-y-1">
                   <div className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)]">
                     Resource Consumption
                   </div>
@@ -1108,7 +875,7 @@ export default function AdaptionLabPage() {
                 </div>
 
                 {selectedJob.output_download_available && (
-                  <div className="p-3.5 bg-[#E8F3EE] rounded-xl border border-[#2E7D68]/30 space-y-2">
+                  <div className="p-3.5 bg-[#E8F3EE] rounded-2xl border border-[#2E7D68]/30 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-[#166534] flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-[#16a34a]" />
@@ -1125,13 +892,13 @@ export default function AdaptionLabPage() {
                       </button>
                     </div>
                     <p className="text-[10px] text-[#2E7D68]">
-                      Streamed directly from the backend via the Adaption Labs datasets download API.
+                      Streamed directly from Adaption Labs via backend datasets download endpoint.
                     </p>
                   </div>
                 )}
 
                 {selectedJob.error_message && (
-                  <div className="p-3.5 bg-red-50 rounded-xl border border-red-200 text-xs text-red-700 space-y-1">
+                  <div className="p-3.5 bg-red-50 rounded-2xl border border-red-200 text-xs text-red-700 space-y-1">
                     <strong className="block text-red-800 font-bold">Execution Error:</strong>
                     <div className="font-mono text-[11px] leading-relaxed break-words">
                       {selectedJob.error_message}
@@ -1139,13 +906,37 @@ export default function AdaptionLabPage() {
                   </div>
                 )}
 
-                <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] space-y-1">
-                  <div className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)]">
-                    Column Mapping Used
-                  </div>
-                  <pre className="text-[11px] font-mono text-[var(--ink-secondary)] overflow-x-auto">
-                    {JSON.stringify(selectedJob.column_mapping, null, 2)}
-                  </pre>
+                {/* Collapsible Technical Details for Troubleshooting */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
+                    className="w-full flex items-center justify-between text-xs text-[var(--ink-muted)] font-semibold p-2 hover:bg-[#F6F5F1] rounded-xl transition-colors cursor-pointer"
+                  >
+                    <span>Technical Details (IDs &amp; Mappings)</span>
+                    {showTechnicalDetails ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </button>
+
+                  {showTechnicalDetails && (
+                    <div className="p-3 bg-[#F6F5F1] rounded-2xl border border-[var(--border-subtle)] space-y-2 mt-2 text-xs">
+                      <div className="font-mono text-[11px] space-y-1 text-[var(--ink)]">
+                        <div>Adaption Dataset ID: {selectedJob.adaption_dataset_id || "None"}</div>
+                        <div>Adaption Run ID: {selectedJob.adaption_run_id || "None"}</div>
+                      </div>
+                      <div className="pt-1 border-t border-[var(--border-subtle)]">
+                        <span className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)] block">
+                          Column Mapping:
+                        </span>
+                        <pre className="text-[10px] font-mono text-[var(--ink-secondary)] overflow-x-auto mt-1">
+                          {JSON.stringify(selectedJob.column_mapping, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
