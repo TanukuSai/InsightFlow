@@ -186,9 +186,12 @@ async def list_adaption_jobs(
     synced_jobs = []
     for job in jobs:
         if job.status == "running" and job.adaption_dataset_id:
-            updated = await AdaptionService.get_job_status(job.id, current_user.workspace_id, db)
-            if updated:
-                job = updated
+            try:
+                updated = await AdaptionService.get_job_status(job.id, current_user.workspace_id, db)
+                if updated:
+                    job = updated
+            except Exception as e:
+                logger.warning(f"Could not refresh running job {job.id} during list: {e}")
         resp = AdaptionJobResponse.model_validate(job)
         resp.output_download_available = bool(
             job.operation_type == "adapt" and job.status == "succeeded" and job.adaption_dataset_id

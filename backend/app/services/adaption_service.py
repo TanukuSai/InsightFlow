@@ -377,11 +377,12 @@ class AdaptionService:
             try:
                 ext_status = client.datasets.get_status(job.adaption_dataset_id)
                 ext_st = getattr(ext_status, "status", None)
+                meta = dict(job.result_metadata or {})
                 if ext_st == "succeeded":
                     job.status = "succeeded"
                     job.completed_at = datetime.now(timezone.utc)
                     job.result_metadata = {
-                        **job.result_metadata,
+                        **meta,
                         "row_count": getattr(ext_status, "row_count", None),
                         "progress": getattr(ext_status, "progress", None),
                     }
@@ -392,14 +393,14 @@ class AdaptionService:
                     err_data = getattr(ext_status, "error_data", None)
                     job.error_message = str(err_data) if err_data else "Adaption run failed upstream."
                     job.result_metadata = {
-                        **job.result_metadata,
+                        **meta,
                         "error_data": str(err_data) if err_data else None,
                     }
                     await db.commit()
                 elif ext_st in ["pending", "running", "awaiting_input"]:
                     # Still running; update progress metadata
                     job.result_metadata = {
-                        **job.result_metadata,
+                        **meta,
                         "upstream_status": ext_st,
                         "progress": getattr(ext_status, "progress", None),
                     }
