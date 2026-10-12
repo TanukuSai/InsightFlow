@@ -42,23 +42,6 @@ export function setActiveWorkspaceId(workspaceId: string): void {
   }
 }
 
-export function getAuthToken(): string | null {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("insightflow_auth_token");
-  }
-  return null;
-}
-
-export function setAuthToken(token: string | null): void {
-  if (typeof window !== "undefined") {
-    if (token) {
-      localStorage.setItem("insightflow_auth_token", token);
-    } else {
-      localStorage.removeItem("insightflow_auth_token");
-    }
-  }
-}
-
 class ApiError extends Error {
   status: number;
   data: any;
@@ -92,11 +75,6 @@ async function fetchJson<T>(
 
   if (!headers.has("X-Workspace-Id")) {
     headers.set("X-Workspace-Id", getActiveWorkspaceId());
-  }
-
-  const token = getAuthToken();
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(url, {
@@ -323,10 +301,6 @@ export const reportsApi = {
 
     const url = `${API_BASE_URL}/api/v1/reports/${reportId}/export`;
     const headers = new Headers();
-    const token = getAuthToken();
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
     headers.set("X-Workspace-Id", getActiveWorkspaceId());
 
     const response = await fetch(url, { headers });

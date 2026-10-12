@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import AppHeader from "@/components/navigation/AppHeader";
 import { recommendationsApi } from "@/lib/api/client";
 import { Recommendation } from "@/lib/api/types";
 import { useDataset } from "@/lib/context/DatasetContext";
 
 export default function RecommendationsPage() {
-  const { selectedDatasetId } = useDataset();
-  const datasetId = selectedDatasetId || "ds-796d15b9a096";
+  const { selectedDatasetId, loading: datasetLoading } = useDataset();
 
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,10 +16,16 @@ export default function RecommendationsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchRecommendations = useCallback(async () => {
+    if (!selectedDatasetId) {
+      setRecommendations([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      const res = await recommendationsApi.list({ datasetId });
+      const res = await recommendationsApi.list({ datasetId: selectedDatasetId });
       setRecommendations(res || []);
     } catch (err: any) {
       console.error("Failed to load recommendations:", err);
@@ -27,11 +33,16 @@ export default function RecommendationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [datasetId]);
+  }, [selectedDatasetId]);
 
   useEffect(() => {
-    fetchRecommendations();
-  }, [fetchRecommendations]);
+    if (selectedDatasetId) {
+      fetchRecommendations();
+    } else if (!datasetLoading) {
+      setLoading(false);
+      setRecommendations([]);
+    }
+  }, [fetchRecommendations, selectedDatasetId, datasetLoading]);
 
   const handleToggleTrack = async (recId: string, currentTracked: boolean) => {
     try {
@@ -55,7 +66,19 @@ export default function RecommendationsPage() {
       />
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
-        {loading ? (
+        {!selectedDatasetId && !datasetLoading ? (
+          <div className="p-12 text-center solid-data rounded-2xl">
+            <div className="text-2xl mb-2">📁</div>
+            <div className="text-sm font-bold text-[#111827]">No Dataset Selected</div>
+            <p className="text-xs text-[#687386] mt-1">Please select an existing dataset or import a new CSV file to view recommendations.</p>
+            <Link
+              href="/import"
+              className="inline-block mt-4 px-4 py-2 bg-[#3656C8] text-white text-xs font-bold rounded-xl hover:bg-[#23387F] transition-colors"
+            >
+              Import CSV Dataset →
+            </Link>
+          </div>
+        ) : loading || datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="w-8 h-8 rounded-full border-2 border-[#3656C8] border-t-transparent animate-spin mx-auto mb-3" />
             <div className="text-xs text-[#7B8491]">Loading recommendations from telemetry database...</div>

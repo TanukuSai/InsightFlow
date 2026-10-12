@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useDataset } from "@/lib/context/DatasetContext";
 
 interface AppSidebarProps {
   isOpen?: boolean;
@@ -11,6 +12,7 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) {
   const pathname = usePathname();
+  const { selectedDataset, loading: datasetLoading } = useDataset();
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: "✦" },
@@ -92,14 +94,22 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
             <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono">
               Active Dataset
             </span>
-            <span className="w-2 h-2 rounded-full bg-[#2E7D68]" />
+            <span className={`w-2 h-2 rounded-full ${selectedDataset ? "bg-[#2E7D68]" : "bg-amber-400"}`} />
           </div>
-          <div className="text-xs font-bold text-[var(--ink)] truncate">
-            Build Battle 2026 Dataset
-          </div>
-          <div className="text-[11px] text-[var(--ink-muted)] mt-0.5 font-mono">
-            7,000 Source Rows
-          </div>
+          {datasetLoading ? (
+            <div className="text-xs text-[var(--ink-muted)] italic">Loading dataset...</div>
+          ) : selectedDataset ? (
+            <>
+              <div className="text-xs font-bold text-[var(--ink)] truncate" title={selectedDataset.name}>
+                {selectedDataset.name}
+              </div>
+              <div className="text-[11px] text-[var(--ink-muted)] mt-0.5 font-mono">
+                {selectedDataset.row_count?.toLocaleString() || 0} Source Rows
+              </div>
+            </>
+          ) : (
+            <div className="text-xs text-[var(--ink-muted)]">No active dataset</div>
+          )}
 
           <div className="mt-3 pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between">
             <Link

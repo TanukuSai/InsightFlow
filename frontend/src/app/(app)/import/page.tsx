@@ -75,6 +75,15 @@ export default function CsvImportPage() {
       />
 
       <div className="p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-8">
+        {/* Public Demo Notice */}
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 shadow-2xs">
+          <span className="text-base leading-none">⚠️</span>
+          <div>
+            <strong className="font-bold">Public Demo Notice: </strong>
+            This is an open hackathon demonstration workspace. Upload only sample or anonymized customer feedback; data is stored in the public demo workspace and may be visible to other visitors.
+          </div>
+        </div>
+
         {summary ? (
           /* Success Screen */
           <div className="p-8 solid-data rounded-3xl shadow-sm space-y-6 border-t-3 border-t-[#3656C8]">

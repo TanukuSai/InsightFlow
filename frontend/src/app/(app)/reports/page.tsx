@@ -1,30 +1,43 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import AppHeader from "@/components/navigation/AppHeader";
 import { reportsApi } from "@/lib/api/client";
 import { Report } from "@/lib/api/types";
 import { useDataset } from "@/lib/context/DatasetContext";
 
 export default function ReportsPage() {
-  const { selectedDatasetId } = useDataset();
-  const datasetId = selectedDatasetId || "ds-796d15b9a096";
+  const { selectedDatasetId, selectedDataset, loading: datasetLoading } = useDataset();
 
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Form states
-  const [title, setTitle] = useState("Build Battle 2026 Executive Intelligence Briefing");
+  const [title, setTitle] = useState("Executive Intelligence Briefing");
   const [format, setFormat] = useState<"pdf" | "json" | "csv">("pdf");
   const [generating, setGenerating] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  // Update title default when dataset loads
+  useEffect(() => {
+    if (selectedDataset?.name) {
+      setTitle(`${selectedDataset.name} Intelligence Briefing`);
+    }
+  }, [selectedDataset?.name]);
+
   const fetchReports = useCallback(async () => {
+    if (!selectedDatasetId) {
+      setReports([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      const res = await reportsApi.list(datasetId);
+      const res = await reportsApi.list(selectedDatasetId);
       setReports(res || []);
     } catch (err: any) {
       console.error("Failed to load reports:", err);
@@ -32,11 +45,16 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [datasetId]);
+  }, [selectedDatasetId]);
 
   useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+    if (selectedDatasetId) {
+      fetchReports();
+    } else if (!datasetLoading) {
+      setLoading(false);
+      setReports([]);
+    }
+  }, [fetchReports, selectedDatasetId, datasetLoading]);
 
   const handleDownload = async (report: Report) => {
     try {
@@ -54,10 +72,15 @@ export default function ReportsPage() {
 
   const handleGenerateReport = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedDatasetId) {
+      alert("Please select or import a dataset first.");
+      return;
+    }
+
     try {
       setGenerating(true);
       const newReport = await reportsApi.generate({
-        dataset_id: datasetId,
+        dataset_id: selectedDatasetId,
         title: title.trim() || "Customer Feedback Intelligence Briefing",
         format,
       });
@@ -80,8 +103,22 @@ export default function ReportsPage() {
       />
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
-        {/* Report Builder Form Card */}
-        <div className="p-6 sm:p-8 solid-data rounded-3xl space-y-6 shadow-xs border-t-3 border-t-[#3656C8]">
+        {!selectedDatasetId && !datasetLoading ? (
+          <div className="p-12 text-center solid-data rounded-2xl">
+            <div className="text-2xl mb-2">📁</div>
+            <div className="text-sm font-bold text-[#111827]">No Dataset Selected</div>
+            <p className="text-xs text-[#687386] mt-1">Please select an existing dataset or import a new CSV file to view and generate reports.</p>
+            <Link
+              href="/import"
+              className="inline-block mt-4 px-4 py-2 bg-[#3656C8] text-white text-xs font-bold rounded-xl hover:bg-[#23387F] transition-colors"
+            >
+              Import CSV Dataset →
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* Report Builder Form Card */}
+            <div className="p-6 sm:p-8 solid-data rounded-3xl space-y-6 shadow-xs border-t-3 border-t-[#3656C8]">
           <div className="flex items-center gap-3 pb-4 border-b border-[#E2E3DD]">
             <div className="w-10 h-10 rounded-xl bg-[#E9EDFC] text-[#3656C8] flex items-center justify-center font-bold text-lg">
               📄
@@ -215,6 +252,8 @@ export default function ReportsPage() {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

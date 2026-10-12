@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "InsightFlow Backend"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
+    PUBLIC_DEMO_WORKSPACE_ID: str = "ws-production-eval"
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./insightflow.db"

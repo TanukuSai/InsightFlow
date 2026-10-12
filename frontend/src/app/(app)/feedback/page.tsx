@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import AppHeader from "@/components/navigation/AppHeader";
 import { feedbackApi } from "@/lib/api/client";
 import { Feedback } from "@/lib/api/types";
@@ -19,8 +20,7 @@ export default function FeedbackExplorerPage() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") || "";
 
-  const { selectedDatasetId, selectedDataset } = useDataset();
-  const datasetId = selectedDatasetId || "ds-796d15b9a096";
+  const { selectedDatasetId, selectedDataset, loading: datasetLoading } = useDataset();
 
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [total, setTotal] = useState(0);
@@ -46,12 +46,19 @@ export default function FeedbackExplorerPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const fetchFeedbacks = useCallback(async () => {
+    if (!selectedDatasetId) {
+      setFeedbacks([]);
+      setTotal(0);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
       const res = await feedbackApi.list({
-        datasetId,
+        datasetId: selectedDatasetId,
         page,
         pageSize,
         category: category || undefined,
@@ -68,11 +75,17 @@ export default function FeedbackExplorerPage() {
     } finally {
       setLoading(false);
     }
-  }, [datasetId, page, pageSize, category, sentiment, search]);
+  }, [selectedDatasetId, page, pageSize, category, sentiment, search]);
 
   useEffect(() => {
-    fetchFeedbacks();
-  }, [fetchFeedbacks]);
+    if (selectedDatasetId) {
+      fetchFeedbacks();
+    } else if (!datasetLoading) {
+      setLoading(false);
+      setFeedbacks([]);
+      setTotal(0);
+    }
+  }, [fetchFeedbacks, selectedDatasetId, datasetLoading]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,12 +102,12 @@ export default function FeedbackExplorerPage() {
 
   const handleAddFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newText.trim()) return;
+    if (!newText.trim() || !selectedDatasetId) return;
 
     try {
       setSubmitting(true);
       await feedbackApi.create({
-        dataset_id: datasetId,
+        dataset_id: selectedDatasetId,
         original_text: newText.trim(),
         source_category: newCategory,
       });
@@ -202,7 +215,19 @@ export default function FeedbackExplorerPage() {
         </div>
 
         {/* Feedback Data Table */}
-        {loading ? (
+        {!selectedDatasetId && !datasetLoading ? (
+          <div className="p-12 text-center solid-data rounded-2xl">
+            <div className="text-2xl mb-2">📁</div>
+            <div className="text-sm font-bold text-[#111827]">No Dataset Selected</div>
+            <p className="text-xs text-[#687386] mt-1">Please select an existing dataset or import a new CSV file to view feedback records.</p>
+            <Link
+              href="/import"
+              className="inline-block mt-4 px-4 py-2 bg-[#4F63FF] text-white text-xs font-bold rounded-xl hover:bg-[#3C4FE6] transition-colors"
+            >
+              Import CSV Dataset →
+            </Link>
+          </div>
+        ) : loading || datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="w-8 h-8 rounded-full border-2 border-[#4F63FF] border-t-transparent animate-spin mx-auto mb-3" />
             <div className="text-xs text-[#687386]">Loading verified records from telemetry database...</div>
