@@ -164,3 +164,52 @@ export interface ImportSummary {
   has_timestamps: boolean;
   errors_sample?: Array<{ row_number: number; error: string; raw_data: string }>;
 }
+
+export interface AdaptionConfigStatus {
+  configured: boolean;
+  api_key_set: boolean;
+  key_prefix?: string;
+  sdk_version: string;
+  message: string;
+  public_operations_enabled: boolean;
+}
+
+export interface AdaptionEstimateRequest {
+  dataset_id: string;
+  column_mapping?: Record<string, any>;
+  max_rows?: number;
+}
+
+export interface AdaptionEstimateResponse {
+  local_job_id: string;
+  dataset_id: string;
+  adaption_dataset_id?: string;
+  estimated_credits: number;
+  estimated_minutes: number;
+  column_mapping_used: Record<string, any>;
+  message: string;
+}
+
+export interface AdaptionRunRequest {
+  dataset_id: string;
+  column_mapping?: Record<string, any>;
+  job_specification?: Record<string, any>;
+}
+
+export interface AdaptionJobResponse {
+  id: string;
+  workspace_id: string;
+  dataset_id: string;
+  adaption_dataset_id?: string;
+  adaption_run_id?: string;
+  operation_type: string;
+  status: string;
+  column_mapping: Record<string, any>;
+  job_specification: Record<string, any>;
+  estimated_credits?: number;
+  estimated_minutes?: number;
+  result_metadata: Record<string, any>;
+  error_message?: string;
+  created_at: string;
+  completed_at?: string;
+}

@@ -77,3 +77,34 @@ async def test_adaption_unconfigured_error_handling(client: AsyncClient, sample_
     # Must return 503 and not fabricate success
     assert resp.status_code == 503
     assert "not configured" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_adaption_start_job_clamps_max_rows(client: AsyncClient, sample_csv_content: bytes, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "ENABLE_PUBLIC_ADAPTION_OPERATIONS", True)
+    monkeypatch.setattr(settings, "ADAPTION_API_KEY", "adaption_mock_api_key_12345")
+
+    files = {"file": ("feed.csv", sample_csv_content, "text/csv")}
+    imp_resp = await client.post("/api/v1/datasets/import", files=files)
+    dataset_id = imp_resp.json()["dataset_id"]
+
+    mock_dataset_obj = MagicMock()
+    mock_dataset_obj.dataset_id = "adaption-ds-mock-789"
+    mock_run_obj = MagicMock()
+    mock_run_obj.run_id = "adaption-run-999"
+
+    mock_client = MagicMock()
+    mock_client.datasets.upload_file.return_value = mock_dataset_obj
+    mock_client.datasets.adapt.return_value = mock_run_obj
+
+    with patch("app.services.adaption_service.AdaptionService.get_client", return_value=mock_client):
+        # Request with 50,000 rows (must be clamped to settings.ADAPTION_MAX_ROWS = 1000)
+        payload = {
+            "dataset_id": dataset_id,
+            "job_specification": {"max_rows": 50000},
+        }
+        resp = await client.post("/api/v1/adaption/jobs", json=payload)
+        assert resp.status_code == 202
+        job_data = resp.json()
+        assert job_data["status"] == "running"
+        assert job_data["job_specification"]["max_rows"] == 1000

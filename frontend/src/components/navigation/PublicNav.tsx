@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { Activity } from "lucide-react";
 
 export default function PublicNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,9 +11,9 @@ export default function PublicNav() {
     <header className="fixed top-4 left-0 right-0 z-50 px-4 sm:px-8 max-w-6xl mx-auto">
       <nav className="glass-nav rounded-full px-5 py-2.5 flex items-center justify-between shadow-xs">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 focus-visible-ring rounded-lg p-1">
-          <div className="w-7 h-7 rounded-lg bg-[#4F63FF] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-            ✦
+        <Link href="/" className="flex items-center gap-2.5 focus-visible-ring rounded-lg p-1 group">
+          <div className="w-7 h-7 rounded-lg bg-[var(--brand)] text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
+            <Activity className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="font-extrabold text-sm sm:text-base tracking-tight text-[#111827]">
             InsightFlow

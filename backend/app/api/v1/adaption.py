@@ -94,12 +94,21 @@ async def start_adaption_run(
             detail="Adaption API key is not configured. Set ADAPTION_API_KEY in backend environment.",
         )
 
+    # 3. Enforce strict row cap clamp on job specification
+    spec = dict(payload.job_specification or {})
+    requested_rows = spec.get("max_rows", settings.ADAPTION_MAX_ROWS)
+    try:
+        requested_rows = int(requested_rows)
+    except (ValueError, TypeError):
+        requested_rows = settings.ADAPTION_MAX_ROWS
+    spec["max_rows"] = min(requested_rows, settings.ADAPTION_MAX_ROWS)
+
     try:
         job = await AdaptionService.start_adaptation_run(
             dataset_id=payload.dataset_id,
             workspace_id=current_user.workspace_id,
             column_mapping=payload.column_mapping,
-            job_specification=payload.job_specification,
+            job_specification=spec,
             db=db,
         )
         return job

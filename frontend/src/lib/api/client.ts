@@ -8,6 +8,11 @@ import {
   AnalysisJob,
   Report,
   ImportSummary,
+  AdaptionConfigStatus,
+  AdaptionEstimateRequest,
+  AdaptionEstimateResponse,
+  AdaptionRunRequest,
+  AdaptionJobResponse,
 } from "./types";
 
 function resolveApiBaseUrl(): string {
@@ -322,6 +327,41 @@ export const reportsApi = {
     link.click();
     window.URL.revokeObjectURL(downloadUrl);
     document.body.removeChild(link);
+  },
+};
+
+// -------------------------------------------------------------
+// 8. ADAPTION LABS API (Adaptive Data Ingestion & Optimization)
+// -------------------------------------------------------------
+export const adaptionApi = {
+  getStatus: async (): Promise<AdaptionConfigStatus> => {
+    return fetchJson<AdaptionConfigStatus>("/api/v1/adaption/status");
+  },
+
+  estimate: async (
+    payload: AdaptionEstimateRequest
+  ): Promise<AdaptionEstimateResponse> => {
+    return fetchJson<AdaptionEstimateResponse>("/api/v1/adaption/estimate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  startJob: async (
+    payload: AdaptionRunRequest
+  ): Promise<AdaptionJobResponse> => {
+    return fetchJson<AdaptionJobResponse>("/api/v1/adaption/jobs", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listJobs: async (): Promise<AdaptionJobResponse[]> => {
+    return fetchJson<AdaptionJobResponse[]>("/api/v1/adaption/jobs");
+  },
+
+  getJob: async (jobId: string): Promise<AdaptionJobResponse> => {
+    return fetchJson<AdaptionJobResponse>(`/api/v1/adaption/jobs/${jobId}`);
   },
 };
 

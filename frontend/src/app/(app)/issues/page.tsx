@@ -6,6 +6,7 @@ import AppHeader from "@/components/navigation/AppHeader";
 import { issuesApi } from "@/lib/api/client";
 import { Issue } from "@/lib/api/types";
 import { useDataset } from "@/lib/context/DatasetContext";
+import { AlertCircle } from "lucide-react";
 
 export default function IssuesTriagePage() {
   const { selectedDatasetId, loading: datasetLoading } = useDataset();
@@ -162,8 +163,8 @@ export default function IssuesTriagePage() {
             </button>
           </div>
         ) : issues.length === 0 ? (
-          <div className="p-12 text-center solid-data rounded-2xl">
-            <div className="text-2xl mb-2">✦</div>
+          <div className="p-12 text-center solid-data rounded-2xl space-y-2">
+            <AlertCircle className="w-8 h-8 text-[var(--ink-muted)] mx-auto opacity-50" />
             <div className="text-sm font-bold text-[#20252D]">No issues matching selected filters</div>
             <button
               onClick={() => {

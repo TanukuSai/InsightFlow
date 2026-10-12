@@ -63,10 +63,11 @@ class AdaptionService:
         Prepares a clean, standard CSV mapped for Adaption Adaptive Data:
         columns: instruction (prompt), input (context category), output (completion if applicable)
         """
+        bounded_limit = min(max_rows, settings.ADAPTION_MAX_ROWS)
         query = select(Feedback).where(
             Feedback.dataset_id == dataset_id,
             Feedback.workspace_id == workspace_id,
-        ).limit(max_rows)
+        ).limit(bounded_limit)
         res = await db.execute(query)
         feedbacks = res.scalars().all()
 
