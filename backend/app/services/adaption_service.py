@@ -358,6 +358,18 @@ class AdaptionService:
                     logger.warning(f"Could not remove temp CSV {csv_path}: {ex}")
 
     @staticmethod
+    def _safe_serialize(val: Any) -> Any:
+        if val is None or isinstance(val, (int, float, str, bool)):
+            return val
+        if hasattr(val, "model_dump"):
+            return val.model_dump()
+        if hasattr(val, "dict"):
+            return val.dict()
+        if hasattr(val, "__dict__"):
+            return {k: AdaptionService._safe_serialize(v) for k, v in val.__dict__.items() if not k.startswith("_")}
+        return str(val)
+
+    @staticmethod
     async def get_job_status(
         job_id: str,
         workspace_id: str,
@@ -377,40 +389,43 @@ class AdaptionService:
         if client and job.status == "running" and job.adaption_dataset_id:
             try:
                 ext_status = client.datasets.get_status(job.adaption_dataset_id)
-                ext_st = getattr(ext_status, "status", None)
-                meta = dict(job.result_metadata or {})
-                if ext_st == "succeeded":
-                    job.status = "succeeded"
-                    job.completed_at = datetime.now(timezone.utc)
-                    job.result_metadata = {
-                        **meta,
-                        "row_count": getattr(ext_status, "row_count", None),
-                        "progress": getattr(ext_status, "progress", None),
-                    }
-                    await db.commit()
-                    await db.refresh(job)
-                elif ext_st == "failed":
-                    job.status = "failed"
-                    job.completed_at = datetime.now(timezone.utc)
-                    err_data = getattr(ext_status, "error_data", None)
-                    job.error_message = str(err_data) if err_data else "Adaption run failed upstream."
-                    job.result_metadata = {
-                        **meta,
-                        "error_data": str(err_data) if err_data else None,
-                    }
-                    await db.commit()
-                    await db.refresh(job)
-                elif ext_st in ["pending", "running", "awaiting_input"]:
-                    # Still running; update progress metadata
-                    job.result_metadata = {
-                        **meta,
-                        "upstream_status": ext_st,
-                        "progress": getattr(ext_status, "progress", None),
-                    }
-                    await db.commit()
-                    await db.refresh(job)
             except Exception as e:
                 logger.warning(f"Could not refresh Adaption job status from API: {e}")
+                return job
+
+            ext_st = getattr(ext_status, "status", None)
+            meta = dict(job.result_metadata or {})
+            if ext_st == "succeeded":
+                job.status = "succeeded"
+                job.completed_at = datetime.now(timezone.utc)
+                job.result_metadata = {
+                    **meta,
+                    "row_count": getattr(ext_status, "row_count", None),
+                    "progress": AdaptionService._safe_serialize(getattr(ext_status, "progress", None)),
+                }
+            elif ext_st == "failed":
+                job.status = "failed"
+                job.completed_at = datetime.now(timezone.utc)
+                err_data = getattr(ext_status, "error_data", None)
+                job.error_message = str(err_data) if err_data else "Adaption run failed upstream."
+                job.result_metadata = {
+                    **meta,
+                    "error_data": AdaptionService._safe_serialize(err_data),
+                }
+            elif ext_st in ["pending", "running", "awaiting_input"]:
+                # Still running; update progress metadata
+                job.result_metadata = {
+                    **meta,
+                    "upstream_status": ext_st,
+                    "progress": AdaptionService._safe_serialize(getattr(ext_status, "progress", None)),
+                }
+
+            try:
+                await db.commit()
+                await db.refresh(job)
+            except Exception as e:
+                logger.warning(f"Could not commit refreshed job status: {e}")
+                await db.rollback()
 
         return job
 
