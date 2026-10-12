@@ -350,15 +350,11 @@ export default function AdaptionLabPage() {
             ========================================================================= */}
         <div className="p-4 sm:py-3.5 sm:px-5 rounded-2xl bg-white border border-[var(--border-subtle)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="space-y-0.5 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>PROCESSING BY ADAPTION LABS · TRAINING DATASET WORKFLOW</span>
-            </div>
             <h1 className="text-base sm:text-lg font-extrabold text-[var(--ink)] tracking-tight">
               Turn customer feedback into support-assistant training data
             </h1>
             <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
-              Choose a small sample of reviews, estimate the processing cost and time, process it with Adaption Labs, and download the resulting dataset when ready.
+              Choose a sample of customer comments, check estimated cost and time, process with Adaption Labs, and download the training dataset.
             </p>
           </div>
 
@@ -411,10 +407,10 @@ export default function AdaptionLabPage() {
             <div className="text-[10px] font-mono text-[var(--ink-muted)]">
               {statusInfo?.daily_runs_remaining !== undefined && statusInfo?.daily_runs_remaining !== null ? (
                 <span>
-                  Quota: <strong className="text-[var(--ink)]">{statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3}</strong> runs · <strong className="text-[var(--ink)]">{statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10}</strong> estimates left today (UTC)
+                  Remaining today: <strong className="text-[var(--ink)]">{statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3}</strong> runs · <strong className="text-[var(--ink)]">{statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10}</strong> estimates
                 </span>
               ) : (
-                <span>Checking quota limits…</span>
+                <span>Checking remaining usage…</span>
               )}
             </div>
           </div>
@@ -425,7 +421,7 @@ export default function AdaptionLabPage() {
           <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5 shadow-xs">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
             <div className="space-y-0.5 flex-1">
-              <strong className="block font-bold">Action Notice:</strong>
+              <strong className="block font-bold">Notice:</strong>
               <div>{errorMessage}</div>
             </div>
             <button
@@ -469,7 +465,7 @@ export default function AdaptionLabPage() {
                     Choose feedback
                   </h2>
                 </div>
-                <span className="text-[10px] font-mono text-[var(--ink-muted)]">Source sample</span>
+                <span className="text-[10px] font-mono text-[var(--ink-muted)]">Feedback sample</span>
               </div>
 
               {/* Source dataset selection */}
@@ -477,7 +473,7 @@ export default function AdaptionLabPage() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
                     <Database className="w-3.5 h-3.5 text-[var(--brand)]" />
-                    Selected Dataset:
+                    Selected feedback set:
                   </span>
                   <span className="font-mono text-[10px] text-[var(--ink-muted)] truncate max-w-[120px]">
                     {selectedDatasetId || "None"}
@@ -487,7 +483,7 @@ export default function AdaptionLabPage() {
                   <div className="text-xs text-[var(--ink-secondary)]">
                     <strong className="text-[var(--ink)]">{selectedDataset.name}</strong>
                     <div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
-                      {totalDatasetRows.toLocaleString()} rows available in workspace
+                      {totalDatasetRows.toLocaleString()} comments available in workspace
                     </div>
                   </div>
                 ) : (
@@ -504,7 +500,7 @@ export default function AdaptionLabPage() {
                     Sample limit:
                   </label>
                   <span className="font-mono text-[var(--brand)] font-bold text-[11px]">
-                    Sample: {maxRows} of {totalDatasetRows > 0 ? totalDatasetRows.toLocaleString() : "—"} rows
+                    Sample: {maxRows} of {totalDatasetRows > 0 ? totalDatasetRows.toLocaleString() : "—"} comments
                   </span>
                 </div>
 
@@ -592,7 +588,7 @@ export default function AdaptionLabPage() {
           </div>
 
           {/* ---------------------------------------------------------------------
-              STEP 2: ESTIMATE FIRST
+              STEP 2: CHECK COST AND TIME
               --------------------------------------------------------------------- */}
           <div className="p-5 sm:p-5.5 rounded-2xl bg-white border border-[var(--border-subtle)] shadow-xs flex flex-col justify-between space-y-4">
             <div className="space-y-3.5">
@@ -602,14 +598,14 @@ export default function AdaptionLabPage() {
                     2
                   </span>
                   <h2 className="text-sm font-bold text-[var(--ink)]">
-                    Estimate first
+                    Check cost and time
                   </h2>
                 </div>
-                <span className="text-[10px] font-mono text-[var(--ink-muted)]">Cost &amp; time</span>
+                <span className="text-[10px] font-mono text-[var(--ink-muted)]">Estimate</span>
               </div>
 
               <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
-                Uploads this sample to Adaption Labs to return a cost/time estimate. It does not start the full processing run.
+                Uploads this sample to Adaption Labs to return a cost and time estimate. It does not start the full processing run.
               </p>
 
               {/* Estimate Primary Button */}
@@ -628,12 +624,12 @@ export default function AdaptionLabPage() {
                   ) : isEstimating ? (
                     <>
                       <RotateCw className="w-3.5 h-3.5 animate-spin text-[var(--brand)]" />
-                      <span>Calculating estimate…</span>
+                      <span>Checking cost and time…</span>
                     </>
                   ) : (
                     <>
                       <Coins className="w-3.5 h-3.5 text-[var(--brand)]" />
-                      <span>Estimate cost &amp; time</span>
+                      <span>Check cost &amp; time</span>
                     </>
                   )}
                 </button>
@@ -694,7 +690,7 @@ export default function AdaptionLabPage() {
                   </div>
 
                   <p className="text-[10px] text-[var(--ink-secondary)] text-center leading-snug">
-                    Sample of {maxRows} rows evaluated. Proceed to Step 3 to process.
+                    Sample of {maxRows} comments evaluated. Proceed to Step 3 to process.
                   </p>
                 </div>
               ) : (
@@ -704,7 +700,7 @@ export default function AdaptionLabPage() {
                     No quote requested yet
                   </div>
                   <p className="text-[11px] text-[var(--ink-muted)] leading-tight">
-                    Click "Estimate cost &amp; time" to check expected credits and runtime.
+                    Click "Check cost &amp; time" to check expected credits and runtime.
                   </p>
                 </div>
               )}
@@ -735,10 +731,10 @@ export default function AdaptionLabPage() {
                     3
                   </span>
                   <h2 className="text-sm font-bold text-[var(--ink)]">
-                    Process &amp; download
+                    Process and download
                   </h2>
                 </div>
-                <span className="text-[10px] font-mono text-[var(--ink-muted)]">Final dataset</span>
+                <span className="text-[10px] font-mono text-[var(--ink-muted)]">Training data</span>
               </div>
 
               <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
@@ -827,7 +823,7 @@ export default function AdaptionLabPage() {
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>
-                          {downloadingJobId === latestAdaptJob.id ? "Downloading..." : "Download processed dataset (CSV)"}
+                          {downloadingJobId === latestAdaptJob.id ? "Downloading..." : "Download training dataset (CSV)"}
                         </span>
                       </button>
                     </div>
@@ -1211,7 +1207,7 @@ export default function AdaptionLabPage() {
                     onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
                     className="w-full flex items-center justify-between text-xs text-[var(--ink-muted)] font-semibold p-2 hover:bg-[#F6F5F1] rounded-xl transition-colors cursor-pointer"
                   >
-                    <span>Technical IDs &amp; Mappings</span>
+                    <span>Technical details</span>
                     {showTechnicalDetails ? (
                       <ChevronDown className="w-4 h-4" />
                     ) : (

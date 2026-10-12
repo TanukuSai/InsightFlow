@@ -95,7 +95,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
-        <AppHeader title="Feedback Overview" subtitle="Customer Signal Observatory" />
+        <AppHeader title="Feedback overview" subtitle="A summary of customer feedback in this dataset" />
         <div className="p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
           <div className="h-44 w-full bg-[#11182A]/10 animate-pulse rounded-2xl" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -115,20 +115,20 @@ export default function DashboardPage() {
   if (!selectedDatasetId && !datasetLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
-        <AppHeader title="Feedback Overview" subtitle="Customer Signal Observatory" />
+        <AppHeader title="Feedback overview" subtitle="A summary of customer feedback in this dataset" />
         <div className="p-8 max-w-xl mx-auto my-16 text-center bg-white rounded-3xl border border-[#DDE2E9] p-8 shadow-sm space-y-4">
           <div className="w-12 h-12 mx-auto rounded-2xl bg-[#E9EDFC] text-[#3656C8] flex items-center justify-center">
             <Database className="w-6 h-6 text-[#3656C8]" />
           </div>
-          <h2 className="text-base font-bold text-[#111827]">No Dataset Selected</h2>
+          <h2 className="text-base font-bold text-[#111827]">No dataset selected</h2>
           <p className="text-xs text-[#687386] leading-relaxed">
-            Please import a CSV dataset or select an active dataset from the header to view deduplication and customer feedback analytics.
+            Import a feedback CSV file or select a dataset from the header to view customer feedback.
           </p>
           <Link
             href="/import"
             className="inline-block px-5 py-2.5 bg-[#3656C8] text-white text-xs font-bold rounded-xl shadow-sm hover:bg-[#23387F] transition-colors focus-visible-ring"
           >
-            + Import Feedback CSV
+            Import feedback
           </Link>
         </div>
       </div>
@@ -138,18 +138,18 @@ export default function DashboardPage() {
   if (error || !data) {
     return (
       <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
-        <AppHeader title="Feedback Overview" subtitle="Customer Signal Observatory" />
+        <AppHeader title="Feedback overview" subtitle="A summary of customer feedback in this dataset" />
         <div className="p-8 max-w-2xl mx-auto my-16 text-center bg-white rounded-3xl border border-[#FF6B61]/25 p-8 shadow-sm">
           <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[#FFF1F0] text-[#FF6B61] flex items-center justify-center text-2xl font-bold">
             !
           </div>
-          <h2 className="text-lg font-bold text-[#111827] mb-2">Unable to Connect to Analytics Engine</h2>
+          <h2 className="text-lg font-bold text-[#111827] mb-2">Unable to load dashboard data</h2>
           <p className="text-xs text-[#687386] mb-6 leading-relaxed">{error || "Dataset could not be loaded."}</p>
           <button
             onClick={() => selectedDatasetId && loadDashboard(selectedDatasetId)}
             className="px-5 py-2.5 bg-[#3656C8] text-white text-xs font-bold rounded-xl shadow-sm hover:bg-[#23387F] transition-colors focus-visible-ring"
           >
-            Retry Connection
+            Retry
           </button>
         </div>
       </div>
@@ -170,21 +170,21 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       {/* Zone A: Page Header */}
       <AppHeader
-        title="Feedback Overview"
-        subtitle={`Dataset: ${data.dataset_name} • ${totalRows.toLocaleString()} Source Rows (${repeatedRows.toLocaleString()} exact-repeat rows)`}
+        title="Feedback overview"
+        subtitle={`A summary of the feedback in ${data.dataset_name}`}
         actions={
           <div className="flex items-center gap-2">
             <Link
               href="/feedback"
               className="px-3.5 py-1.5 bg-white border border-[#DDE2E9] text-xs font-semibold rounded-xl text-[#20252D] hover:bg-[#ECEFF3] transition-colors focus-visible-ring"
             >
-              Feedback Grid
+              Customer feedback
             </Link>
             <Link
               href="/reports"
               className="px-3.5 py-1.5 bg-[#3656C8] text-white text-xs font-bold rounded-xl hover:bg-[#23387F] shadow-sm transition-colors focus-visible-ring"
             >
-              Build Report
+              Create report
             </Link>
           </div>
         }
@@ -192,7 +192,7 @@ export default function DashboardPage() {
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
         {/* =========================================================================
-            ZONE B: SIGNATURE "SIGNAL BRIEF" HERO PANEL (The Visual Anchor)
+            ZONE B: FEEDBACK OVERVIEW HERO PANEL
             ========================================================================= */}
         <div className="signal-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden bg-[#172033] border border-[#2E3D5C]">
           {/* Living Dots Constellation on Midnight Focal Surface */}
@@ -200,24 +200,24 @@ export default function DashboardPage() {
             <DataFieldCanvas mode="signal-brief" />
           </div>
 
-          {/* Ambient Background Signal Glows */}
+          {/* Ambient Background Glows */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#3656C8]/25 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-[#5876B8]/20 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            {/* Left 8 Columns: Strategic Evidence Brief */}
+            {/* Left 8 Columns: Main Headline & Intro */}
             <div className="lg:col-span-8 space-y-3.5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-mono text-[#9EB4FA]">
-                <span className="w-2 h-2 rounded-full bg-[#5876B8] animate-pulse" />
-                <span>SIGNAL OBSERVATORY • DETERMINISTIC DEDUPLICATION ACTIVE</span>
+                <Sparkles className="w-3 h-3 text-[#9EB4FA]" />
+                <span>CUSTOMER FEEDBACK OVERVIEW</span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#F7F9FC] leading-snug">
-                Customer Signal Emerging from {totalRows.toLocaleString()} Ingested Records
+                What customers are telling you
               </h1>
 
               <p className="text-xs sm:text-sm text-[#B8C2D5] leading-relaxed max-w-2xl">
-                Deterministic grouping isolates <strong className="text-[#F7F9FC]">{uniqueStatements.toLocaleString()} unique verbatim statements</strong> out of {totalRows.toLocaleString()} imported reviews. An identified <strong className="text-[#FAECEB] font-bold underline decoration-[#C6534D]">{repeatPct}% repetition rate</strong> reveals recurring systemic friction without conflating phrase repetition with distinct customers.
+                Based on <strong className="text-[#F7F9FC]">{totalRows.toLocaleString()} customer comments</strong>, grouped into <strong className="text-[#F7F9FC]">{uniqueStatements.toLocaleString()} distinct comments</strong>. <strong className="text-[#FAECEB] font-bold underline decoration-[#C6534D]">{repeatPct}% of comments</strong> share identical wording with other reviews.
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -225,26 +225,26 @@ export default function DashboardPage() {
                   href="#repeated-statements"
                   className="px-4 py-2 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-md transition-colors focus-visible-ring"
                 >
-                  Inspect Top Recurring Friction Phrases ↓
+                  View most repeated comments ↓
                 </a>
                 <Link
                   href="/feedback"
                   className="px-4 py-2 bg-white/10 hover:bg-white/15 text-[#F7F9FC] border border-white/15 text-xs font-semibold rounded-xl transition-colors focus-visible-ring"
                 >
-                  Explore {uniqueStatements.toLocaleString()} Unique Signals →
+                  Browse feedback →
                 </Link>
               </div>
             </div>
 
-            {/* Right 4 Columns: Constellation Preview Metric Box */}
+            {/* Right 4 Columns: Comment Summary Metric Box */}
             <div className="lg:col-span-4 bg-[#202C43]/90 border border-[#2E3D5C] rounded-2xl p-5 backdrop-blur-md space-y-3">
               <div className="text-[10px] uppercase font-bold tracking-wider text-[#B8C2D5]">
-                Signal Compression Summary
+                Comment Summary
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#B8C2D5]">Total Input Rows</span>
+                  <span className="text-[#B8C2D5]">Total Comments</span>
                   <span className="font-mono font-bold text-[#F7F9FC]">{totalRows.toLocaleString()}</span>
                 </div>
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1">
-                  <span className="text-[#B8C2D5]">Distinct Statements</span>
+                  <span className="text-[#B8C2D5]">Distinct Comments</span>
                   <span className="font-mono font-bold text-[#9EB4FA]">{uniqueStatements.toLocaleString()} ({uniquePct}%)</span>
                 </div>
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1">
-                  <span className="text-[#B8C2D5]">Identical Repeats</span>
+                  <span className="text-[#B8C2D5]">Repeated Comments</span>
                   <span className="font-mono font-bold text-[#C6534D]">{repeatedRows.toLocaleString()} ({repeatPct}%)</span>
                 </div>
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -268,33 +268,33 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="text-[10px] text-[#A2AEBD] font-mono pt-2 border-t border-white/10">
-                Data Integrity: Customer IDs Not Present in CSV
+              <div className="text-[10px] text-[#A2AEBD] pt-2 border-t border-white/10">
+                These counts compare comment text, not individual customers.
               </div>
             </div>
           </div>
         </div>
 
         {/* =========================================================================
-            ZONE C: KEY KPI ROW (4 Intentional Cards with 3D Flip)
+            ZONE C: KEY METRICS ROW (4 Cards with Details Flip)
             ========================================================================= */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold tracking-wider uppercase text-[#687386]">
-              Key Signal Analytics (N={totalRows.toLocaleString()})
+              Key metrics ({totalRows.toLocaleString()} total comments)
             </h3>
             <span className="text-[11px] text-[#687386]">
-              Click card or press Enter to inspect calculation provenance
+              Click card or press Enter to learn about these numbers
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* KPI Card 1: Total Ingested (Focal Highlight) */}
+            {/* KPI Card 1: Feedback Rows */}
             <div className="perspective-1000 h-[155px]">
               <div
                 tabIndex={0}
                 role="button"
-                aria-label="Total Ingested Card. Press to view calculation details."
+                aria-label="Feedback rows card. Press to view calculation details."
                 onClick={() => setFlippedKpi(flippedKpi === 1 ? null : 1)}
                 onKeyDown={(e) => handleKpiKeyDown(e, 1)}
                 className={`card-flipper cursor-pointer rounded-2xl focus-visible-ring ${
@@ -305,16 +305,16 @@ export default function DashboardPage() {
                 <div className="card-face-front p-5 solid-data rounded-2xl flex flex-col justify-between shadow-xs border-l-4 border-l-[#3656C8]">
                   <div>
                     <div className="flex items-center justify-between text-xs text-[#4D5765]">
-                      <span className="font-bold text-[#20252D]">Total Raw Feedback</span>
-                      <span className="text-[10px] text-[#3656C8] font-mono">↺ flip</span>
+                      <span className="font-bold text-[#20252D]">Feedback rows</span>
+                      <span className="text-[10px] text-[#3656C8] font-mono">View details</span>
                     </div>
                     <div className="text-3xl font-extrabold text-[#20252D] mt-2 tracking-tight">
                       {data.total_source_rows.toLocaleString()}
                     </div>
                   </div>
                   <div className="text-[11px] text-[#7B8491] pt-2 border-t border-[#E2E3DD] flex items-center justify-between">
-                    <span>{data.total_source_rows.toLocaleString()} valid records ingested</span>
-                    <span className="text-[10px] text-[#3656C8] font-bold">Ingested</span>
+                    <span>{data.total_source_rows.toLocaleString()} comments imported</span>
+                    <span className="text-[10px] text-[#3656C8] font-bold">Imported</span>
                   </div>
                 </div>
 
@@ -322,26 +322,26 @@ export default function DashboardPage() {
                 <div className="card-face-back p-5 bg-[#172033] text-white rounded-2xl flex flex-col justify-between shadow-lg border border-[#2E3D5C]">
                   <div>
                     <div className="flex items-center justify-between text-[10px] uppercase font-bold text-[#9EB4FA]">
-                      <span>Source Provenance</span>
-                      <span>↺ return</span>
+                      <span>Source data</span>
+                      <span>Back</span>
                     </div>
                     <p className="text-xs text-[#B8C2D5] mt-2 leading-relaxed">
-                      Imported from {data.dataset_name || "CSV dataset"} with deterministic schema validation.
+                      The total number of review rows imported from {data.dataset_name || "your CSV file"}.
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-[#A2AEBD] pt-1 border-t border-white/10">
-                    Expected columns: review &amp; category
+                    Includes all imported review rows.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* KPI Card 2: Unique Statements */}
+            {/* KPI Card 2: Unique Comments */}
             <div className="perspective-1000 h-[155px]">
               <div
                 tabIndex={0}
                 role="button"
-                aria-label="Unique Statements Card. Press to view calculation details."
+                aria-label="Unique comments card. Press to view calculation details."
                 onClick={() => setFlippedKpi(flippedKpi === 2 ? null : 2)}
                 onKeyDown={(e) => handleKpiKeyDown(e, 2)}
                 className={`card-flipper cursor-pointer rounded-2xl focus-visible-ring ${
@@ -352,15 +352,15 @@ export default function DashboardPage() {
                 <div className="card-face-front p-5 solid-data rounded-2xl flex flex-col justify-between shadow-xs">
                   <div>
                     <div className="flex items-center justify-between text-xs text-[#4D5765]">
-                      <span className="font-bold text-[#20252D]">Unique Exact Signals</span>
-                      <span className="text-[10px] text-[#4D5765] font-mono">↺ flip</span>
+                      <span className="font-bold text-[#20252D]">Unique comments</span>
+                      <span className="text-[10px] text-[#4D5765] font-mono">View details</span>
                     </div>
                     <div className="text-3xl font-extrabold text-[#5876B8] mt-2 tracking-tight">
                       {uniqueStatements.toLocaleString()}
                     </div>
                   </div>
                   <div className="text-[11px] text-[#7B8491] pt-2 border-t border-[#E2E3DD] flex items-center justify-between">
-                    <span>Distinct verbatim review texts</span>
+                    <span>Distinct review texts</span>
                     <span className="text-[10px] text-[#3B5899] font-bold">{uniquePct}%</span>
                   </div>
                 </div>
@@ -369,26 +369,26 @@ export default function DashboardPage() {
                 <div className="card-face-back p-5 bg-[#172033] text-white rounded-2xl flex flex-col justify-between shadow-lg border border-[#2E3D5C]">
                   <div>
                     <div className="flex items-center justify-between text-[10px] uppercase font-bold text-[#9EB4FA]">
-                      <span>Deduplication Logic</span>
-                      <span>↺ return</span>
+                      <span>Distinct comments</span>
+                      <span>Back</span>
                     </div>
                     <p className="text-xs text-[#B8C2D5] mt-2 leading-relaxed">
-                      Exact text normalization compresses {totalRows.toLocaleString()} rows into {uniqueStatements.toLocaleString()} distinct statements to isolate root causes.
+                      Comments with exactly matching text are grouped together to identify recurring topics.
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-[#A2AEBD] pt-1 border-t border-white/10">
-                    Exact string match aggregation
+                    Exact text matching.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* KPI Card 3: Repetitive Statements */}
+            {/* KPI Card 3: Repeated Comments */}
             <div className="perspective-1000 h-[155px]">
               <div
                 tabIndex={0}
                 role="button"
-                aria-label="Repetitive Statements Card. Press to view calculation details."
+                aria-label="Repeated comments card. Press to view calculation details."
                 onClick={() => setFlippedKpi(flippedKpi === 3 ? null : 3)}
                 onKeyDown={(e) => handleKpiKeyDown(e, 3)}
                 className={`card-flipper cursor-pointer rounded-2xl focus-visible-ring ${
@@ -399,15 +399,15 @@ export default function DashboardPage() {
                 <div className="card-face-front p-5 solid-data rounded-2xl flex flex-col justify-between shadow-xs">
                   <div>
                     <div className="flex items-center justify-between text-xs text-[#4D5765]">
-                      <span className="font-bold text-[#20252D]">Identical Repeated Text</span>
-                      <span className="text-[10px] text-[#4D5765] font-mono">↺ flip</span>
+                      <span className="font-bold text-[#20252D]">Repeated comments</span>
+                      <span className="text-[10px] text-[#4D5765] font-mono">View details</span>
                     </div>
                     <div className="text-3xl font-extrabold text-[#C6534D] mt-2 tracking-tight">
                       {repeatedRows.toLocaleString()}
                     </div>
                   </div>
                   <div className="text-[11px] text-[#7B8491] pt-2 border-t border-[#E2E3DD] flex items-center justify-between">
-                    <span>Recurring text instances</span>
+                    <span>Identical comment text</span>
                     <span className="text-[10px] text-[#C6534D] font-bold">{repeatPct}%</span>
                   </div>
                 </div>
@@ -416,26 +416,26 @@ export default function DashboardPage() {
                 <div className="card-face-back p-5 bg-[#172033] text-white rounded-2xl flex flex-col justify-between shadow-lg border border-[#C6534D]/30">
                   <div>
                     <div className="flex items-center justify-between text-[10px] uppercase font-bold text-[#C6534D]">
-                      <span>Data Honesty Notice</span>
-                      <span>↺ return</span>
+                      <span>Repeated comments</span>
+                      <span>Back</span>
                     </div>
                     <p className="text-xs text-[#B8C2D5] mt-2 leading-relaxed">
-                      Repeated text strings are isolated to prevent conflating message recurrence with distinct individuals.
+                      Reviews that repeat the same text as another review. Note: this counts repeated comment text, not unique customers.
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-[#A2AEBD] pt-1 border-t border-white/10">
-                    Crucial: No unique customer IDs
+                    Compares text, not unique customers.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* KPI Card 4: Action Dossiers */}
+            {/* KPI Card 4: Issues to Review */}
             <div className="perspective-1000 h-[155px]">
               <div
                 tabIndex={0}
                 role="button"
-                aria-label="Prioritized Issues Card. Press to view calculation details."
+                aria-label="Issues to review card. Press to view calculation details."
                 onClick={() => setFlippedKpi(flippedKpi === 4 ? null : 4)}
                 onKeyDown={(e) => handleKpiKeyDown(e, 4)}
                 className={`card-flipper cursor-pointer rounded-2xl focus-visible-ring ${
@@ -446,16 +446,16 @@ export default function DashboardPage() {
                 <div className="card-face-front p-5 solid-data rounded-2xl flex flex-col justify-between shadow-xs">
                   <div>
                     <div className="flex items-center justify-between text-xs text-[#4D5765]">
-                      <span className="font-bold text-[#20252D]">Actionable Dossiers</span>
-                      <span className="text-[10px] text-[#4D5765] font-mono">↺ flip</span>
+                      <span className="font-bold text-[#20252D]">Issues to review</span>
+                      <span className="text-[10px] text-[#4D5765] font-mono">View details</span>
                     </div>
                     <div className="text-3xl font-extrabold text-[#3656C8] mt-2 tracking-tight">
                       {issues.length}
                     </div>
                   </div>
                   <div className="text-[11px] text-[#7B8491] pt-2 border-t border-[#E2E3DD] flex items-center justify-between">
-                    <span>Evidence-backed problem clusters</span>
-                    <span className="text-[10px] text-[#3656C8] font-bold">Sprint Ready</span>
+                    <span>Recurring customer problems</span>
+                    <span className="text-[10px] text-[#3656C8] font-bold">Priority</span>
                   </div>
                 </div>
 
@@ -463,15 +463,15 @@ export default function DashboardPage() {
                 <div className="card-face-back p-5 bg-[#172033] text-white rounded-2xl flex flex-col justify-between shadow-lg border border-[#2E3D5C]">
                   <div>
                     <div className="flex items-center justify-between text-[10px] uppercase font-bold text-[#9EB4FA]">
-                      <span>Action Dossiers</span>
-                      <span>↺ return</span>
+                      <span>Issues to review</span>
+                      <span>Back</span>
                     </div>
                     <p className="text-xs text-[#B8C2D5] mt-2 leading-relaxed">
-                      {issues.length} prioritized issue dossiers generated from evidence frequency, severity markers, and verbatim quote trails.
+                      Recurring problems identified from repeated customer comments and feedback patterns.
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-[#A2AEBD] pt-1 border-t border-white/10">
-                    Click Inspect Dossier below
+                    Select an issue below to inspect comments.
                   </div>
                 </div>
               </div>
@@ -492,14 +492,14 @@ export default function DashboardPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
-                    Source Category Distribution
+                    Feedback by category
                   </h3>
                   <p className="text-xs text-[#687386] mt-0.5">
-                    Ranked row counts across 4 source headers (N={totalRows.toLocaleString()})
+                    Breakdown across {categoryEntries.length} categories ({totalRows.toLocaleString()} comments)
                   </p>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#ECEFF3] text-[#394457]">
-                  Source Headers
+                  Categories
                 </span>
               </div>
 
@@ -548,8 +548,8 @@ export default function DashboardPage() {
               </div>
 
               <div className="pt-3 border-t border-[#DDE2E9] flex items-center justify-between text-[11px] text-[#687386]">
-                <span>Source taxonomy headers — strictly distinct from sentiment</span>
-                <span className="font-mono font-bold text-[#111827]">N = {totalRows.toLocaleString()}</span>
+                <span>Categories from imported feedback</span>
+                <span className="font-mono font-bold text-[#111827]">Total: {totalRows.toLocaleString()}</span>
               </div>
             </div>
 
@@ -575,10 +575,10 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-bold text-[#20252D] uppercase tracking-wider">
-                          Rule-Based Baseline Sentiment Polarity
+                          Sentiment overview
                         </h3>
                         <p className="text-xs text-[#7B8491] mt-0.5">
-                          Lexicon &amp; negation classification across valid records (N={sentimentTotal.toLocaleString()})
+                          Estimated tone across {sentimentTotal.toLocaleString()} comments
                         </p>
                       </div>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -673,7 +673,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right 7 Columns: Most Repeated Statements (Signature Recurrence Ranking) */}
+          {/* Right 7 Columns: Most Repeated Statements */}
           <div id="repeated-statements" className="lg:col-span-7 space-y-6">
             <div className="p-6 solid-data rounded-3xl space-y-5">
               {(() => {
@@ -685,18 +685,15 @@ export default function DashboardPage() {
                   <>
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#3656C8]">
-                          <span>✦ PRODUCT DIFFERENTIATOR</span>
-                        </div>
                         <h3 className="text-sm font-bold text-[#20252D] uppercase tracking-wider mt-0.5">
-                          Most Repeated Statements (Statement Recurrence Ranking)
+                          Most repeated comments
                         </h3>
                         <p className="text-xs text-[#7B8491] mt-0.5">
-                          Aggregated identical phrasing across {totalRows.toLocaleString()} rows.{topStatements.length > 0 ? ` Top ${topStatements.length} phrases account for ${topCountSum.toLocaleString()} occurrences.` : ""}
+                          Phrases that appear most frequently across {totalRows.toLocaleString()} comments.{topStatements.length > 0 ? ` Top ${topStatements.length} phrases account for ${topCountSum.toLocaleString()} occurrences.` : ""}
                         </p>
                       </div>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#172033] text-white">
-                        Exact Aggregation
+                        Repeated comments
                       </span>
                     </div>
 
@@ -705,7 +702,7 @@ export default function DashboardPage() {
                       {topStatements.length === 0 ? (
                         <div className="p-6 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[#CCD0D7]">
                           <p className="text-xs font-semibold text-[#687386]">
-                            No repeated verbatim phrase clusters identified yet for this dataset.
+                            No repeated comments found in this dataset.
                           </p>
                         </div>
                       ) : (
@@ -755,7 +752,7 @@ export default function DashboardPage() {
                                     {item.count} repeats
                                   </span>
                                   <span className="text-[11px] text-[#3656C8] group-hover:underline font-semibold">
-                                    Inspect Quote →
+                                    View comments →
                                   </span>
                                 </div>
                               </div>
@@ -782,30 +779,30 @@ export default function DashboardPage() {
                 );
               })()}
 
-              {/* Data Honesty Callout */}
+              {/* Data Limitation Callout */}
               <div className="p-3.5 bg-[#FAF5E8] rounded-xl border border-[#B58A43]/30 text-xs text-[#966C28] leading-relaxed">
-                <strong>Data Honesty Standard: </strong>
-                High duplicate frequency reveals recurring operational friction phrases, but does not prove distinct affected individuals since the source CSV lacks customer IDs.
+                <strong>Note: </strong>
+                Repeated phrases highlight common friction points, but do not indicate how many unique individuals were affected since the CSV lacks customer IDs.
               </div>
             </div>
           </div>
         </div>
 
         {/* =========================================================================
-            ZONE D.5: PURPOSE-DRIVEN EDITORIAL ADAPTION WORKFLOW CALLOUT
+            ZONE D.5: SUPPORT TRAINING WORKFLOW CALLOUT
             ========================================================================= */}
         <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#E2E3DD] shadow-xs space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-5 border-b border-[#E2E3DD]">
             <div className="space-y-1.5 max-w-2xl">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E9EDFC] text-[10px] font-mono font-bold text-[#3656C8]">
                 <Sparkles className="w-3 h-3 text-[#3656C8]" />
-                <span>NEXT STEP · ADAPTION LABS SUPPORT WORKFLOW</span>
+                <span>SUPPORT TRAINING DATA</span>
               </div>
               <h3 className="text-base sm:text-lg font-extrabold text-[#20252D] tracking-tight">
-                Next step: prepare feedback for a support assistant
+                Prepare support-training data
               </h3>
               <p className="text-xs text-[#4D5765] leading-relaxed">
-                InsightFlow isolates friction points and customer quote patterns above. With Adaption Labs, you can format these real customer experiences into high-signal support response training pairs.
+                Turn customer feedback into training data for a support assistant using Adaption Labs.
               </p>
             </div>
 
@@ -814,7 +811,7 @@ export default function DashboardPage() {
                 href="/adaption"
                 className="px-5 py-2.5 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-xs transition-all focus-visible-ring inline-flex items-center gap-2 group cursor-pointer"
               >
-                <span>Open Adaption Lab</span>
+                <span>Prepare support data</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
@@ -824,33 +821,33 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">1. Customer Signals</span>
+                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">1. Feedback sample</span>
                 <MessageSquare className="w-3.5 h-3.5 text-[#3656C8]" />
               </div>
               <div className="text-xs font-bold text-[#20252D]">
-                Grounded Verbatims
+                Customer reviews
               </div>
               <p className="text-[11px] text-[#4D5765] leading-relaxed">
-                Source: <strong>{data?.dataset_name || "Active Dataset"}</strong> ({totalRows.toLocaleString()} rows ingested · 100–1,000 rows sample bound).
+                Source: <strong>{data?.dataset_name || "Active Dataset"}</strong> ({totalRows.toLocaleString()} comments available · 100–1,000 sample size).
               </p>
             </div>
 
             <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">2. Support Blueprint</span>
+                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">2. Support pairs</span>
                 <Layers className="w-3.5 h-3.5 text-[#7C3AED]" />
               </div>
               <div className="text-xs font-bold text-[#20252D]">
-                Prompt + Context Mapping
+                Prompt + context formatting
               </div>
               <p className="text-[11px] text-[#4D5765] leading-relaxed">
-                Formats raw feedback + category taxonomy into empathetic response instruction pairs.
+                Formats customer feedback and categories into support resolution pairs.
               </p>
             </div>
 
             <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">3. Run with Adaption</span>
+                <span className="text-[10px] font-bold uppercase font-mono text-[#7B8491]">3. Processing &amp; download</span>
                 <Cpu className="w-3.5 h-3.5 text-[#2E7D68]" />
               </div>
               <div className="text-xs font-bold text-[#20252D]">
@@ -906,30 +903,30 @@ export default function DashboardPage() {
               <p className="text-[11px] text-[#4D5765] leading-relaxed">
                 {adaptionStatus?.daily_runs_remaining !== undefined && adaptionStatus?.daily_runs_remaining !== null
                   ? `${adaptionStatus.daily_runs_remaining}/${adaptionStatus.daily_runs_limit ?? 3} runs remaining today (UTC).`
-                  : "Estimate compute, run bounded pipeline, and download output."}
+                  : "Estimate cost, process sample with Adaption Labs, and download dataset."}
               </p>
             </div>
           </div>
         </div>
 
         {/* =========================================================================
-            ZONE E: ISSUES REQUIRING INSPECTION (Action Dossiers)
+            ZONE E: ISSUES REQUIRING REVIEW
             ========================================================================= */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xs font-bold tracking-wider uppercase text-[#7B8491]">
-                Priority Action Dossiers Requiring Review ({issues.length})
+                Priority issues requiring review ({issues.length})
               </h3>
               <p className="text-xs text-[#7B8491] mt-0.5">
-                Ranked by recurrence frequency, severity markers, and verbatim quote trails
+                Recurring customer problems sorted by priority
               </p>
             </div>
             <Link
               href="/issues"
               className="text-xs font-bold text-[#3656C8] hover:underline"
             >
-              View all {issues.length} dossiers →
+              View all {issues.length} issues →
             </Link>
           </div>
 
@@ -955,7 +952,7 @@ export default function DashboardPage() {
                     <span className="text-xs text-[#4D5765]">{issue.category}</span>
                   </div>
                   <span className="text-[11px] font-mono text-[#7B8491]">
-                    {issue.supporting_count} supporting reviews
+                    {issue.supporting_count} supporting comments
                   </span>
                 </div>
 
@@ -975,7 +972,7 @@ export default function DashboardPage() {
                     href={`/issues`}
                     className="text-xs font-bold text-[#3656C8] hover:underline"
                   >
-                    Inspect Dossier Evidence →
+                    View issue details →
                   </Link>
                 </div>
               </div>
@@ -984,43 +981,43 @@ export default function DashboardPage() {
         </div>
 
         {/* =========================================================================
-            DATA INTEGRITY NOTICE: TEMPORAL TRENDS WITHHELD
+            DATA NOTE: TIMELINE TRENDS WITHHELD
             ========================================================================= */}
         <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#E2E3DD] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#2E7D68]" />
               <h4 className="text-xs font-bold text-[#20252D] uppercase tracking-wider">
-                Temporal Trendlines Withheld (Data Integrity Protected)
+                Timeline trends not available
               </h4>
             </div>
             <p className="text-xs text-[#7B8491]">
-              The source dataset contains only <code>review</code> and <code>category</code> columns without verified timestamps. Historical line charts and week-over-week trends are withheld to prevent fabricated timeline claims.
+              This dataset contains review text and category labels without timestamps, so time-based trends are not shown.
             </p>
           </div>
           <div className="text-xs font-mono text-[#7B8491] shrink-0">
-            Schema Compliance: 100% Truthful
+            Dataset note
           </div>
         </div>
 
         {/* =========================================================================
-            ZONE F: RAW FEEDBACK STREAM SAMPLE (IN SOURCE INGESTION ORDER)
+            ZONE F: RECENT CUSTOMER COMMENTS
             ========================================================================= */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xs font-bold tracking-wider uppercase text-[#7B8491]">
-                Source Feedback Stream (Source Ingestion Order)
+                Recent customer comments
               </h3>
               <p className="text-xs text-[#7B8491] mt-0.5">
-                First rows from dataset as received; unmanipulated raw verbatims
+                Latest comments from this dataset
               </p>
             </div>
             <Link
               href="/feedback"
               className="text-xs font-bold text-[#3656C8] hover:underline"
             >
-              Open Full Feedback Grid ({totalRows.toLocaleString()} Records) →
+              View all comments ({totalRows.toLocaleString()}) →
             </Link>
           </div>
 
@@ -1043,7 +1040,7 @@ export default function DashboardPage() {
                   "{fb.original_text}"
                 </p>
                 <div className="text-[11px] text-[#3656C8] font-semibold group-hover:underline pt-1">
-                  Inspect Verbatim →
+                  View details →
                 </div>
               </div>
             ))}
@@ -1066,7 +1063,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between pb-4 border-b border-[#E2E3DD]">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#7B8491]">
-                    Verbatim Record Inspection
+                    Comment details
                   </div>
                   <h3 className="text-base font-extrabold text-[#20252D] font-mono">
                     #{selectedFeedback.id}
@@ -1082,7 +1079,7 @@ export default function DashboardPage() {
 
               <div className="space-y-2">
                 <div className="text-xs font-bold text-[#20252D]">
-                  Unaltered Raw Verbatim Text:
+                  Customer comment:
                 </div>
                 <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] text-xs font-serif italic text-[#20252D] leading-relaxed">
                   "{selectedFeedback.original_text}"
@@ -1092,7 +1089,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[#E2E3DD]">
                   <div className="text-[10px] font-bold text-[#7B8491] uppercase">
-                    Source Category
+                    Category
                   </div>
                   <div className="text-xs font-bold text-[#20252D] mt-0.5">
                     {selectedFeedback.source_category}
@@ -1100,20 +1097,20 @@ export default function DashboardPage() {
                 </div>
                 <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[#E2E3DD]">
                   <div className="text-[10px] font-bold text-[#7B8491] uppercase">
-                    Analysis Status
+                    Status
                   </div>
-                  <div className="text-xs font-bold text-[#2E7D68] mt-0.5">
-                    Analyzed
+                  <div className="text-xs font-bold text-[#2E7D68] mt-0.5 capitalize">
+                    {selectedFeedback.analysis_status}
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-[#E8F3EE] rounded-2xl border border-[#2E7D68]/20 space-y-1">
-                <div className="text-xs font-bold text-[#2E7D68]">
-                  Data Provenance Guarantee:
+              <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-1">
+                <div className="text-xs font-bold text-[#20252D]">
+                  Original feedback:
                 </div>
-                <p className="text-[11px] text-[#2E7D68] leading-relaxed">
-                  This record is stored verbatim from the source CSV. No AI summarization has modified the original customer wording.
+                <p className="text-[11px] text-[#4D5765] leading-relaxed">
+                  This comment is preserved exactly as imported from your CSV file.
                 </p>
               </div>
             </div>
@@ -1123,7 +1120,7 @@ export default function DashboardPage() {
                 href="/feedback"
                 className="flex-1 py-2.5 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl text-center shadow-sm transition-colors"
               >
-                Inspect in Feedback Grid →
+                Inspect in customer feedback →
               </Link>
               <button
                 onClick={() => setSelectedFeedback(null)}

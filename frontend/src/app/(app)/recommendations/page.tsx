@@ -62,30 +62,30 @@ export default function RecommendationsPage() {
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
         title="Recommendations"
-        subtitle={`${recommendations.length > 0 ? recommendations.length : "Actionable"} Fix Specifications Grounded in Feedback Evidence`}
+        subtitle="Suggested actions based on customer feedback."
       />
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
         {!selectedDatasetId && !datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="text-2xl mb-2">📁</div>
-            <div className="text-sm font-bold text-[#111827]">No Dataset Selected</div>
-            <p className="text-xs text-[#687386] mt-1">Please select an existing dataset or import a new CSV file to view recommendations.</p>
+            <div className="text-sm font-bold text-[#111827]">No dataset selected</div>
+            <p className="text-xs text-[#687386] mt-1">Select an existing dataset or import a CSV file to view recommendations.</p>
             <Link
               href="/import"
               className="inline-block mt-4 px-4 py-2 bg-[#3656C8] text-white text-xs font-bold rounded-xl hover:bg-[#23387F] transition-colors"
             >
-              Import CSV Dataset →
+              Import feedback →
             </Link>
           </div>
         ) : loading || datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="w-8 h-8 rounded-full border-2 border-[#3656C8] border-t-transparent animate-spin mx-auto mb-3" />
-            <div className="text-xs text-[#7B8491]">Loading recommendations from database...</div>
+            <div className="text-xs text-[#7B8491]">Loading recommendations...</div>
           </div>
         ) : error ? (
           <div className="p-8 text-center solid-data rounded-2xl border border-[#C6534D]/30">
-            <div className="text-sm font-bold text-[#C6534D] mb-1">Error Loading Recommendations</div>
+            <div className="text-sm font-bold text-[#C6534D] mb-1">Error loading recommendations</div>
             <p className="text-xs text-[#7B8491] mb-4">{error}</p>
             <button
               onClick={fetchRecommendations}
@@ -96,8 +96,8 @@ export default function RecommendationsPage() {
           </div>
         ) : recommendations.length === 0 ? (
           <div className="p-12 text-center solid-data rounded-2xl">
-            <div className="text-sm font-bold text-[#20252D]">No recommendations generated yet</div>
-            <p className="text-xs text-[#7B8491] mt-1">Run an analysis job to generate recommendations from feedback.</p>
+            <div className="text-sm font-bold text-[#20252D]">No recommendations yet</div>
+            <p className="text-xs text-[#7B8491] mt-1">Analyze customer feedback to generate recommended actions.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -128,7 +128,7 @@ export default function RecommendationsPage() {
                           : "bg-[#F6F5F1] text-[#4D5765] border-[#E2E3DD] hover:bg-[#F0F2F5]"
                       }`}
                     >
-                      {rec.is_tracked ? "✓ Tracked in Sprint" : "+ Track Action"}
+                      {rec.is_tracked ? "✓ Tracked" : "+ Track action"}
                     </button>
                   </div>
 
@@ -138,7 +138,7 @@ export default function RecommendationsPage() {
 
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B8491] block mb-1">
-                      Problem Addressed:
+                      Problem:
                     </span>
                     <p className="text-xs text-[#4D5765] leading-relaxed">
                       {rec.problem_statement}
@@ -147,7 +147,7 @@ export default function RecommendationsPage() {
 
                   <div className="p-3.5 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#3656C8] block mb-1">
-                      Proposed Engineering Action:
+                      Recommended action:
                     </span>
                     <p className="text-xs font-semibold text-[#20252D] leading-relaxed">
                       {rec.action || rec.proposed_action}
@@ -156,7 +156,7 @@ export default function RecommendationsPage() {
 
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B8491] block mb-1">
-                      Evidence Rationale:
+                      Why this helps:
                     </span>
                     <p className="text-xs text-[#4D5765] leading-relaxed italic">
                       {rec.rationale}

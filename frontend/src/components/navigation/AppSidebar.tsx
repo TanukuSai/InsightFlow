@@ -29,18 +29,17 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Feedback Explorer", href: "/feedback", icon: MessageSquareText },
-    { label: "Issues & Dossiers", href: "/issues", icon: AlertTriangle },
+    { label: "Customer feedback", href: "/feedback", icon: MessageSquareText },
+    { label: "Issues", href: "/issues", icon: AlertTriangle },
     { label: "Recommendations", href: "/recommendations", icon: Lightbulb },
     {
-      label: "Adaption Lab",
+      label: "Support training",
       href: "/adaption",
       icon: Sparkles,
-      badge: "Adaptive Data",
       highlight: true,
     },
-    { label: "Reports & Export", href: "/reports", icon: FileText },
-    { label: "Import CSV", href: "/import", icon: UploadCloud },
+    { label: "Reports", href: "/reports", icon: FileText },
+    { label: "Import feedback", href: "/import", icon: UploadCloud },
     { label: "Settings", href: "/settings", icon: Settings },
   ];
 
@@ -70,7 +69,7 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
                 InsightFlow
               </span>
               <span className="block text-[9px] uppercase font-mono tracking-wider text-[var(--ink-muted)]">
-                Signal Observatory
+                Customer feedback insights
               </span>
             </div>
           </Link>
@@ -114,17 +113,6 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
                   />
                   <span className="truncate">{item.label}</span>
                 </div>
-                {item.badge && (
-                  <span
-                    className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 ${
-                      isActive
-                        ? "bg-[var(--brand)] text-white"
-                        : "bg-[#E9EDFC] text-[var(--brand)] font-semibold"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
               </Link>
             );
           })}
@@ -135,7 +123,7 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono flex items-center gap-1.5">
               <Layers className="w-3 h-3" />
-              Active Dataset
+              Current dataset
             </span>
             <span className={`w-2 h-2 rounded-full ${selectedDataset ? "bg-[#2E7D68]" : "bg-amber-400"}`} />
           </div>
@@ -147,11 +135,16 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
                 {selectedDataset.name}
               </div>
               <div className="text-[11px] text-[var(--ink-muted)] mt-0.5 font-mono">
-                {selectedDataset.row_count?.toLocaleString() || 0} Source Rows
+                {selectedDataset.row_count?.toLocaleString() || 0} comments
               </div>
             </>
           ) : (
-            <div className="text-xs text-[var(--ink-muted)]">No active dataset</div>
+            <Link
+              href="/import"
+              className="text-xs text-[var(--brand)] hover:underline font-medium block"
+            >
+              No feedback imported yet — Import feedback
+            </Link>
           )}
 
           <div className="mt-3 pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between">

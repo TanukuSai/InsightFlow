@@ -61,7 +61,7 @@ export default function CsvImportPage() {
       }
     } catch (err: any) {
       console.error("CSV Import error:", err);
-      setError(err?.message || "Failed to process CSV file on backend");
+      setError(err?.message || "Failed to process CSV file");
     } finally {
       setUploading(false);
     }
@@ -70,8 +70,8 @@ export default function CsvImportPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
-        title="CSV Import & Ingestion"
-        subtitle="Upload customer feedback datasets with schema validation and exact-string deduplication"
+        title="Import feedback"
+        subtitle="Upload a CSV of customer comments to analyze them in InsightFlow."
       />
 
       <div className="p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-8">
@@ -79,8 +79,8 @@ export default function CsvImportPage() {
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 shadow-2xs">
           <span className="text-base leading-none">⚠️</span>
           <div>
-            <strong className="font-bold">Data Privacy Notice: </strong>
-            Upload authorized customer feedback records. Ensure personal identifiable information (PII) has been sanitized or removed prior to ingestion.
+            <strong className="font-bold">Data privacy: </strong>
+            Upload customer feedback you have permission to use. Remove any personal or sensitive information before importing.
           </div>
         </div>
 
@@ -93,10 +93,10 @@ export default function CsvImportPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-[#20252D]">
-                  Dataset Successfully Ingested
+                  Feedback imported successfully
                 </h2>
                 <p className="text-xs text-[#4D5765]">
-                  {summary.valid_rows.toLocaleString()} valid records processed into workspace.
+                  {summary.valid_rows.toLocaleString()} comments added to your workspace.
                 </p>
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function CsvImportPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
               <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-[#7B8491]">
-                  Total Rows
+                  Total rows
                 </div>
                 <div className="text-2xl font-extrabold text-[#20252D] mt-1 font-mono">
                   {summary.total_rows.toLocaleString()}
@@ -112,7 +112,7 @@ export default function CsvImportPage() {
               </div>
               <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-[#7B8491]">
-                  Valid Records
+                  Valid comments
                 </div>
                 <div className="text-2xl font-extrabold text-[#2E7D68] mt-1 font-mono">
                   {summary.valid_rows.toLocaleString()}
@@ -120,7 +120,7 @@ export default function CsvImportPage() {
               </div>
               <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-[#7B8491]">
-                  Unique Statements
+                  Unique comments
                 </div>
                 <div className="text-2xl font-extrabold text-[#5876B8] mt-1 font-mono">
                   {summary.unique_exact_statements.toLocaleString()}
@@ -128,7 +128,7 @@ export default function CsvImportPage() {
               </div>
               <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-[#7B8491]">
-                  Identical Repeats
+                  Repeated comments
                 </div>
                 <div className="text-2xl font-extrabold text-[#C6534D] mt-1 font-mono">
                   {summary.repeated_statements.toLocaleString()}
@@ -137,7 +137,7 @@ export default function CsvImportPage() {
             </div>
 
             <div className="p-4 bg-[#E9EDFC] rounded-2xl border border-[#3656C8]/20 text-xs text-[#4D5765]">
-              <strong className="text-[#20252D]">Detected Source Categories: </strong>
+              <strong className="text-[#20252D]">Detected Categories: </strong>
               {summary.detected_categories?.join(", ") || "None"}
             </div>
 
@@ -146,13 +146,13 @@ export default function CsvImportPage() {
                 href={`/dashboard?dataset_id=${encodeURIComponent(summary.dataset_id)}`}
                 className="px-6 py-2.5 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-sm transition-colors focus-visible-ring"
               >
-                Launch Dashboard →
+                Go to dashboard →
               </Link>
               <Link
                 href={`/feedback?dataset_id=${encodeURIComponent(summary.dataset_id)}`}
                 className="px-5 py-2.5 bg-[#F0F2F5] text-[#20252D] text-xs font-semibold rounded-xl hover:bg-[#E2E3DD] transition-colors focus-visible-ring"
               >
-                View Feedback Stream
+                View customer feedback
               </Link>
               <button
                 onClick={() => {
@@ -161,7 +161,7 @@ export default function CsvImportPage() {
                 }}
                 className="px-4 py-2.5 text-xs text-[#7B8491] hover:text-[#20252D] hover:underline"
               >
-                Upload Another File
+                Upload another file
               </button>
             </div>
           </div>
@@ -171,10 +171,10 @@ export default function CsvImportPage() {
             <div className="p-8 solid-data rounded-3xl shadow-sm space-y-6 border-t-3 border-t-[#3656C8]">
               <div className="space-y-1">
                 <h2 className="text-base font-bold text-[#20252D]">
-                  Select CSV Feedback Dataset
+                  Upload a CSV file
                 </h2>
                 <p className="text-xs text-[#4D5765]">
-                  Upload customer reviews in standard CSV format. Expected columns: <code className="px-1.5 py-0.5 bg-[#F0F2F5] rounded text-[#20252D] font-mono">review</code> and <code className="px-1.5 py-0.5 bg-[#F0F2F5] rounded text-[#20252D] font-mono">category</code>.
+                  Your file must include the columns <code className="px-1.5 py-0.5 bg-[#F0F2F5] rounded text-[#20252D] font-mono">review</code> and <code className="px-1.5 py-0.5 bg-[#F0F2F5] rounded text-[#20252D] font-mono">category</code> (spelled exactly this way).
                 </p>
               </div>
 
@@ -189,12 +189,12 @@ export default function CsvImportPage() {
                 <div className="space-y-2 pointer-events-none">
                   <div className="text-3xl text-[#3656C8]">📥</div>
                   <div className="text-xs font-bold text-[#20252D] group-hover:text-[#3656C8] transition-colors">
-                    {file ? file.name : "Click or drag CSV file to this upload zone"}
+                    {file ? file.name : "Click or drag a CSV file here"}
                   </div>
                   <div className="text-[11px] text-[#7B8491]">
                     {file
                       ? `${(file.size / 1024).toFixed(1)} KB selected`
-                      : "Supports customer survey and review CSV exports up to 50 MB"}
+                      : "Upload files up to 50 MB"}
                   </div>
                 </div>
               </div>
@@ -218,7 +218,7 @@ export default function CsvImportPage() {
               {previewRows.length > 0 && (
                 <div className="space-y-2 pt-2">
                   <div className="text-xs font-bold text-[#4D5765]">
-                    Local Client Preview (First 5 Rows)
+                    File preview (first 5 rows)
                   </div>
                   <div className="border border-[#E2E3DD] rounded-xl overflow-x-auto bg-white">
                     <table className="w-full text-left text-xs">
@@ -262,10 +262,10 @@ export default function CsvImportPage() {
                   {uploading ? (
                     <>
                       <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Ingesting &amp; Processing on Backend...</span>
+                      <span>Importing feedback…</span>
                     </>
                   ) : (
-                    <span>Upload &amp; Ingest CSV →</span>
+                    <span>Import CSV</span>
                   )}
                 </button>
               </div>

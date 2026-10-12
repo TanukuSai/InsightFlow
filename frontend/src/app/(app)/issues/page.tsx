@@ -94,15 +94,15 @@ export default function IssuesTriagePage() {
   return (
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
-        title="Issues Triage & Evidence"
-        subtitle={`${issues.length > 0 ? issues.length : "Actionable"} Problem Clusters Prioritized by Customer Verbatim Evidence`}
+        title="Issues"
+        subtitle="Review recurring problems mentioned in customer feedback."
       />
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
         {/* Filters */}
         <div className="p-4 solid-data rounded-2xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs font-bold text-[#687386]">Filter By:</span>
+            <span className="text-xs font-bold text-[#687386]">Filter by:</span>
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
@@ -129,7 +129,7 @@ export default function IssuesTriagePage() {
           </div>
 
           <div className="text-xs font-bold text-[#3656C8] font-mono">
-            {issues.length} Dossiers Listed
+            {issues.length} {issues.length === 1 ? "issue" : "issues"}
           </div>
         </div>
 
@@ -137,19 +137,19 @@ export default function IssuesTriagePage() {
         {!selectedDatasetId && !datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="text-2xl mb-2">📁</div>
-            <div className="text-sm font-bold text-[#20252D]">No Dataset Selected</div>
-            <p className="text-xs text-[#7B8491] mt-1">Please select an existing dataset or import a new CSV file to view issues.</p>
+            <div className="text-sm font-bold text-[#20252D]">No dataset selected</div>
+            <p className="text-xs text-[#7B8491] mt-1">Select an existing dataset or import a CSV file to view issues.</p>
             <Link
               href="/import"
               className="inline-block mt-4 px-4 py-2 bg-[#3656C8] text-white text-xs font-bold rounded-xl hover:bg-[#23387F] transition-colors"
             >
-              Import CSV Dataset →
+              Import feedback →
             </Link>
           </div>
         ) : loading || datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="w-8 h-8 rounded-full border-2 border-[#3656C8] border-t-transparent animate-spin mx-auto mb-3" />
-            <div className="text-xs text-[#7B8491]">Loading issue dossiers from database...</div>
+            <div className="text-xs text-[#7B8491]">Loading issues...</div>
           </div>
         ) : error ? (
           <div className="p-8 text-center solid-data rounded-2xl border border-[#C6534D]/30">
@@ -165,7 +165,7 @@ export default function IssuesTriagePage() {
         ) : issues.length === 0 ? (
           <div className="p-12 text-center solid-data rounded-2xl space-y-2">
             <AlertCircle className="w-8 h-8 text-[var(--ink-muted)] mx-auto opacity-50" />
-            <div className="text-sm font-bold text-[#20252D]">No issues matching selected filters</div>
+            <div className="text-sm font-bold text-[#20252D]">No issues match these filters</div>
             <button
               onClick={() => {
                 setPriorityFilter("");
@@ -173,7 +173,7 @@ export default function IssuesTriagePage() {
               }}
               className="mt-3 px-4 py-2 bg-[#F0F2F5] text-[#3656C8] text-xs font-bold rounded-xl hover:bg-[#E9EDFC]"
             >
-              Reset Filters
+              Clear filters
             </button>
           </div>
         ) : (
@@ -205,7 +205,7 @@ export default function IssuesTriagePage() {
                         {iss.priority}
                       </span>
                       <span className="text-xs font-mono text-[#7B8491]">
-                        {iss.supporting_count} reviews
+                        {iss.supporting_count} {iss.supporting_count === 1 ? "comment" : "comments"}
                       </span>
                     </div>
 
@@ -227,7 +227,7 @@ export default function IssuesTriagePage() {
               })}
             </div>
 
-            {/* Right Column: Full Issue Dossier Detail */}
+            {/* Right Column: Full Issue Detail */}
             <div className="lg:col-span-7">
               {selectedIssue ? (
                 <div className="p-6 sm:p-8 solid-data rounded-3xl shadow-sm space-y-6 sticky top-24">
@@ -267,7 +267,7 @@ export default function IssuesTriagePage() {
                             : "bg-[#F6F5F1] text-[#4D5765] border-[#E2E3DD] hover:bg-[#F0F2F5]"
                         }`}
                       >
-                        {selectedIssue.is_tracked ? "✓ Tracked in Sprint" : "+ Track Issue"}
+                        {selectedIssue.is_tracked ? "✓ Tracked" : "+ Track issue"}
                       </button>
                     </div>
                   </div>
@@ -275,7 +275,7 @@ export default function IssuesTriagePage() {
                   {/* Summary & Rationale */}
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#687386] mb-1">
-                      Problem Summary
+                      Summary
                     </h4>
                     <p className="text-xs sm:text-sm text-[#111827] leading-relaxed">
                       {selectedIssue.summary}
@@ -284,7 +284,7 @@ export default function IssuesTriagePage() {
 
                   <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-1.5">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#3656C8]">
-                      Priority &amp; Evidence Rationale
+                      Priority rationale
                     </h4>
                     <p className="text-xs text-[#4D5765] leading-relaxed">
                       {selectedIssue.priority_explanation}
@@ -295,7 +295,7 @@ export default function IssuesTriagePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
                       <div className="text-[11px] text-[#7B8491] font-medium">
-                        Total Supporting Quotes
+                        Related comments
                       </div>
                       <div className="text-xl font-extrabold text-[#20252D] mt-1 font-mono">
                         {selectedIssue.supporting_count}
@@ -303,7 +303,7 @@ export default function IssuesTriagePage() {
                     </div>
                     <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
                       <div className="text-[11px] text-[#7B8491] font-medium">
-                        Unique Exact Statements
+                        Distinct comments
                       </div>
                       <div className="text-xl font-extrabold text-[#5876B8] mt-1 font-mono">
                         {selectedIssue.unique_supporting_count}
@@ -314,7 +314,7 @@ export default function IssuesTriagePage() {
                   {/* Status Lifecycle Controls */}
                   <div className="pt-4 border-t border-[#E2E3DD] flex items-center justify-between">
                     <span className="text-xs font-bold text-[#7B8491]">
-                      Workflow Status:
+                      Status:
                     </span>
                     <div className="flex gap-1.5">
                       {["open", "investigating", "resolved"].map((st) => (

@@ -125,8 +125,8 @@ export default function FeedbackExplorerPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
-        title="Feedback Stream"
-        subtitle={`${selectedDataset?.name || "Dataset"} • ${total.toLocaleString()} Rows • Ingestion Order Provenance`}
+        title="Customer feedback"
+        subtitle={`${total.toLocaleString()} comments in ${selectedDataset?.name || "current dataset"}`}
         actions={
           <button
             onClick={() => setShowAddModal(true)}
@@ -145,7 +145,7 @@ export default function FeedbackExplorerPage() {
             <div className="flex-1 min-w-[240px] relative">
               <input
                 type="text"
-                placeholder="Search feedback verbatim text, keyword, or complaint..."
+                placeholder="Search customer feedback..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full px-4 py-2 pl-9 bg-[#F5F5F1] border border-[#DDE2E9] rounded-xl text-xs text-[#111827] focus:outline-none focus:border-[#3656C8] focus-visible-ring placeholder-[#687386]"
@@ -197,7 +197,7 @@ export default function FeedbackExplorerPage() {
                 onClick={handleResetFilters}
                 className="px-3 py-2 bg-[#ECEFF3] text-[#394457] text-xs font-semibold rounded-xl hover:bg-[#DDE2E9] transition-colors focus-visible-ring"
               >
-                Reset
+                Clear filters
               </button>
             )}
           </form>
@@ -205,7 +205,7 @@ export default function FeedbackExplorerPage() {
           {/* Result Count and Active Filters */}
           <div className="flex items-center justify-between text-xs text-[#687386] pt-2 border-t border-[#DDE2E9]">
             <div>
-              Showing <strong className="text-[#111827]">{feedbacks.length}</strong> of <strong className="text-[#111827]">{total.toLocaleString()}</strong> records
+              Showing <strong className="text-[#111827]">{feedbacks.length}</strong> of <strong className="text-[#111827]">{total.toLocaleString()}</strong> comments
               {category && <span> in <em className="text-[#111827] font-semibold">{category}</em></span>}
             </div>
             <div className="text-[11px] text-[#687386] font-mono">
@@ -218,23 +218,23 @@ export default function FeedbackExplorerPage() {
         {!selectedDatasetId && !datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="text-2xl mb-2">📁</div>
-            <div className="text-sm font-bold text-[#111827]">No Dataset Selected</div>
-            <p className="text-xs text-[#687386] mt-1">Please select an existing dataset or import a new CSV file to view feedback records.</p>
+            <div className="text-sm font-bold text-[#111827]">No dataset selected</div>
+            <p className="text-xs text-[#687386] mt-1">Select an existing dataset or import a CSV file to view customer feedback.</p>
             <Link
               href="/import"
               className="inline-block mt-4 px-4 py-2 bg-[#4F63FF] text-white text-xs font-bold rounded-xl hover:bg-[#3C4FE6] transition-colors"
             >
-              Import CSV Dataset →
+              Import feedback →
             </Link>
           </div>
         ) : loading || datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="w-8 h-8 rounded-full border-2 border-[#4F63FF] border-t-transparent animate-spin mx-auto mb-3" />
-            <div className="text-xs text-[#687386]">Loading feedback records from database...</div>
+            <div className="text-xs text-[#687386]">Loading customer feedback...</div>
           </div>
         ) : error ? (
           <div className="p-8 text-center solid-data rounded-2xl border border-[#FF6B61]/30">
-            <div className="text-sm font-bold text-[#FF6B61] mb-1">Error Loading Feedback</div>
+            <div className="text-sm font-bold text-[#FF6B61] mb-1">Error loading feedback</div>
             <p className="text-xs text-[#687386] mb-4">{error}</p>
             <button
               onClick={fetchFeedbacks}
@@ -246,13 +246,13 @@ export default function FeedbackExplorerPage() {
         ) : feedbacks.length === 0 ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="text-2xl mb-2">🔍</div>
-            <div className="text-sm font-bold text-[#111827]">No matching feedback records</div>
-            <p className="text-xs text-[#687386] mt-1">Try broadening your search keyword or clearing the active category filter.</p>
+            <div className="text-sm font-bold text-[#111827]">No feedback matches these filters</div>
+            <p className="text-xs text-[#687386] mt-1">Try clearing your search or filters to see all comments.</p>
             <button
               onClick={handleResetFilters}
               className="mt-4 px-4 py-2 bg-[#ECEFF3] text-[#4F63FF] text-xs font-bold rounded-xl hover:bg-[#EEF2FF]"
             >
-              Reset Filters
+              Clear filters
             </button>
           </div>
         ) : (
@@ -261,11 +261,11 @@ export default function FeedbackExplorerPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#F5F5F1] border-b border-[#DDE2E9] text-[#687386] font-bold uppercase text-[10px] tracking-wider">
                   <tr>
-                    <th className="py-3 px-4 w-28">Source Row</th>
-                    <th className="py-3 px-4">Verbatim Feedback Text</th>
-                    <th className="py-3 px-4 w-44">Source Category</th>
-                    <th className="py-3 px-4 w-28">Analysis Status</th>
-                    <th className="py-3 px-4 w-24 text-right">Action</th>
+                    <th className="py-3 px-4 w-28">ID</th>
+                    <th className="py-3 px-4">Customer comment</th>
+                    <th className="py-3 px-4 w-44">Category</th>
+                    <th className="py-3 px-4 w-28">Status</th>
+                    <th className="py-3 px-4 w-28 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#DDE2E9]">
@@ -295,7 +295,7 @@ export default function FeedbackExplorerPage() {
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <span className="text-xs font-bold text-[#3656C8] hover:underline">
-                            Inspect →
+                            View details →
                           </span>
                         </td>
                       </tr>
@@ -341,7 +341,7 @@ export default function FeedbackExplorerPage() {
               <div className="flex items-center justify-between pb-4 border-b border-[#DDE2E9]">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#687386] font-mono">
-                    Verbatim Record Inspection
+                    Comment details
                   </span>
                   <h3 className="text-base font-bold text-[#111827] font-mono">
                     #{activeFeedback.id}
@@ -357,7 +357,7 @@ export default function FeedbackExplorerPage() {
 
               <div>
                 <span className="text-xs font-bold text-[#394457] block mb-2">
-                  Unaltered Verbatim Source Text:
+                  Customer comment:
                 </span>
                 <div className="p-4 bg-[#F5F5F1] rounded-2xl border border-[#DDE2E9] text-xs text-[#111827] leading-relaxed italic font-serif">
                   "{activeFeedback.original_text}"
@@ -366,14 +366,14 @@ export default function FeedbackExplorerPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-[#F5F5F1] rounded-xl border border-[#DDE2E9]">
-                  <div className="text-[10px] text-[#687386]">Source Category</div>
+                  <div className="text-[10px] text-[#687386]">Category</div>
                   <div className="text-xs font-bold text-[#111827] mt-0.5">
                     {activeFeedback.source_category || "Uncategorized"}
                   </div>
                 </div>
                 <div className="p-3 bg-[#F5F5F1] rounded-xl border border-[#DDE2E9]">
-                  <div className="text-[10px] text-[#687386]">Analysis Status</div>
-                  <div className="text-xs font-bold text-[#4F63FF] mt-0.5 capitalize">
+                  <div className="text-[10px] text-[#687386]">Status</div>
+                  <div className="text-xs font-bold text-[#3656C8] mt-0.5 capitalize">
                     {activeFeedback.analysis_status}
                   </div>
                 </div>
@@ -382,7 +382,7 @@ export default function FeedbackExplorerPage() {
               {activeFeedback.primary_topic && (
                 <div className="p-3 bg-[#EEF2FF] rounded-xl border border-[#4F63FF]/30">
                   <div className="text-[10px] text-[#687386]">Primary Topic</div>
-                  <div className="text-xs font-bold text-[#4F63FF] mt-0.5">
+                  <div className="text-xs font-bold text-[#3656C8] mt-0.5">
                     {activeFeedback.primary_topic}
                   </div>
                 </div>
@@ -390,9 +390,9 @@ export default function FeedbackExplorerPage() {
 
               <div className="p-4 bg-[#172033] text-white rounded-2xl text-[11px] leading-relaxed border border-[#2E3D5C]">
                 <div className="text-[10px] uppercase font-bold text-[#9EB4FA] font-mono mb-1">
-                  Provenance Guarantee
+                  Comment preservation
                 </div>
-                This verbatim quote is preserved verbatim from the ingested dataset without synthetic augmentation.
+                This comment is saved exactly as provided in the imported file.
               </div>
             </div>
 
@@ -401,7 +401,7 @@ export default function FeedbackExplorerPage() {
                 onClick={() => setActiveFeedback(null)}
                 className="px-5 py-2.5 bg-[#ECEFF3] hover:bg-[#DDE2E9] text-[#111827] text-xs font-semibold rounded-xl transition-colors focus-visible-ring"
               >
-                Close Drawer
+                Close
               </button>
             </div>
           </div>
@@ -429,7 +429,7 @@ export default function FeedbackExplorerPage() {
             <form onSubmit={handleAddFeedback} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#394457] mb-1.5">
-                  Verbatim Customer Comment
+                  Customer comment
                 </label>
                 <textarea
                   required
