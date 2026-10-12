@@ -43,11 +43,11 @@ class AdaptionService:
                 logger.warning(f"Failed to fetch quota summary for status: {e}")
 
         if key_configured and settings.ENABLE_PUBLIC_ADAPTION_OPERATIONS:
-            message = "Owner-configured demo integration ready for Adaptive Data workflows."
+            message = "Adaption Labs connection active and ready for Adaptive Data workflows."
         elif key_configured and not settings.ENABLE_PUBLIC_ADAPTION_OPERATIONS:
-            message = "Public demo operations are currently paused by the project owner."
+            message = "Adaption operations are currently paused."
         else:
-            message = "Owner has not configured ADAPTION_API_KEY in the backend environment."
+            message = "Adaption integration is not configured."
 
         return {
             "configured": key_configured and ADAPTION_AVAILABLE,

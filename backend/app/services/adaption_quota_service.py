@@ -62,7 +62,7 @@ class AdaptionQuotaService:
                 logger.warning(f"Adaption estimate quota reached for UTC date {today_str} ({record.estimate_count}/{settings.ADAPTION_DAILY_ESTIMATE_LIMIT})")
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=f"Daily demo quota reached: maximum {settings.ADAPTION_DAILY_ESTIMATE_LIMIT} Adaption estimate requests allowed per UTC day to protect owner credits. Resets at 00:00 UTC.",
+                    detail=f"Daily quota reached: maximum {settings.ADAPTION_DAILY_ESTIMATE_LIMIT} estimate requests allowed per day. Resets at 00:00 UTC.",
                     headers={"Retry-After": str(retry_after)},
                 )
             record.estimate_count += 1
@@ -71,7 +71,7 @@ class AdaptionQuotaService:
                 logger.warning(f"Adaption run quota reached for UTC date {today_str} ({record.run_count}/{settings.ADAPTION_DAILY_RUN_LIMIT})")
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=f"Daily demo quota reached: maximum {settings.ADAPTION_DAILY_RUN_LIMIT} Adaption runs allowed per UTC day to protect owner credits. Resets at 00:00 UTC.",
+                    detail=f"Daily quota reached: maximum {settings.ADAPTION_DAILY_RUN_LIMIT} adaptation runs allowed per day. Resets at 00:00 UTC.",
                     headers={"Retry-After": str(retry_after)},
                 )
             record.run_count += 1

@@ -41,14 +41,14 @@ async def estimate_adaptation(
     if not settings.ENABLE_PUBLIC_ADAPTION_OPERATIONS:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Adaption external operations are disabled in this public demonstration environment. Set ENABLE_PUBLIC_ADAPTION_OPERATIONS=true with a valid ADAPTION_API_KEY to enable.",
+            detail="Adaption external operations are currently disabled. Please contact your workspace administrator to enable them.",
         )
 
     # 2. Key configuration check
     if not settings.ADAPTION_API_KEY or len(settings.ADAPTION_API_KEY) < 10:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Adaption API key is not configured. Set ADAPTION_API_KEY in backend environment.",
+            detail="Adaption API key is not configured.",
         )
 
     # 3. Workspace dataset boundary check
@@ -108,14 +108,14 @@ async def start_adaption_run(
     if not settings.ENABLE_PUBLIC_ADAPTION_OPERATIONS:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Adaption external operations are disabled in this public demonstration environment. Set ENABLE_PUBLIC_ADAPTION_OPERATIONS=true with a valid ADAPTION_API_KEY to enable.",
+            detail="Adaption external operations are currently disabled. Please contact your workspace administrator to enable them.",
         )
 
     # 2. Key configuration check
     if not settings.ADAPTION_API_KEY or len(settings.ADAPTION_API_KEY) < 10:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Adaption API key is not configured. Set ADAPTION_API_KEY in backend environment.",
+            detail="Adaption API key is not configured.",
         )
 
     # 3. Workspace dataset boundary check

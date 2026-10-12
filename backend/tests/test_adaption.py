@@ -33,7 +33,7 @@ async def test_adaption_disabled_by_default_returns_403(client: AsyncClient, sam
     payload = {"dataset_id": dataset_id, "max_rows": 250}
     resp = await client.post("/api/v1/adaption/estimate", json=payload)
     assert resp.status_code == 403
-    assert "disabled in this public demonstration environment" in resp.json()["detail"]
+    assert "disabled" in resp.json()["detail"].lower()
 
 
 @pytest.mark.asyncio
@@ -178,7 +178,7 @@ async def test_adaption_daily_quota_exhaustion_returns_429(client: AsyncClient, 
         # 2nd request must be blocked with HTTP 429
         resp2 = await client.post("/api/v1/adaption/estimate", json={"dataset_id": dataset_id})
         assert resp2.status_code == 429
-        assert "Daily demo quota reached" in resp2.json()["detail"]
+        assert "Daily quota reached" in resp2.json()["detail"]
         assert "Retry-After" in resp2.headers
 
 
