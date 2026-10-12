@@ -8,6 +8,8 @@ services:
     healthCheckPath: /health
     plan: free
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.10
       - key: APP_ENV
         value: production
       - key: PUBLIC_DEMO_WORKSPACE_ID

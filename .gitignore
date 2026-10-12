@@ -55,6 +55,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+scratch/
 
 # OS Files
 .DS_Store
