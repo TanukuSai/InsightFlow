@@ -827,7 +827,7 @@ export default function DashboardPage() {
                 Grounded Verbatims
               </div>
               <p className="text-[11px] text-[#4D5765] leading-relaxed">
-                Source: <strong>{data?.dataset_name || "Active Dataset"}</strong> ({totalRows.toLocaleString()} rows ingested).
+                Source: <strong>{data?.dataset_name || "Active Dataset"}</strong> ({totalRows.toLocaleString()} rows ingested · 100–1,000 rows sample bound).
               </p>
             </div>
 
@@ -853,7 +853,7 @@ export default function DashboardPage() {
                 {latestAdaptionJob ? (
                   <span className="inline-flex items-center gap-1 text-[#2E7D68]">
                     <CheckCircle2 className="w-3 h-3" />
-                    Latest: {latestAdaptionJob.status.toUpperCase()}
+                    Latest: {latestAdaptionJob.status.toLowerCase() === "succeeded" ? "Completed" : latestAdaptionJob.status.toLowerCase() === "pending" ? "Queued" : latestAdaptionJob.status.charAt(0).toUpperCase() + latestAdaptionJob.status.slice(1)}
                   </span>
                 ) : (
                   "Ready to Configure"

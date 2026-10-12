@@ -32,7 +32,23 @@ type StatusState =
   | "ready"
   | "key_missing"
   | "operations_disabled"
+  | "capacity_exhausted"
   | "unreachable";
+
+const formatJobStatus = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case "succeeded":
+      return "Completed";
+    case "pending":
+      return "Queued";
+    case "running":
+      return "Running";
+    case "failed":
+      return "Failed";
+    default:
+      return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown";
+  }
+};
 
 export default function AdaptionLabPage() {
   const { selectedDatasetId, selectedDataset } = useDataset();
@@ -97,12 +113,21 @@ export default function AdaptionLabPage() {
 
       if (st) {
         setStatusInfo(st);
-        if (st.api_key_set && st.public_operations_enabled) {
-          setStatusState("ready");
-        } else if (!st.api_key_set) {
+        if (!st.api_key_set) {
           setStatusState("key_missing");
-        } else {
+        } else if (!st.public_operations_enabled) {
           setStatusState("operations_disabled");
+        } else if (
+          st.daily_runs_remaining !== undefined &&
+          st.daily_runs_remaining !== null &&
+          st.daily_runs_remaining <= 0 &&
+          st.daily_estimates_remaining !== undefined &&
+          st.daily_estimates_remaining !== null &&
+          st.daily_estimates_remaining <= 0
+        ) {
+          setStatusState("capacity_exhausted");
+        } else {
+          setStatusState("ready");
         }
       } else {
         setStatusState("unreachable");
@@ -293,28 +318,28 @@ export default function AdaptionLabPage() {
         }
       />
 
-      <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
+      <div className="p-4 sm:p-6 lg:py-4 lg:px-8 max-w-7xl mx-auto w-full space-y-4">
         {/* =========================================================================
-            HEADER & REAL INTEGRATION STATUS
+            HEADER & REAL INTEGRATION STATUS (Compact First-Viewport Bar)
             ========================================================================= */}
-        <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
+        <div className="p-3.5 sm:py-3 sm:px-5 rounded-2xl bg-white border border-[var(--border-subtle)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="space-y-0.5">
             <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
               <Sparkles className="w-3.5 h-3.5" />
               <span>ADAPTION LABS · SUPPORT DATA WORKFLOW</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--ink)] tracking-tight">
+            <h1 className="text-lg sm:text-xl font-extrabold text-[var(--ink)] tracking-tight">
               Turn customer feedback into support-training data
             </h1>
-            <p className="text-xs text-[var(--ink-secondary)] max-w-2xl leading-relaxed">
+            <p className="text-[11px] text-[var(--ink-secondary)] max-w-2xl leading-tight">
               Select a feedback sample, estimate usage with Adaption Labs, then launch adaptation and download the resulting dataset when complete.
             </p>
           </div>
 
-          <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0">
+          <div className="flex flex-col items-start md:items-end gap-1 shrink-0">
             <div className="flex items-center gap-2">
               <span
-                className={`text-[11px] font-mono font-bold px-3 py-1 rounded-full border inline-flex items-center gap-1.5 ${
+                className={`text-[11px] font-mono font-bold px-3 py-0.5 rounded-full border inline-flex items-center gap-1.5 ${
                   isOperationsReady
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : statusState === "unreachable"
@@ -346,6 +371,12 @@ export default function AdaptionLabPage() {
                     <span>OPERATIONS DISABLED</span>
                   </>
                 )}
+                {statusState === "capacity_exhausted" && (
+                  <>
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                    <span>DAILY DEMO CAPACITY EXHAUSTED</span>
+                  </>
+                )}
                 {statusState === "unreachable" && (
                   <>
                     <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
@@ -355,7 +386,7 @@ export default function AdaptionLabPage() {
               </span>
             </div>
 
-            <div className="text-[11px] font-mono text-[var(--ink-muted)]">
+            <div className="text-[10px] font-mono text-[var(--ink-muted)]">
               {statusInfo?.daily_runs_remaining !== undefined && statusInfo?.daily_runs_remaining !== null ? (
                 <span>
                   Demo Quota: <strong className="text-[var(--ink)]">{statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3}</strong> runs · <strong className="text-[var(--ink)]">{statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10}</strong> estimates today (UTC)
@@ -369,7 +400,7 @@ export default function AdaptionLabPage() {
 
         {/* Global Feedback Banners */}
         {errorMessage && (
-          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5 shadow-xs">
+          <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5 shadow-xs">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
             <div className="space-y-0.5">
               <strong className="block font-bold">Action Notice:</strong>
@@ -379,7 +410,7 @@ export default function AdaptionLabPage() {
         )}
 
         {successMessage && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5 shadow-xs">
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5 shadow-xs">
             <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
             <div>{successMessage}</div>
           </div>
@@ -389,26 +420,26 @@ export default function AdaptionLabPage() {
             BALANCED FIRST-VIEWPORT 2-COLUMN WORKFLOW
             Left (7 cols): Prepare Run & Actions | Right (5 cols): Estimate & Recent Runs
             ========================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* ---------------------------------------------------------------------
-              LEFT COLUMN: STEP 1 TO STEP 3 RUN CONFIGURATION
+              LEFT COLUMN: STEP 1 SOURCE & SAFETY BOUND
               --------------------------------------------------------------------- */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-5">
+          <div className="lg:col-span-7 space-y-4">
+            <div className="p-5 sm:p-5.5 rounded-2xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-3.5">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] font-mono">
                   STEP 1 · SOURCE &amp; SAFETY BOUND
                 </div>
-                <h2 className="text-base font-bold text-[var(--ink)] mt-0.5">
+                <h2 className="text-sm sm:text-base font-bold text-[var(--ink)] mt-0.5">
                   Prepare feedback sample
                 </h2>
-                <p className="text-xs text-[var(--ink-muted)]">
+                <p className="text-[11px] text-[var(--ink-muted)]">
                   Bound source dataset rows to safeguard demonstration credits
                 </p>
               </div>
 
               {/* Source Dataset Summary */}
-              <div className="p-4 rounded-2xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
                     <Database className="w-3.5 h-3.5 text-[var(--brand)]" />
@@ -430,12 +461,12 @@ export default function AdaptionLabPage() {
               </div>
 
               {/* Row Cap Selector */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <label className="font-bold text-[var(--ink)]">
                     Sample limit for Adaption Labs:
                   </label>
-                  <span className="font-mono text-[var(--brand)] font-bold">
+                  <span className="font-mono text-[var(--brand)] font-bold text-[11px]">
                     {maxRows} rows maximum
                   </span>
                 </div>
@@ -446,7 +477,7 @@ export default function AdaptionLabPage() {
                       key={rows}
                       type="button"
                       onClick={() => setMaxRows(rows)}
-                      className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all focus-visible-ring cursor-pointer ${
+                      className={`py-1.5 px-3 rounded-xl text-xs font-mono font-bold transition-all focus-visible-ring cursor-pointer ${
                         maxRows === rows
                           ? "bg-[var(--brand)] text-white shadow-xs"
                           : "bg-[#F6F5F1] text-[var(--ink)] hover:bg-[#EAE8E2] border border-[var(--border-subtle)]"
@@ -456,33 +487,33 @@ export default function AdaptionLabPage() {
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-[var(--ink-muted)]">
+                <p className="text-[10px] text-[var(--ink-muted)]">
                   Clamped server-side to 1,000 rows to ensure predictable execution.
                 </p>
               </div>
 
               {/* Task Blueprint Preview */}
-              <div className="p-4 rounded-2xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-2">
+              <div className="p-3 rounded-xl bg-[#F6F5F1] border border-[var(--border-subtle)] space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)]">
                     Task Blueprint (Support Assistant Alignment)
                   </span>
                   <span className="text-[10px] font-mono text-[var(--brand)]">Prompt + Context</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-white rounded-xl border border-[var(--border-subtle)]">
-                    <span className="text-[10px] font-bold uppercase font-mono text-[var(--brand)] block">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 bg-white rounded-lg border border-[var(--border-subtle)]">
+                    <span className="text-[9px] font-bold uppercase font-mono text-[var(--brand)] block">
                       prompt
                     </span>
-                    <div className="text-xs font-medium text-[var(--ink)] mt-0.5">
+                    <div className="text-[11px] font-medium text-[var(--ink)] mt-0.5 leading-snug">
                       "Write a concise, empathetic customer-support resolution"
                     </div>
                   </div>
-                  <div className="p-3 bg-white rounded-xl border border-[var(--border-subtle)]">
-                    <span className="text-[10px] font-bold uppercase font-mono text-[#7C3AED] block">
+                  <div className="p-2.5 bg-white rounded-lg border border-[var(--border-subtle)]">
+                    <span className="text-[9px] font-bold uppercase font-mono text-[#7C3AED] block">
                       context
                     </span>
-                    <div className="text-xs font-medium text-[var(--ink)] mt-0.5">
+                    <div className="text-[11px] font-medium text-[var(--ink)] mt-0.5 leading-snug">
                       Verbatim feedback quote + source category
                     </div>
                   </div>
@@ -490,25 +521,25 @@ export default function AdaptionLabPage() {
               </div>
 
               {/* External Data Transfer & Consent Notice */}
-              <div className="p-4 rounded-2xl bg-[#FAF5E8] border border-amber-200/80 space-y-3">
-                <div className="flex items-start gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                  <div className="space-y-1 text-xs text-amber-950 leading-relaxed">
-                    <div className="font-bold">
+              <div className="p-3.5 rounded-xl bg-[#FAF5E8] border border-amber-200/80 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5 text-xs text-amber-950 leading-relaxed">
+                    <div className="font-bold text-[11px]">
                       External Data Transfer Notice
                     </div>
-                    <p className="text-[11px] text-amber-800">
+                    <p className="text-[10px] text-amber-800 leading-snug">
                       Bounded rows (up to {maxRows}) are transmitted to the external Adaption Labs API for estimation and adaptation. Estimates upload a quote sample; actual runs consume owner demo credits.
                     </p>
                   </div>
                 </div>
 
-                <label className="flex items-start gap-2.5 pt-2 border-t border-amber-200 text-xs text-amber-950 cursor-pointer select-none">
+                <label className="flex items-start gap-2 pt-1.5 border-t border-amber-200 text-xs text-amber-950 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={hasConsented}
                     onChange={(e) => setHasConsented(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-[var(--brand)] focus:ring-[var(--brand)]"
+                    className="mt-0.5 h-3.5 w-3.5 rounded border-amber-300 text-[var(--brand)] focus:ring-[var(--brand)]"
                   />
                   <span className="text-[11px] font-medium leading-tight">
                     I acknowledge that up to {maxRows} feedback rows will be uploaded to Adaption Labs for processing.
@@ -517,21 +548,21 @@ export default function AdaptionLabPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-3">
+              <div className="pt-1 flex flex-col sm:flex-row gap-2.5">
                 <button
                   type="button"
                   onClick={handleEstimate}
                   disabled={isEstimating || !selectedDatasetId || !hasConsented || !isOperationsReady}
-                  className="flex-1 py-3 px-4 bg-white border border-[var(--border-strong)] hover:border-[var(--brand)] text-[var(--ink)] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2.5 px-4 bg-white border border-[var(--border-strong)] hover:border-[var(--brand)] text-[var(--ink)] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
                 >
                   {isEstimating ? (
                     <>
-                      <RotateCw className="w-4 h-4 animate-spin text-[var(--brand)]" />
+                      <RotateCw className="w-3.5 h-3.5 animate-spin text-[var(--brand)]" />
                       <span>Querying Estimate...</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="w-4 h-4 text-[var(--brand)]" />
+                      <Coins className="w-3.5 h-3.5 text-[var(--brand)]" />
                       <span>Estimate Cost &amp; Time</span>
                     </>
                   )}
@@ -541,16 +572,16 @@ export default function AdaptionLabPage() {
                   type="button"
                   onClick={() => setShowConfirmModal(true)}
                   disabled={isStartingJob || !selectedDatasetId || !hasConsented || !isOperationsReady}
-                  className="flex-1 py-3 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2.5 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
                 >
                   {isStartingJob ? (
                     <>
-                      <RotateCw className="w-4 h-4 animate-spin" />
+                      <RotateCw className="w-3.5 h-3.5 animate-spin" />
                       <span>Launching Run...</span>
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4 fill-current" />
+                      <Play className="w-3.5 h-3.5 fill-current" />
                       <span>Run with Adaption Labs</span>
                     </>
                   )}
@@ -562,54 +593,54 @@ export default function AdaptionLabPage() {
           {/* ---------------------------------------------------------------------
               RIGHT COLUMN: STEP 2 ESTIMATE & STEP 3 RECENT ACTIVITY LEDGER
               --------------------------------------------------------------------- */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-4">
             {/* Computation Forecast Card */}
-            <div className="p-6 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-4">
+            <div className="p-5 rounded-2xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-3.5">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono">
                   STEP 2 · USAGE ESTIMATE
                 </div>
-                <h3 className="text-base font-bold text-[var(--ink)] mt-0.5">
+                <h3 className="text-sm sm:text-base font-bold text-[var(--ink)] mt-0.5">
                   Computation forecast
                 </h3>
-                <p className="text-xs text-[var(--ink-muted)]">
+                <p className="text-[11px] text-[var(--ink-muted)]">
                   Live pre-flight quote returned by Adaption Labs
                 </p>
               </div>
 
               {estimateResult ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 rounded-2xl bg-[#E9EDFC] border border-[var(--brand)]/20">
-                      <span className="text-[10px] font-bold uppercase font-mono text-[var(--brand)] block">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="p-3.5 rounded-xl bg-[#E9EDFC] border border-[var(--brand)]/20">
+                      <span className="text-[9px] font-bold uppercase font-mono text-[var(--brand)] block">
                         Estimated Credits
                       </span>
-                      <div className="text-2xl font-extrabold text-[var(--brand)] mt-1 font-mono">
+                      <div className="text-xl sm:text-2xl font-extrabold text-[var(--brand)] mt-0.5 font-mono">
                         {estimateResult.estimated_credits !== null && estimateResult.estimated_credits !== undefined
                           ? estimateResult.estimated_credits.toFixed(1)
                           : "N/A"}
                       </div>
-                      <span className="text-[10px] text-[var(--ink-muted)]">
+                      <span className="text-[9px] text-[var(--ink-muted)]">
                         Adaption compute units
                       </span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-[#FAF5E8] border border-amber-200">
-                      <span className="text-[10px] font-bold uppercase font-mono text-amber-800 block">
+                    <div className="p-3.5 rounded-xl bg-[#FAF5E8] border border-amber-200">
+                      <span className="text-[9px] font-bold uppercase font-mono text-amber-800 block">
                         Estimated Minutes
                       </span>
-                      <div className="text-2xl font-extrabold text-amber-900 mt-1 font-mono">
+                      <div className="text-xl sm:text-2xl font-extrabold text-amber-900 mt-0.5 font-mono">
                         {estimateResult.estimated_minutes !== null && estimateResult.estimated_minutes !== undefined
                           ? `~${estimateResult.estimated_minutes.toFixed(1)}m`
                           : "N/A"}
                       </div>
-                      <span className="text-[10px] text-[var(--ink-muted)]">
+                      <span className="text-[9px] text-[var(--ink-muted)]">
                         Expected runtime
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] text-[11px] text-[var(--ink-secondary)] space-y-1">
+                  <div className="p-2.5 bg-[#F6F5F1] rounded-xl border border-[var(--border-subtle)] text-[11px] text-[var(--ink-secondary)] space-y-1">
                     <div className="flex justify-between">
                       <span className="text-[var(--ink-muted)]">Job:</span>
                       <span className="font-mono font-bold text-[var(--ink)]">{estimateResult.local_job_id}</span>
@@ -618,29 +649,35 @@ export default function AdaptionLabPage() {
                       <span className="text-[var(--ink-muted)]">Sample Bound:</span>
                       <span className="font-mono text-[var(--ink)]">{maxRows} rows</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--ink-muted)]">Quote Timestamp:</span>
+                      <span className="font-mono text-[var(--ink)]">
+                        {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-6 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[var(--border-strong)] space-y-2">
-                  <Coins className="w-7 h-7 text-[var(--ink-muted)] mx-auto opacity-40" />
+                <div className="p-5 text-center bg-[#F6F5F1] rounded-xl border border-dashed border-[var(--border-strong)] space-y-1.5">
+                  <Coins className="w-6 h-6 text-[var(--ink-muted)] mx-auto opacity-40" />
                   <div className="text-xs font-bold text-[var(--ink)]">
                     No quote requested yet
                   </div>
                   <p className="text-[11px] text-[var(--ink-muted)] max-w-xs mx-auto leading-relaxed">
-                    Check the data disclosure on the left and click "Estimate Cost &amp; Time" to receive live quote figures.
+                    Getting an estimate uploads the bounded sample CSV to Adaption Labs for quote analysis, but does not start the adaptation run or consume adaptation run quota.
                   </p>
                 </div>
               )}
             </div>
 
             {/* Recent Activity Ledger Card */}
-            <div className="p-6 rounded-3xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-4">
+            <div className="p-5 rounded-2xl bg-white border border-[var(--border-subtle)] shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] font-mono">
                     STEP 3 · RUN ACTIVITY
                   </div>
-                  <h3 className="text-base font-bold text-[var(--ink)] mt-0.5">
+                  <h3 className="text-sm sm:text-base font-bold text-[var(--ink)] mt-0.5">
                     Recent pipeline runs ({jobs.length})
                   </h3>
                 </div>
@@ -657,8 +694,8 @@ export default function AdaptionLabPage() {
               </div>
 
               {jobs.length === 0 ? (
-                <div className="p-6 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[var(--border-strong)] space-y-1.5">
-                  <Cpu className="w-7 h-7 text-[var(--ink-muted)] mx-auto opacity-40" />
+                <div className="p-5 text-center bg-[#F6F5F1] rounded-xl border border-dashed border-[var(--border-strong)] space-y-1">
+                  <Cpu className="w-6 h-6 text-[var(--ink-muted)] mx-auto opacity-40" />
                   <div className="text-xs font-bold text-[var(--ink)]">
                     No runs recorded yet
                   </div>
@@ -667,7 +704,7 @@ export default function AdaptionLabPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
                   {jobs.slice(0, 5).map((job) => {
                     const isSuccess = job.status === "succeeded";
                     const isRunning = job.status === "running";
@@ -676,7 +713,7 @@ export default function AdaptionLabPage() {
                       <div
                         key={job.id}
                         onClick={() => setSelectedJob(job)}
-                        className="p-3.5 rounded-2xl bg-[#F6F5F1] hover:bg-[#EDEBE5] border border-[var(--border-subtle)] space-y-2 cursor-pointer transition-all group"
+                        className="p-3 rounded-xl bg-[#F6F5F1] hover:bg-[#EDEBE5] border border-[var(--border-subtle)] space-y-1.5 cursor-pointer transition-all group"
                       >
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-mono font-bold text-[var(--ink)]">
@@ -692,22 +729,23 @@ export default function AdaptionLabPage() {
                             }`}
                           >
                             {isRunning && <RotateCw className="w-2.5 h-2.5 animate-spin" />}
-                            {job.status.toUpperCase()}
+                            {formatJobStatus(job.status)}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between text-[11px] text-[var(--ink-muted)]">
-                          <span className="capitalize font-mono">
-                            {job.operation_type === "adapt" ? "Adaptation Run" : "Cost Estimate"}
-                          </span>
                           <span className="font-mono">
+                            {job.operation_type === "adapt" ? "Adaptation Run" : "Cost Estimate"}
+                            {job.job_specification?.max_rows ? ` · ${job.job_specification.max_rows} rows` : ""}
+                          </span>
+                          <span className="font-mono font-medium text-[var(--ink)]">
                             {job.estimated_credits !== null && job.estimated_credits !== undefined
                               ? `${job.estimated_credits.toFixed(1)} cr`
                               : "—"}
                           </span>
                         </div>
 
-                        <div className="pt-1.5 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
+                        <div className="pt-1 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
                           <span className="text-[var(--ink-muted)] font-mono text-[10px]">
                             {new Date(job.created_at).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -727,7 +765,7 @@ export default function AdaptionLabPage() {
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#E8F3EE] hover:bg-[#D5EAE0] text-[#2E7D68] text-[10px] font-bold font-mono transition-colors"
                               >
                                 <Download className="w-3 h-3" />
-                                <span>{downloadingJobId === job.id ? "..." : "CSV"}</span>
+                                <span>{downloadingJobId === job.id ? "Downloading..." : "Download CSV"}</span>
                               </button>
                             )}
                             <span className="text-[var(--brand)] font-semibold group-hover:underline flex items-center gap-0.5">
