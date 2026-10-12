@@ -207,11 +207,20 @@ async def get_adaption_job(
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    job = await AdaptionService.get_job_status(
-        job_id=job_id,
-        workspace_id=current_user.workspace_id,
-        db=db,
-    )
+    try:
+        job = await AdaptionService.get_job_status(
+            job_id=job_id,
+            workspace_id=current_user.workspace_id,
+            db=db,
+        )
+    except Exception as e:
+        logger.warning(f"Error refreshing job status for {job_id}: {e}")
+        stmt = select(AdaptionJob).where(
+            AdaptionJob.id == job_id,
+            AdaptionJob.workspace_id == current_user.workspace_id,
+        )
+        job = (await db.execute(stmt)).scalar_one_or_none()
+
     if not job:
         raise HTTPException(status_code=404, detail="Adaption job not found")
 

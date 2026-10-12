@@ -388,6 +388,7 @@ class AdaptionService:
                         "progress": getattr(ext_status, "progress", None),
                     }
                     await db.commit()
+                    await db.refresh(job)
                 elif ext_st == "failed":
                     job.status = "failed"
                     job.completed_at = datetime.now(timezone.utc)
@@ -398,6 +399,7 @@ class AdaptionService:
                         "error_data": str(err_data) if err_data else None,
                     }
                     await db.commit()
+                    await db.refresh(job)
                 elif ext_st in ["pending", "running", "awaiting_input"]:
                     # Still running; update progress metadata
                     job.result_metadata = {
@@ -406,6 +408,7 @@ class AdaptionService:
                         "progress": getattr(ext_status, "progress", None),
                     }
                     await db.commit()
+                    await db.refresh(job)
             except Exception as e:
                 logger.warning(f"Could not refresh Adaption job status from API: {e}")
 

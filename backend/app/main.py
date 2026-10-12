@@ -57,6 +57,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={
             "code": "INTERNAL_SERVER_ERROR",
             "message": "An unexpected server error occurred. Please try again later.",
+            "detail": str(exc),
             "path": request.url.path,
         },
     )
