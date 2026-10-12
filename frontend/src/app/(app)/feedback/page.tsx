@@ -230,7 +230,7 @@ export default function FeedbackExplorerPage() {
         ) : loading || datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="w-8 h-8 rounded-full border-2 border-[#4F63FF] border-t-transparent animate-spin mx-auto mb-3" />
-            <div className="text-xs text-[#687386]">Loading verified records from telemetry database...</div>
+            <div className="text-xs text-[#687386]">Loading feedback records from database...</div>
           </div>
         ) : error ? (
           <div className="p-8 text-center solid-data rounded-2xl border border-[#FF6B61]/30">

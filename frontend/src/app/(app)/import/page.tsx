@@ -96,7 +96,7 @@ export default function CsvImportPage() {
                   Dataset Successfully Ingested
                 </h2>
                 <p className="text-xs text-[#4D5765]">
-                  Verified {summary.valid_rows.toLocaleString()} records processed into local analytics store.
+                  {summary.valid_rows.toLocaleString()} valid records processed into public demo workspace.
                 </p>
               </div>
             </div>

@@ -81,7 +81,7 @@ export default function RecommendationsPage() {
         ) : loading || datasetLoading ? (
           <div className="p-12 text-center solid-data rounded-2xl">
             <div className="w-8 h-8 rounded-full border-2 border-[#3656C8] border-t-transparent animate-spin mx-auto mb-3" />
-            <div className="text-xs text-[#7B8491]">Loading recommendations from telemetry database...</div>
+            <div className="text-xs text-[#7B8491]">Loading recommendations from database...</div>
           </div>
         ) : error ? (
           <div className="p-8 text-center solid-data rounded-2xl border border-[#C6534D]/30">

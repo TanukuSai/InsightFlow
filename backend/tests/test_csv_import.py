@@ -53,3 +53,23 @@ async def test_csv_import_invalid_extension(client: AsyncClient):
     response = await client.post("/api/v1/datasets/import", files=files, headers=headers)
     assert response.status_code == 400
     assert "must be a .csv file" in response.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_canonical_seed_idempotent(db_session):
+    from app.db.seed import seed_canonical_dataset_if_needed
+    from app.models.dataset import Dataset
+    from app.core.config import settings
+    from sqlalchemy import select
+
+    # Call seeder
+    await seed_canonical_dataset_if_needed(db_session)
+    res = await db_session.execute(select(Dataset).where(Dataset.id == settings.CANONICAL_DATASET_ID))
+    d = res.scalar_one_or_none()
+    assert d is not None
+    assert d.id == settings.CANONICAL_DATASET_ID
+
+    # Second call is idempotent no-op
+    await seed_canonical_dataset_if_needed(db_session)
+    res2 = await db_session.execute(select(Dataset).where(Dataset.id == settings.CANONICAL_DATASET_ID))
+    assert res2.scalar_one_or_none() is not None

@@ -12,9 +12,10 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     PUBLIC_DEMO_WORKSPACE_ID: str = "ws-production-eval"
+    CANONICAL_DATASET_ID: str = "ds-796d15b9a096"
 
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./insightflow.db"
+    DATABASE_URL: str = f"sqlite+aiosqlite:///{(Path(__file__).resolve().parent.parent.parent / 'insightflow.db').as_posix()}"
 
     # Supabase Auth / Services
     SUPABASE_URL: str = ""
@@ -22,11 +23,24 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     SUPABASE_JWT_SECRET: str = ""
 
-    # Adaption Labs
+    # Adaption Labs & Cloud Kill Switch
     ADAPTION_API_KEY: str = ""
+    ENABLE_PUBLIC_ADAPTION_OPERATIONS: bool = False
+    ADAPTION_MAX_ROWS: int = 1000
 
-    # Uploads & Limits
-    MAX_UPLOAD_SIZE_MB: int = 50
+    # Uploads & Resource Bounds
+    MAX_UPLOAD_SIZE_MB: int = 10
+    MAX_CSV_ROWS: int = 20000
+    ADMIN_SECRET_KEY: str = ""
+
+    # Bounded Public Rate Limits
+    RATE_LIMIT_IMPORTS_PER_HOUR: int = 5
+    RATE_LIMIT_ANALYSIS_PER_10MIN: int = 5
+    RATE_LIMIT_REPORTS_PER_HOUR: int = 10
+    RATE_LIMIT_FEEDBACK_PER_HOUR: int = 30
+    RATE_LIMIT_ADAPTION_PER_HOUR: int = 5
+    RATE_LIMIT_BURST_PER_MINUTE: int = 120
+
     CORS_ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",

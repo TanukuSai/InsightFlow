@@ -13,6 +13,8 @@ from app.services.recommendation_service import RecommendationService
 from app.db.session import AsyncSessionLocal
 from app.core.logging import logger
 
+from app.core.rate_limit import rate_limit_analysis
+
 router = APIRouter()
 
 
@@ -21,8 +23,8 @@ async def run_full_pipeline_task(
     workspace_id: str,
     job_id: str,
     sample_size: int = None,
-    provider: str = "hybrid-nlp",
-    model: str = "v1.0-balanced",
+    provider: str = "rule-based baseline",
+    model: str = "lexicon-rules-v1.0",
 ):
     async with AsyncSessionLocal() as session:
         try:
@@ -74,6 +76,7 @@ async def start_analysis(
     background_tasks: BackgroundTasks,
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
+    _rate_limit: None = Depends(rate_limit_analysis),
 ):
     # Verify dataset exists in workspace
     stmt = select(Dataset).where(
@@ -84,6 +87,19 @@ async def start_analysis(
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found in workspace")
 
+    # Prevent redundant concurrent analysis jobs on the same dataset
+    active_stmt = select(AnalysisJob).where(
+        AnalysisJob.dataset_id == dataset_id,
+        AnalysisJob.workspace_id == current_user.workspace_id,
+        AnalysisJob.status.in_(["queued", "running"]),
+    )
+    active_job = (await db.execute(active_stmt)).scalar_one_or_none()
+    if active_job:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"An analysis job ({active_job.id}) is already {active_job.status} for this dataset.",
+        )
+
     # Create AnalysisJob
     job_id = f"aj-{uuid.uuid4().hex[:12]}"
     job = AnalysisJob(
@@ -92,8 +108,8 @@ async def start_analysis(
         dataset_id=dataset_id,
         status="queued",
         total_items=dataset.row_count,
-        provider=payload.provider or "hybrid-nlp",
-        model=payload.model or "v1.0-balanced",
+        provider=payload.provider or "rule-based baseline",
+        model=payload.model or "lexicon-rules-v1.0",
     )
     db.add(job)
     dataset.status = "analyzing"

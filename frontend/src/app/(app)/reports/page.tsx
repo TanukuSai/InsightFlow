@@ -128,7 +128,7 @@ export default function ReportsPage() {
                 Generate Executive Intelligence Briefing
               </h2>
               <p className="text-xs text-[#7B8491]">
-                Generates a board-ready report from verified database issues, evidence quotes, and category counts.
+                Generates an executive briefing from database issues, evidence quotes, and category counts.
               </p>
             </div>
           </div>

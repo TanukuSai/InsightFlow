@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import PublicNav from "@/components/navigation/PublicNav";
 import DataFieldCanvas, { DotFieldStage } from "@/components/background/DataFieldCanvas";
@@ -8,15 +8,13 @@ import DataFieldCanvas, { DotFieldStage } from "@/components/background/DataFiel
 export default function MarketingLandingPage() {
   const [scrollProgress, setScrollProgress] = useState<number>(1.0);
   const [activeStage, setActiveStage] = useState<DotFieldStage>(1);
-  const isClickNavRef = useRef(false);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const storyStages = [
     {
       id: 1,
       badge: "Stage 01 • Ingestion",
       title: "Scattered Customer Feedback",
-      desc: "Raw customer comments arrive across support channels, app reviews, and surveys with varying formats and noisy repetitions.",
+      desc: "Raw feedback records imported via CSV or manual entry, containing varying lengths and exact text repetitions.",
       metric: "7,000 Source Rows",
       metricLabel: "Dataset scale",
       accent: "#3656C8",
@@ -26,9 +24,9 @@ export default function MarketingLandingPage() {
       id: 2,
       badge: "Stage 02 • Exact Repeats",
       title: "Identifying Repeated Statements",
-      desc: "Deterministic text normalization isolates identical repetitive complaints without conflating duplicate text with unique customer counts.",
-      metric: "320 Unique Strings",
-      metricLabel: "6,680 exact repeats identified",
+      desc: "Deterministic text normalization isolates identical repetitive statements without conflating duplicate text with unique customer counts.",
+      metric: "320 Unique Statements",
+      metricLabel: "6,680 exact duplicate instances",
       accent: "#5876B8",
       border: "border-[#5876B8]",
     },
@@ -46,7 +44,7 @@ export default function MarketingLandingPage() {
       id: 4,
       badge: "Stage 04 • Actionable Evidence",
       title: "Traceable Issues & Recommendations",
-      desc: "High-priority problem areas emerge backed by verbatim customer quotes, forming defensible engineering recommendations.",
+      desc: "High-priority problem areas emerge backed by verbatim customer quotes, forming defensible recommendations.",
       metric: "10 Issue Dossiers",
       metricLabel: "Evidence-backed backlog",
       accent: "#B83D42",
@@ -54,18 +52,16 @@ export default function MarketingLandingPage() {
     },
   ];
 
-  // Continuous, Reversible Scroll Tracker
+  // Continuous, Reversible Scroll Tracker (Deterministic mathematical mapping)
   useEffect(() => {
     let ticking = false;
 
     const handleScroll = () => {
-      if (isClickNavRef.current) return;
       if (ticking) return;
       ticking = true;
 
       requestAnimationFrame(() => {
         ticking = false;
-        if (isClickNavRef.current) return;
 
         const scrollY = window.scrollY;
         const howItWorksEl = document.getElementById("how-it-works");
@@ -76,27 +72,26 @@ export default function MarketingLandingPage() {
         const howItWorksHeight = howItWorksEl.offsetHeight;
 
         // Stage 1: In Hero section
-        if (scrollY < howItWorksTop - 200) {
-          const progress = 1.0 + Math.max(0, (scrollY / (howItWorksTop - 200)) * 0.3);
+        if (scrollY < howItWorksTop - 180) {
+          const progress = 1.0 + Math.max(0, (scrollY / Math.max(1, howItWorksTop - 180)) * 0.2);
           setScrollProgress(progress);
           setActiveStage(1);
           return;
         }
 
-        // Within How It Works & Stages
+        // Within How It Works & Stages: map relative scroll directly to stages 1.0 -> 4.0
         const relativeScroll = scrollY - (howItWorksTop - 150);
-        const scrollFraction = Math.max(0, Math.min(1, relativeScroll / (howItWorksHeight + 100)));
+        const scrollFraction = Math.max(0, Math.min(1, relativeScroll / Math.max(1, howItWorksHeight + 100)));
 
-        // Continuous interpolation between Stage 1.3 to 4.0
         const computedProgress = 1.0 + scrollFraction * 3.0;
         setScrollProgress(computedProgress);
 
         // Derive active stage for tabs indicator
-        if (computedProgress < 1.8) {
+        if (computedProgress < 1.67) {
           setActiveStage(1);
-        } else if (computedProgress < 2.7) {
+        } else if (computedProgress < 2.5) {
           setActiveStage(2);
-        } else if (computedProgress < 3.5) {
+        } else if (computedProgress < 3.33) {
           setActiveStage(3);
         } else {
           setActiveStage(4);
@@ -105,39 +100,31 @@ export default function MarketingLandingPage() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
     };
   }, []);
 
   const handleStageSelect = (stageId: DotFieldStage) => {
     setActiveStage(stageId);
     setScrollProgress(stageId);
-    isClickNavRef.current = true;
-    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-    clickTimeoutRef.current = setTimeout(() => {
-      isClickNavRef.current = false;
-    }, 900);
 
-    // Calculate anchor scroll target matching the exact fraction for this stage
     const howItWorksEl = document.getElementById("how-it-works");
     if (howItWorksEl) {
       const howItWorksTop = howItWorksEl.offsetTop;
       const howItWorksHeight = howItWorksEl.offsetHeight;
-      const stageFractions: Record<DotFieldStage, number> = {
-        1: 0.0,
-        2: 0.33,
-        3: 0.66,
-        4: 0.98,
-      };
-      const fraction = stageFractions[stageId] ?? 0;
-      const topOffset = stageId === 1
-        ? Math.max(0, howItWorksTop - 120)
-        : howItWorksTop - 150 + (howItWorksHeight + 100) * fraction;
-      window.scrollTo({ top: topOffset, behavior: "smooth" });
+      const fraction = (stageId - 1.0) / 3.0;
+      const targetScrollY = stageId === 1
+        ? Math.max(0, howItWorksTop - 180)
+        : Math.round(howItWorksTop - 150 + (howItWorksHeight + 100) * fraction);
+
+      const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({
+        top: targetScrollY,
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      });
     }
   };
 
@@ -225,14 +212,14 @@ export default function MarketingLandingPage() {
                   Signal Observatory Engine
                 </h3>
                 <p className="text-xs text-[#C5CCD7] leading-relaxed">
-                  Real-time aggregation isolates 320 unique verbatim complaints from 7,000 imported reviews, uncovering 95.4% repetition in operational friction.
+                  Aggregates imported feedback to isolate 320 unique exact feedback statements from 7,000 benchmark rows, identifying 6,680 repeated statement instances (95.4% exact duplicate rate in the Build Battle benchmark dataset).
                 </p>
               </div>
 
               {/* Micro Metric Preview */}
               <div className="relative z-10 space-y-2 pt-4 border-t border-white/10">
                 <div className="text-[10px] uppercase font-bold text-[#9EB4FA] font-mono mb-1">
-                  Contest Dataset Benchmark (N=7,000)
+                  Build Battle Benchmark (N=7,000 Rows)
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#C5CCD7]">Operational Issues</span>
@@ -295,10 +282,6 @@ export default function MarketingLandingPage() {
                 {st.id}. {st.title.split(" ")[0]}
               </button>
             ))}
-          </div>
-
-          <div className="text-[11px] text-[var(--ink-muted)] font-mono mt-3">
-            Continuous Scroll Interpolation: Stage {scrollProgress.toFixed(2)} / 4.00
           </div>
         </div>
 
@@ -523,7 +506,7 @@ export default function MarketingLandingPage() {
               Ready to turn customer feedback into action?
             </h2>
             <p className="text-sm sm:text-base text-[#C5CCD7] max-w-lg mx-auto leading-relaxed">
-              Experience InsightFlow with the verified Build Battle 2026 dataset, or ingest your custom feedback records.
+              Experience InsightFlow with the preloaded Build Battle 2026 dataset, or ingest your custom feedback records via CSV.
             </p>
             <div className="pt-2">
               <Link

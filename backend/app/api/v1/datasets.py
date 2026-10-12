@@ -1,9 +1,11 @@
-from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from app.api.deps import get_current_user, get_session
 from app.core.security import AuthenticatedUser
+from app.core.config import settings
+from app.core.rate_limit import rate_limit_import
 from app.models.dataset import Dataset
 from app.schemas.dataset import DatasetResponse, ImportSummaryResponse
 from app.services.csv_service import CSVImportService
@@ -17,6 +19,7 @@ async def import_csv_dataset(
     name: str = Form(None),
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
+    _rate_limit: None = Depends(rate_limit_import),
 ):
     dataset_name = name or (file.filename.replace(".csv", "") if file.filename else "Imported Dataset")
     dataset, summary = await CSVImportService.process_csv_file(
@@ -63,9 +66,24 @@ async def get_dataset(
 @router.delete("/datasets/{dataset_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_dataset(
     dataset_id: str,
+    x_admin_key: Optional[str] = Header(None),
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
+    # 1. Canonical dataset can NEVER be deleted
+    if dataset_id == settings.CANONICAL_DATASET_ID:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The canonical seed dataset cannot be deleted.",
+        )
+
+    # 2. In public demo workspace mode, anonymous deletion is disabled
+    if not settings.ADMIN_SECRET_KEY or x_admin_key != settings.ADMIN_SECRET_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dataset deletion is disabled in the public demonstration workspace to protect shared evaluation state.",
+        )
+
     stmt = select(Dataset).where(
         Dataset.id == dataset_id,
         Dataset.workspace_id == current_user.workspace_id,

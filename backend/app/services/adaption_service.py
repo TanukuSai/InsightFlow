@@ -40,10 +40,15 @@ class AdaptionService:
             "api_key_set": key_configured,
             "key_prefix": prefix,
             "sdk_version": ADAPTION_SDK_VERSION,
+            "public_operations_enabled": settings.ENABLE_PUBLIC_ADAPTION_OPERATIONS,
             "message": (
                 "Adaption Labs SDK initialized and ready for Adaptive Data workflows."
-                if key_configured
-                else "ADAPTION_API_KEY is not set. Set it in .env to enable dataset optimization & adaptation."
+                if key_configured and settings.ENABLE_PUBLIC_ADAPTION_OPERATIONS
+                else (
+                    "Adaption external cloud operations are disabled in public demo mode. Set ENABLE_PUBLIC_ADAPTION_OPERATIONS=true in .env to enable."
+                    if key_configured
+                    else "ADAPTION_API_KEY is not set. Set it in .env with ENABLE_PUBLIC_ADAPTION_OPERATIONS=true to enable dataset optimization."
+                )
             ),
         }
 

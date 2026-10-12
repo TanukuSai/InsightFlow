@@ -28,13 +28,15 @@ ENV/
 
 # Databases & local archives
 *.db-journal
+*.db-wal
 test_*.db
 backend/test_insightflow.db
+insightflow.db
 frontend.zip
 backend/reports/
+backend/reports/*
 backend/data/adaption_input_*.csv
 backend/data/ds-*.csv
-!backend/data/ds-796d15b9a096.csv
 
 # Environment & secrets
 .env

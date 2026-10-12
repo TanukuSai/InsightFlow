@@ -9,6 +9,7 @@ class AdaptionConfigStatus(BaseModel):
     key_prefix: Optional[str] = None
     sdk_version: str
     message: str
+    public_operations_enabled: bool = False
 
 
 class AdaptionEstimateRequest(BaseModel):

@@ -94,6 +94,12 @@ class CSVImportService:
             review_text = row[review_col_idx].strip() if review_col_idx < len(row) else ""
             category_text = row[category_col_idx].strip() if (category_col_idx != -1 and category_col_idx < len(row)) else "Uncategorized"
 
+            if total_rows > settings.MAX_CSV_ROWS:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"CSV contains {total_rows} rows, exceeding the public demo limit of {settings.MAX_CSV_ROWS} rows.",
+                )
+
             if not review_text:
                 invalid_rows += 1
                 continue
@@ -117,7 +123,7 @@ class CSVImportService:
         unique_exact_statements = len(text_counter)
         repeated_rows = valid_rows - unique_exact_statements
 
-        # Save local copy for Adaption and exports
+        # Save local copy for exports
         dataset_id = f"ds-{uuid.uuid4().hex[:12]}"
         save_path = os.path.join(settings.DATA_DIR, f"{dataset_id}.csv")
         try:
@@ -126,46 +132,59 @@ class CSVImportService:
         except Exception as e:
             logger.warning(f"Failed to cache uploaded CSV to disk: {e}")
 
-        # Create Dataset entity
-        dataset = Dataset(
-            id=dataset_id,
-            workspace_id=workspace_id,
-            name=dataset_name or file.filename or "Uploaded Dataset",
-            original_filename=file.filename or "dataset.csv",
-            row_count=total_rows,
-            valid_rows=valid_rows,
-            invalid_rows=invalid_rows,
-            unique_feedback_count=unique_exact_statements,
-            repeat_feedback_count=repeated_rows,
-            category_distribution=dict(category_counter),
-            has_timestamps=False,  # Honest assessment: standard dataset has no timestamp column
-            status="imported",
-        )
-        db.add(dataset)
-        await db.flush()
-
-        # Batch insert Feedbacks
-        for i in range(0, len(raw_feedback_records), CSVImportService.CHUNK_SIZE):
-            chunk = raw_feedback_records[i : i + CSVImportService.CHUNK_SIZE]
-            feedbacks = [
-                Feedback(
-                    id=f"fb-{uuid.uuid4().hex[:12]}",
-                    workspace_id=workspace_id,
-                    dataset_id=dataset.id,
-                    original_text=item["original_text"],
-                    source_category=item["source_category"],
-                    sentiment_label=None,  # STRICT: Kept nullable until AI analysis runs!
-                    sentiment_score=None,
-                    confidence_score=None,
-                    analysis_status="pending",
-                )
-                for item in chunk
-            ]
-            db.add_all(feedbacks)
+        try:
+            # Create Dataset entity
+            dataset = Dataset(
+                id=dataset_id,
+                workspace_id=workspace_id,
+                name=dataset_name or file.filename or "Uploaded Dataset",
+                original_filename=file.filename or "dataset.csv",
+                row_count=total_rows,
+                valid_rows=valid_rows,
+                invalid_rows=invalid_rows,
+                unique_feedback_count=unique_exact_statements,
+                repeat_feedback_count=repeated_rows,
+                category_distribution=dict(category_counter),
+                has_timestamps=False,  # Honest assessment: standard dataset has no timestamp column
+                status="imported",
+            )
+            db.add(dataset)
             await db.flush()
 
-        await db.commit()
-        await db.refresh(dataset)
+            # Batch insert Feedbacks
+            for i in range(0, len(raw_feedback_records), CSVImportService.CHUNK_SIZE):
+                chunk = raw_feedback_records[i : i + CSVImportService.CHUNK_SIZE]
+                feedbacks = [
+                    Feedback(
+                        id=f"fb-{uuid.uuid4().hex[:12]}",
+                        workspace_id=workspace_id,
+                        dataset_id=dataset.id,
+                        original_text=item["original_text"],
+                        source_category=item["source_category"],
+                        sentiment_label=None,  # STRICT: Kept nullable until AI analysis runs!
+                        sentiment_score=None,
+                        confidence_score=None,
+                        analysis_status="pending",
+                    )
+                    for item in chunk
+                ]
+                db.add_all(feedbacks)
+                await db.flush()
+
+            await db.commit()
+            await db.refresh(dataset)
+        except Exception as err:
+            await db.rollback()
+            if os.path.exists(save_path):
+                try:
+                    os.remove(save_path)
+                except Exception:
+                    pass
+            logger.error(f"Transaction aborted during CSV import: {err}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to ingest dataset due to an internal transaction error. Partial writes were rolled back.",
+            )
 
         summary = {
             "dataset_id": dataset.id,

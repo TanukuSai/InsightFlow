@@ -62,6 +62,16 @@ async def setup_test_db():
             pass
 
 
+from app.core.rate_limit import limiter
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    limiter.reset()
+    yield
+    limiter.reset()
+
+
 @pytest_asyncio.fixture
 async def db_session():
     async with TestSessionLocal() as session:

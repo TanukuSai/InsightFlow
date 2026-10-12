@@ -6,8 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.core.config import settings
 from app.core.logging import setup_logging, logger
-from app.db.session import async_engine
+from app.db.session import async_engine, AsyncSessionLocal
 from app.db.migrations import init_db
+from app.db.seed import seed_canonical_dataset_if_needed
 from app.api.v1 import api_v1_router
 
 setup_logging()
@@ -18,6 +19,12 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.APP_ENV}]...")
     # Initialize DB schema
     await init_db()
+    # Idempotent seed of canonical demo dataset
+    try:
+        async with AsyncSessionLocal() as session:
+            await seed_canonical_dataset_if_needed(session)
+    except Exception as e:
+        logger.warning(f"Database seeding check encountered error: {e}")
     yield
     logger.info("Shutting down InsightFlow API...")
     await async_engine.dispose()

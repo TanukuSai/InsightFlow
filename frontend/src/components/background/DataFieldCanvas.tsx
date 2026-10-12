@@ -138,8 +138,8 @@ export default function DataFieldCanvas({
         id: i,
         x1: initX,
         y1: initY,
-        vx1: (Math.random() - 0.5) * (prefersReducedMotion ? 0.04 : 0.35),
-        vy1: (Math.random() - 0.5) * (prefersReducedMotion ? 0.04 : 0.35),
+        vx1: prefersReducedMotion ? 0 : (Math.random() - 0.5) * 0.35,
+        vy1: prefersReducedMotion ? 0 : (Math.random() - 0.5) * 0.35,
         categoryIndex: cat,
         radius: mode === "signal-brief" ? 3.2 + Math.random() * 2.8 : 3.8 + Math.random() * 4.0,
         pulsePhase: Math.random() * Math.PI * 2,
@@ -149,15 +149,18 @@ export default function DataFieldCanvas({
       };
     });
 
-    let isDocumentVisible = true;
+    let isDocumentVisible = typeof document !== "undefined" ? !document.hidden : true;
     const handleVisibilityChange = () => {
       isDocumentVisible = !document.hidden;
+      if (isDocumentVisible && !animFrameRef.current) {
+        animFrameRef.current = requestAnimationFrame(render);
+      }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     const render = () => {
       if (!isDocumentVisible) {
-        animFrameRef.current = requestAnimationFrame(render);
+        animFrameRef.current = null;
         return;
       }
 
@@ -180,7 +183,9 @@ export default function DataFieldCanvas({
 
       // 1. Calculate continuous target coordinates for each particle
       pts.forEach((pt, idx) => {
-        pt.pulsePhase += 0.02;
+        if (!prefersReducedMotion) {
+          pt.pulsePhase += 0.02;
+        }
 
         // Mode: Signal Brief (Contained ambient orbital flow on Dashboard)
         if (mode === "signal-brief") {
@@ -261,8 +266,13 @@ export default function DataFieldCanvas({
         }
 
         // Smoothly glide particle toward interpolated target
-        pt.currX += (targetX - pt.currX) * 0.14;
-        pt.currY += (targetY - pt.currY) * 0.14;
+        if (prefersReducedMotion) {
+          pt.currX = targetX;
+          pt.currY = targetY;
+        } else {
+          pt.currX += (targetX - pt.currX) * 0.14;
+          pt.currY += (targetY - pt.currY) * 0.14;
+        }
       });
 
       // 2. Draw subtle proximity connecting filaments

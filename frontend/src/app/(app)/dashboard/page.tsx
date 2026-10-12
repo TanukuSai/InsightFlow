@@ -289,8 +289,8 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-[11px] text-[#7B8491] pt-2 border-t border-[#E2E3DD] flex items-center justify-between">
-                    <span>100% verified records stored</span>
-                    <span className="text-[10px] text-[#3656C8] font-bold">Validated</span>
+                    <span>{data.total_source_rows.toLocaleString()} valid records ingested</span>
+                    <span className="text-[10px] text-[#3656C8] font-bold">Ingested</span>
                   </div>
                 </div>
 
@@ -302,7 +302,7 @@ export default function DashboardPage() {
                       <span>↺ return</span>
                     </div>
                     <p className="text-xs text-[#B8C2D5] mt-2 leading-relaxed">
-                      Imported from BuildBattle_2026_Customer_Feedback_Dataset.csv with 100% schema validation.
+                      Imported from {data.dataset_name || "CSV dataset"} with deterministic schema validation.
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-[#A2AEBD] pt-1 border-t border-white/10">
@@ -532,25 +532,35 @@ export default function DashboardPage() {
             {/* Derived Sentiment Polarity Card */}
             <div className="p-6 solid-data rounded-3xl space-y-4">
               {(() => {
-                const sentimentTotal = (sentiment?.positive || 0) + (sentiment?.neutral || 0) + (sentiment?.negative || 0);
-                const posPct = sentimentTotal > 0 ? (((sentiment?.positive || 0) / sentimentTotal) * 100).toFixed(1) : "0.0";
-                const neuPct = sentimentTotal > 0 ? (((sentiment?.neutral || 0) / sentimentTotal) * 100).toFixed(1) : "0.0";
-                const negPct = sentimentTotal > 0 ? (((sentiment?.negative || 0) / sentimentTotal) * 100).toFixed(1) : "0.0";
-                const analyzedPct = totalRows > 0 ? (((sentimentTotal) / totalRows) * 100).toFixed(1) : "0.0";
+                const posCount = sentiment?.positive || 0;
+                const neuCount = sentiment?.neutral || 0;
+                const negCount = sentiment?.negative || 0;
+                const mixedCount = sentiment?.mixed || 0;
+                const unknownCount = sentiment?.unknown || 0;
+                const sentimentTotal = posCount + neuCount + negCount + mixedCount + unknownCount;
+
+                const posPct = sentimentTotal > 0 ? ((posCount / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const neuPct = sentimentTotal > 0 ? ((neuCount / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const negPct = sentimentTotal > 0 ? ((negCount / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const mixedPct = sentimentTotal > 0 ? ((mixedCount / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const unknownPct = sentimentTotal > 0 ? ((unknownCount / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const analyzedPct = totalRows > 0 ? ((sentimentTotal / totalRows) * 100).toFixed(1) : "0.0";
 
                 return (
                   <>
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-bold text-[#20252D] uppercase tracking-wider">
-                          Model-Derived Sentiment Polarity
+                          Rule-Based Baseline Sentiment Polarity
                         </h3>
                         <p className="text-xs text-[#7B8491] mt-0.5">
-                          Analyzed polarity across valid records (N={sentimentTotal.toLocaleString()})
+                          Lexicon &amp; negation classification across valid records (N={sentimentTotal.toLocaleString()})
                         </p>
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8F3EE] text-[#2E7D68] border border-[#2E7D68]/20">
-                        {analyzedPct}% Analyzed
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        sentimentTotal > 0 ? "bg-[#E8F3EE] text-[#2E7D68] border-[#2E7D68]/20" : "bg-[#F0F2F5] text-[#7B8491] border-[#E2E3DD]"
+                      }`}>
+                        {sentimentTotal > 0 ? `${analyzedPct}% Analyzed` : "Not analyzed"}
                       </span>
                     </div>
 
@@ -561,42 +571,70 @@ export default function DashboardPage() {
                           <div
                             className="bg-[#2E7D68] h-full"
                             style={{ width: `${posPct}%` }}
-                            title={`Positive: ${(sentiment.positive || 0).toLocaleString()} (${posPct}%)`}
+                            title={`Positive: ${posCount.toLocaleString()} (${posPct}%)`}
                           />
                           <div
                             className="bg-[#6C7786] h-full"
                             style={{ width: `${neuPct}%` }}
-                            title={`Neutral: ${(sentiment.neutral || 0).toLocaleString()} (${neuPct}%)`}
+                            title={`Neutral: ${neuCount.toLocaleString()} (${neuPct}%)`}
                           />
                           <div
                             className="bg-[#C6534D] h-full"
                             style={{ width: `${negPct}%` }}
-                            title={`Negative: ${(sentiment.negative || 0).toLocaleString()} (${negPct}%)`}
+                            title={`Negative: ${negCount.toLocaleString()} (${negPct}%)`}
                           />
+                          {mixedCount > 0 && (
+                            <div
+                              className="bg-[#8B6E9B] h-full"
+                              style={{ width: `${mixedPct}%` }}
+                              title={`Mixed: ${mixedCount.toLocaleString()} (${mixedPct}%)`}
+                            />
+                          )}
+                          {unknownCount > 0 && (
+                            <div
+                              className="bg-[#B0B7C3] h-full"
+                              style={{ width: `${unknownPct}%` }}
+                              title={`Unknown: ${unknownCount.toLocaleString()} (${unknownPct}%)`}
+                            />
+                          )}
                         </div>
 
-                        {/* 3 Pillars */}
-                        <div className="grid grid-cols-3 gap-2 pt-1">
+                        {/* Taxonomy Pillars */}
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
                           <div className="p-2.5 rounded-xl bg-[#E8F3EE] border border-[#2E7D68]/20 text-center">
                             <div className="text-[10px] font-bold uppercase text-[#2E7D68]">Positive</div>
                             <div className="text-base font-extrabold text-[#20252D]">
-                              {(sentiment.positive || 0).toLocaleString()}
+                              {posCount.toLocaleString()}
                             </div>
                             <div className="text-[10px] text-[#2E7D68] font-mono">{posPct}%</div>
                           </div>
                           <div className="p-2.5 rounded-xl bg-[#F0F2F5] border border-[#E2E3DD] text-center">
                             <div className="text-[10px] font-bold uppercase text-[#6C7786]">Neutral</div>
                             <div className="text-base font-extrabold text-[#20252D]">
-                              {(sentiment.neutral || 0).toLocaleString()}
+                              {neuCount.toLocaleString()}
                             </div>
                             <div className="text-[10px] text-[#4D5765] font-mono">{neuPct}%</div>
                           </div>
                           <div className="p-2.5 rounded-xl bg-[#FAECEB] border border-[#C6534D]/20 text-center">
                             <div className="text-[10px] font-bold uppercase text-[#C6534D]">Negative</div>
                             <div className="text-base font-extrabold text-[#20252D]">
-                              {(sentiment.negative || 0).toLocaleString()}
+                              {negCount.toLocaleString()}
                             </div>
                             <div className="text-[10px] text-[#C6534D] font-mono">{negPct}%</div>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-[#F6F0F8] border border-[#8B6E9B]/20 text-center">
+                            <div className="text-[10px] font-bold uppercase text-[#8B6E9B]">Mixed</div>
+                            <div className="text-base font-extrabold text-[#20252D]">
+                              {mixedCount.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-[#8B6E9B] font-mono">{mixedPct}%</div>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-[#F0F2F5] border border-[#CCD0D7] text-center">
+                            <div className="text-[10px] font-bold uppercase text-[#687386]">Unknown</div>
+                            <div className="text-base font-extrabold text-[#20252D]">
+                              {unknownCount.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-[#687386] font-mono">{unknownPct}%</div>
                           </div>
                         </div>
                       </div>

@@ -9,6 +9,7 @@ from app.core.security import AuthenticatedUser
 from app.models.report import Report
 from app.schemas.report import ReportCreateRequest, ReportResponse
 from app.services.report_service import ReportService
+from app.core.rate_limit import rate_limit_report
 
 router = APIRouter()
 
@@ -18,6 +19,7 @@ async def generate_report(
     payload: ReportCreateRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
+    _rate_limit: None = Depends(rate_limit_report),
 ):
     try:
         report = await ReportService.generate_report(

@@ -1,253 +1,156 @@
-# InsightFlow Backend
+# InsightFlow — Customer Voice Decision Observatory
 
 **Event**: Build Battle 2026 — AI × Web Development Hackathon  
-**Role**: Complete Backend for InsightFlow Customer Feedback & Decision Platform  
-**Status**: Production & Demo Ready | 100% Automated Test Coverage Passed  
+**Repository**: [TanukuSai/InsightFlow](https://github.com/TanukuSai/InsightFlow)  
+**Public Frontend URL**: [https://frontend-bay-ten-95.vercel.app/](https://frontend-bay-ten-95.vercel.app/)  
+**Status**: Hackathon Public Demo Ready | 22 Automated Backend Pytest Tests Passing  
 
 ---
 
-## 1. System Architecture Overview
+## 1. Product Scope & Hackathon Demonstration Model
 
-InsightFlow transforms unstructured customer feedback into structured intelligence, recurring complaint clusters, evidence-backed issues, and actionable business recommendations.
+InsightFlow is an evidence-first customer feedback observatory designed for the Build Battle 2026 hackathon. The product scope is streamlined for zero-friction evaluation by judges and public visitors:
+
+- **Zero-Authentication Public Demo**: Visitors access the workspace directly (`ws-production-eval`) without sign-up screens, login forms, or session token barriers.
+- **No Scraping or Crawling**: Ingestion is strictly supported via CSV file upload and manual feedback entry. Web scraping, browser automation (Playwright), and social source sync are not included in this runtime scope.
+- **Canonical Benchmark Dataset**: Comes preloaded with the official 7,000-row Build Battle contest dataset (`ds-796d15b9a096`), featuring 320 unique exact statements and 6,680 repeated instances.
+- **Deterministic Rule-Based Baseline**: Sentiment and keyword classification run via an auditable lexicon baseline (`lexicon-rules-v1.0`) with taxonomy labels `positive`, `neutral`, `negative`, `mixed`, and `unknown`.
+- **Verbatim Evidence Linking**: Every identified issue dossier and recommendation links directly to unaltered raw customer quote IDs in the database.
+- **Executive Reporting**: Generates server-side executive summary reports with instant downloads in PDF, CSV, and JSON formats.
+
+> [!NOTE]
+> **Superseded Historical Architecture**: Any legacy documentation or diagrams in this repository referencing Supabase JWT authentication, multi-tenant workspace isolation, or Playwright automated web scraping represent earlier exploratory design phases and have been superseded by this hackathon public demo model.
+
+---
+
+## 2. Public Demo Protections & Security Controls
+
+Because the public demo workspace is open and shared, the backend enforces server-side controls to protect data integrity and prevent resource exhaustion:
+
+1. **Canonical Dataset Protection**: The canonical contest dataset (`ds-796d15b9a096`) cannot be deleted or wiped. Requests to delete it return `403 Forbidden`.
+2. **Deletion Disabled in Public Mode**: Anonymous dataset deletion is disabled in public demo mode (`403 Forbidden`).
+3. **Idempotent Auto-Seeding**: On a clean backend deployment, `app.db.seed.seed_canonical_dataset` automatically initializes the workspace and loads `data/BuildBattle_2026_Customer_Feedback_Dataset.csv` if missing, ensuring an immediate judge-ready experience.
+4. **Bounded Upload Caps**:
+   - Maximum upload file size: **10 MB** (enforced by `MAX_UPLOAD_SIZE_MB`).
+   - Maximum CSV row count: **20,000 rows** (enforced by `MAX_CSV_ROWS`).
+   - Atomic database rollback and temporary file cleanup on any ingestion error.
+5. **Sliding-Window Rate Limiting** (per client IP):
+   - CSV Imports: 3 per hour.
+   - Analysis Runs: 3 per 10 minutes (concurrent duplicate runs for the same dataset return `409 Conflict`).
+   - Report Generation: 5 per hour.
+   - Manual Feedback Submissions: 30 per hour.
+   - Read APIs: 120 requests per minute.
+   - Responses return `429 Too Many Requests` with `Retry-After` headers.
+6. **Adaption Cloud Kill Switch**: External Adaption Labs API calls are disabled by default (`ENABLE_PUBLIC_ADAPTION_OPERATIONS=False`). When disabled, endpoints return `403 Forbidden` with an informative message. When enabled, runs are bounded by `ADAPTION_MAX_ROWS=1000` and per-IP rate limits.
+
+> [!WARNING]
+> **Shared Public Workspace Notice**: Datasets uploaded and status changes made to issues or recommendations occur in a shared public demo workspace. Upload only sample, public, or anonymized feedback records.
+
+---
+
+## 3. End-to-End User Journey
 
 ```
-                  ┌─────────────────────────────────────────────────────────┐
-                  │                 Next.js Frontend Client                 │
-                  └────────────────────────────┬────────────────────────────┘
-                                               │ HTTP / REST / JSON
-                                               ▼
-                  ┌─────────────────────────────────────────────────────────┐
-                  │            FastAPI Gateway Layer (/api/v1)              │
-                  │   - Auth / Workspace Isolation (Supabase JWT Claims)    │
-                  │   - Bounded Multipart CSV Ingestion Pipeline            │
-                  │   - Pydantic v2 Strict Validation Envelopes             │
-                  └─────────────┬──────────────────────────┬────────────────┘
-                                │                          │
-                  ┌─────────────▼──────────┐ ┌─────────────▼────────────────┐
-                  │  PostgreSQL / Supabase │ │     Adaption Labs Official    │
-                  │  (Tables, Indexes,     │ │     Python SDK (v0.14.0)     │
-                  │   Schema 'insightflow')│ │   - Adaptive Data Workflow   │
-                  │   or SQLite (Local)    │ │   - Cost & Time Estimations  │
-                  └─────────────┬──────────┘ │   - Data Optimization Runs   │
-                                │            └──────────────────────────────┘
-                  ┌─────────────▼──────────────────────────┐
-                  │          Background Worker Engine      │
-                  │   - Lexical & Semantic Sentiment Class.│
-                  │   - Complaint Grouping & Issue Linking │
-                  │   - Recommendation & Evidence Synthesis│
-                  │   - Multi-format PDF / CSV / JSON Rep. │
-                  └────────────────────────────────────────┘
+Landing Page (Marketing & Proof)
+       │
+       ▼
+Executive Cockpit (/dashboard) ────► Verbatim Inspection Drawer
+       │
+       ├──► Feedback Stream (/feedback) — Filter by Category & Search
+       │
+       ├──► CSV Ingestion (/import) — Upload & Validation (Max 10MB / 20k rows)
+       │
+       ├──► Issues Triage (/issues) — Evidence Dossiers & Status Management
+       │
+       ├──► Recommendations (/recommendations) — Grounded Engineering Actions
+       │
+       └──► Executive Reports (/reports) — Download PDF, CSV, JSON Briefings
 ```
 
 ---
 
-## 2. Core Architectural Decisions
+## 4. API Endpoint Reference
 
-### A. Strict Separation of Source Categories & Derived Sentiment
-- **Rule**: Source category labels (`Operational Issues`, `Fraud and Scam`, `Product Feedback`, `Customer Service`) from the raw dataset are **never** treated as sentiment.
-- **Implementation**: Upon CSV ingestion, `sentiment_label`, `sentiment_score`, and `confidence_score` remain explicitly `null` (`analysis_status: "pending"`).
-- Sentiment is only classified when the analysis pipeline runs, using an explicit taxonomy:
-  `positive`, `neutral`, `negative`, `mixed`, `unknown`.
-- Sentiment score is calibrated between `-1.0` and `+1.0`, while model confidence is calibrated `0.0` to `1.0`.
+All endpoints are served under `/api/v1` and bound server-side to `PUBLIC_DEMO_WORKSPACE_ID`:
 
-### B. Real Adaption Labs Integration
-- **Rule**: Integrated using Adaption's actual documented API and official Python SDK (`adaption` v0.14.0).
-- **Adaptive Data Workflow**:
-  1. Exports customer feedback into standardized columns (`instruction` as prompt, `input` as context category).
-  2. Uploads to Adaption via `client.datasets.upload_file(...)`.
-  3. Awaits asynchronous platform ingestion confirmation via `client.datasets.get_status(...)`.
-  4. Calculates pre-flight credit & duration quotes with `client.datasets.adapt(..., estimate=True)`.
-  5. Launches optimization runs with `client.datasets.adapt(..., estimate=False)`.
-  6. Tracks run progress and stores external `dataset_id` and `run_id` in database.
-- **Graceful Error Handling**: If `ADAPTION_API_KEY` is missing or the external service times out, an honest error message is logged and returned without fabricating fake success.
-
-### C. Honest Temporal Data Handling
-- The hackathon CSV dataset does not include valid review timestamps.
-- **Rule**: InsightFlow **never fabricates fake dates** or synthetic historical trend lines.
-- Dashboard API explicitly flags `temporal_available: false` with the user-facing notice:
-  *"Dataset does not contain valid timestamp data. Historical time-series charts cannot be fabricated."*
-
----
-
-## 3. Database Schema Design
-
-All tables are created under the `insightflow` schema in Supabase PostgreSQL (or SQLite locally):
-
-| Entity | Table Name | Purpose | Key Attributes |
+| Method | Endpoint | Description | Public Controls |
 |---|---|---|---|
-| **Workspaces** | `workspaces` | Multi-tenant isolation | `id`, `name`, `created_at` |
-| **Datasets** | `datasets` | Ingested datasets & metadata | `id`, `workspace_id`, `row_count`, `valid_rows`, `unique_feedback_count`, `repeat_feedback_count`, `category_distribution` |
-| **Feedback** | `feedbacks` | Individual customer reviews | `id`, `dataset_id`, `original_text`, `source_category`, `sentiment_label`, `sentiment_score`, `primary_topic` |
-| **Analysis Jobs** | `analysis_jobs` | Durable async analysis tracking | `id`, `status` (queued/running/succeeded/failed), `total_items`, `processed_items`, `metrics` |
-| **Issues** | `issues` | Recurring complaint clusters | `id`, `title`, `summary`, `priority` (Critical/High/Medium/Low), `priority_explanation`, `supporting_count`, `unique_supporting_count`, `is_tracked` |
-| **Issue Evidence** | `issue_feedback` | Many-to-many evidence link | `issue_id`, `feedback_id`, `relevance_score`, `excerpt`, `linked_at` |
-| **Recommendations** | `recommendations` | Evidence-based strategic actions | `id`, `issue_id`, `action`, `rationale`, `expected_benefit`, `priority`, `status`, `is_tracked` |
-| **Reports** | `reports` | Multi-format executive exports | `id`, `dataset_id`, `format` (pdf/json/csv), `file_path`, `summary_data` |
-| **Adaption Jobs** | `adaption_jobs` | Persisted Adaption Labs runs | `id`, `dataset_id`, `adaption_dataset_id`, `adaption_run_id`, `operation_type`, `estimated_credits`, `status` |
+| `GET` | `/health` | Health check & DB connectivity probe | Unrestricted |
+| `GET` | `/ready` | Application readiness probe | Unrestricted |
+| `GET` | `/api/v1/datasets` | List available datasets | Read rate limit |
+| `GET` | `/api/v1/datasets/{id}` | Dataset details & category distribution | Read rate limit |
+| `POST` | `/api/v1/datasets/import` | Multipart CSV upload & deduplication | Rate limited (3/hr), Max 10MB, Max 20k rows |
+| `DELETE` | `/api/v1/datasets/{id}` | Delete dataset | **Disabled in public demo (403 Forbidden)** |
+| `GET` | `/api/v1/datasets/{id}/dashboard` | Unified metrics & category distribution | Read rate limit |
+| `POST` | `/api/v1/datasets/{id}/analysis` | Trigger rule-based baseline analysis | Rate limited (3/10m), duplicate job lock (409) |
+| `GET` | `/api/v1/feedback` | Paginated feedback list & search | Read rate limit |
+| `POST` | `/api/v1/feedback` | Submit single feedback record | Rate limited (30/hr) |
+| `GET` | `/api/v1/feedback/{id}` | Inspect unaltered verbatim feedback | Read rate limit |
+| `GET` | `/api/v1/issues` | List priority issue clusters | Read rate limit |
+| `PATCH` | `/api/v1/issues/{id}` | Update issue status or priority | Bounded mutation |
+| `GET` | `/api/v1/recommendations` | List action recommendations | Read rate limit |
+| `PATCH` | `/api/v1/recommendations/{id}` | Update recommendation implementation status | Bounded mutation |
+| `POST` | `/api/v1/reports` | Generate executive briefing | Rate limited (5/hr) |
+| `GET` | `/api/v1/reports/{id}/export` | Stream downloaded PDF / CSV / JSON file | Rate limited |
+| `GET` | `/api/v1/adaption/status` | Adaption SDK & key status check | Informative status |
+| `POST` | `/api/v1/adaption/estimate` | Estimate adaptation credits | **Disabled by default (403 Forbidden)** |
+| `POST` | `/api/v1/adaption/jobs` | Launch adaptation job | **Disabled by default (403 Forbidden)** |
 
 ---
 
-## 4. REST API Endpoint Reference
+## 5. Local Development Setup
 
-All routes are versioned under `/api/v1`.
-
-### Health & Readiness
-- `GET /health`: System health and database connectivity probe.
-- `GET /ready`: Readiness check.
-
-### Datasets & Ingestion
-- `POST /api/v1/datasets/import`: Multipart CSV upload with streaming validation, row-level checking, and duplicate statistics.
-- `GET /api/v1/datasets`: List all datasets scoped to the caller's workspace.
-- `GET /api/v1/datasets/{id}`: Detailed dataset statistics and category breakdown.
-- `DELETE /api/v1/datasets/{id}`: Cascade deletion of dataset and associated records.
-- `GET /api/v1/imports/{id}`: Poll status of an import job.
-
-### Feedback Records
-- `GET /api/v1/feedback`: Paginated feedback browser with search keyword filtering (`?search=`), category filter (`?category=`), sentiment filter (`?sentiment=`), and status filter.
-- `POST /api/v1/feedback`: Submit a single feedback entry.
-- `GET /api/v1/feedback/{id}`: Retrieve single feedback details.
-- `PATCH /api/v1/feedback/{id}`: Update review category or metadata.
-
-### AI Analysis Pipeline
-- `POST /api/v1/datasets/{id}/analysis`: Asynchronously trigger sentiment classification, topic extraction, issue clustering, and recommendation generation.
-- `GET /api/v1/analysis/{job_id}`: Poll analysis job progress and metrics.
-- `POST /api/v1/analysis/{job_id}/retry`: Safely retry a failed analysis run.
-
-### Executive Dashboard
-- `GET /api/v1/datasets/{id}/dashboard`: Unified frontend contract payload containing:
-  - Source metrics (total rows: 7,000, unique exact: 320, repeated: 6,680).
-  - Source category distribution.
-  - Sentiment distribution & average score (only after analysis has executed).
-  - Top prioritized issues with supporting counts.
-  - Actionable recommendations.
-  - Sample recent reviews in source order.
-  - Limitations and temporal availability flags.
-
-### Issue Discovery & Tracking
-- `GET /api/v1/issues`: List discovered issues filtered by priority, category, or status.
-- `GET /api/v1/issues/{id}`: Retrieve issue with supporting feedback evidence excerpts.
-- `PATCH /api/v1/issues/{id}`: Human review update (modify status or priority).
-- `POST /api/v1/issues/{id}/track`: Add issue to saved tracking list.
-- `DELETE /api/v1/issues/{id}/track`: Untrack issue.
-
-### Intelligent Recommendations
-- `GET /api/v1/recommendations`: List recommendations linked to issues.
-- `GET /api/v1/recommendations/{id}`: Detailed view of a recommendation.
-- `PATCH /api/v1/recommendations/{id}`: Update implementation status.
-- `POST /api/v1/recommendations/{id}/track`: Track recommendation.
-
-### Business Reports & Exports
-- `POST /api/v1/reports`: Generate report in `pdf`, `json`, or `csv`.
-- `GET /api/v1/reports`: List generated reports.
-- `GET /api/v1/reports/{id}`: Retrieve report metadata and summary data.
-- `GET /api/v1/reports/{id}/export`: Download generated file (PDF stream, CSV, or JSON).
-
-### Adaption Labs Integration
-- `GET /api/v1/adaption/status`: Check SDK version, API key configuration, and readiness.
-- `POST /api/v1/adaption/estimate`: Prepare feedback data, upload to Adaption, and calculate credit/time quote without billing.
-- `POST /api/v1/adaption/jobs`: Start live adaptation run on Adaption Labs platform.
-- `GET /api/v1/adaption/jobs/{id}`: Poll status of local & upstream Adaption job.
-- `GET /api/v1/adaption/jobs`: List all Adaption jobs in workspace.
-
----
-
-## 5. Local Setup & Execution Guide
-
-### Prerequisites
-- Python 3.11+ (Python 3.14 verified)
-- Git
-
-### Installation
+### Backend (FastAPI + SQLite)
 ```bash
-# 1. Clone repository and navigate to backend
+# 1. Navigate to backend directory
 cd backend
 
 # 2. Install dependencies
 pip install -r requirements.txt
-```
 
-### Environment Configuration
-Copy the template `.env.example` to `.env`:
-```bash
+# 3. Configure environment
 cp .env.example .env
-```
-Ensure `.env` contains:
-```env
-APP_ENV=development
-DATABASE_URL=sqlite+aiosqlite:///./insightflow.db
-SUPABASE_URL=https://ulqysmxopkkizydttqqp.supabase.co
-ADAPTION_API_KEY=pt_live_your_key_here
-```
 
-### Running the API Server
-```bash
+# 4. Start backend server
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-Interactive OpenAPI documentation is live at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-- Health check: `http://localhost:8000/health`
+- API Docs: `http://localhost:8000/docs`
+- Health Probe: `http://localhost:8000/health`
 
-### Running the Automated Test Suite
+### Frontend (Next.js 16)
 ```bash
-pytest tests -v
+# 1. Navigate to frontend directory
+cd frontend
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment
+# Ensure NEXT_PUBLIC_API_BASE_URL points to backend (e.g. http://127.0.0.1:8000)
+
+# 4. Start development server
+npm run dev
 ```
 
 ---
 
-## 6. Frontend Integration Contract
+## 6. Testing & Quality Verification
 
-The backend provides a standardized JSON contract designed for modern React / Next.js interfaces:
-
-```json
-{
-  "dataset_id": "ds-796d15b9a096",
-  "dataset_name": "Build Battle 2026 Hackathon Dataset",
-  "total_source_rows": 7000,
-  "unique_exact_statements": 320,
-  "repeated_rows": 6680,
-  "has_timestamps": false,
-  "temporal_available": false,
-  "temporal_message": "Dataset does not contain valid timestamp data. Historical trend charts are unavailable.",
-  "analysis_status": "completed",
-  "source_category_distribution": {
-    "Operational Issues": 1800,
-    "Fraud and Scam": 1755,
-    "Product Feedback": 1738,
-    "Customer Service": 1707
-  },
-  "sentiment_distribution": {
-    "positive": 2260,
-    "neutral": 2573,
-    "negative": 2141,
-    "mixed": 26,
-    "unknown": 0,
-    "total_analyzed": 7000
-  },
-  "average_sentiment_score": 0.02,
-  "top_recurring_issues": [
-    {
-      "id": "iss-04cf7457ef0c",
-      "title": "Systemic Risk: Fraud & Payment Scams",
-      "summary": "Identified 1755 customer reports (35 distinct statements) detailing fraudulent interactions and suspicious seller payment demands.",
-      "category": "Fraud and Scam",
-      "priority": "Critical",
-      "priority_explanation": "Direct risk of customer financial loss and severe trust erosion. Immediate intervention required.",
-      "supporting_count": 1755,
-      "unique_supporting_count": 35,
-      "is_tracked": false
-    }
-  ]
-}
+Run the automated backend test suite:
+```bash
+cd backend
+python -m pytest tests -v
 ```
+**Current Test Status**: **22 passed** across:
+- `test_adaption.py` — Adaption status, kill switch enforcement (403), key check (503), row cap.
+- `test_security.py` — Public demo workspace binding, canonical dataset protection (403), deletion disabled, rate limiting (429).
+- `test_csv_import.py` — File upload caps (422), schema validation, duplicate deduplication.
+- `test_api_integration.py` — End-to-end dataset lifecycle, feedback browsing, analysis, and report generation.
+- `test_issues_recommendations.py` — Evidence linking and status mutation.
 
----
-
-## 7. Performance Benchmarks
-
-Tested with the real **7,000-row** customer feedback hackathon dataset:
-- **CSV Ingestion & Batch Storage**: 0.90s
-- **AI Sentiment & Topic Classification**: 1.23s
-- **Evidence Clustering & Recommendations**: Instantaneous (< 0.1s)
-- **Executive PDF Report Generation**: 0.23s
-- **Test Suite Execution (15 tests)**: 1.83s
+Frontend production validation:
+```bash
+cd frontend
+npm run build
+```
+Builds statically and dynamically with strict TypeScript validation.

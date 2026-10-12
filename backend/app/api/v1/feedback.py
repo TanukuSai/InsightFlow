@@ -8,6 +8,7 @@ from app.models.feedback import Feedback
 from app.models.dataset import Dataset
 from app.schemas.feedback import FeedbackCreate, FeedbackUpdate, FeedbackResponse
 from app.schemas.common import PaginatedResponse
+from app.core.rate_limit import rate_limit_feedback
 
 router = APIRouter()
 
@@ -62,6 +63,7 @@ async def create_feedback(
     payload: FeedbackCreate,
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
+    _rate_limit: None = Depends(rate_limit_feedback),
 ):
     # Verify dataset exists in workspace
     ds_stmt = select(Dataset).where(

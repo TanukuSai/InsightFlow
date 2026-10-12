@@ -101,7 +101,7 @@ export default function SettingsPage() {
                 Data Model &amp; Demo Specifications
               </h2>
               <p className="text-xs text-[#7B8491]">
-                Zero-friction open evaluation with verified evidence traceability
+                Zero-friction open evaluation with verbatim evidence traceability
               </p>
             </div>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#E9EDFC] text-[#3656C8] border border-[#3656C8]/20 font-mono">
