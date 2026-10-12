@@ -1,19 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import AppHeader from "@/components/navigation/AppHeader";
 import { recommendationsApi } from "@/lib/api/client";
 import { Recommendation } from "@/lib/api/types";
+import { useDataset } from "@/lib/context/DatasetContext";
 
 export default function RecommendationsPage() {
+  const { selectedDatasetId } = useDataset();
+  const datasetId = selectedDatasetId || "ds-796d15b9a096";
+
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const datasetId = "ds-796d15b9a096";
-
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -25,11 +27,11 @@ export default function RecommendationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasetId]);
 
   useEffect(() => {
     fetchRecommendations();
-  }, []);
+  }, [fetchRecommendations]);
 
   const handleToggleTrack = async (recId: string, currentTracked: boolean) => {
     try {
@@ -49,7 +51,7 @@ export default function RecommendationsPage() {
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
         title="Recommendations"
-        subtitle="10 Actionable Fix Specifications Grounded in Feedback Evidence"
+        subtitle={`${recommendations.length > 0 ? recommendations.length : "Actionable"} Fix Specifications Grounded in Feedback Evidence`}
       />
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -125,7 +127,7 @@ export default function RecommendationsPage() {
                       Proposed Engineering Action:
                     </span>
                     <p className="text-xs font-semibold text-[#20252D] leading-relaxed">
-                      {rec.proposed_action}
+                      {rec.action || rec.proposed_action}
                     </p>
                   </div>
 

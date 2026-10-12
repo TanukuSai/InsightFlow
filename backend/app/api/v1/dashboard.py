@@ -1,6 +1,6 @@
 from typing import Dict
 from datetime import datetime, timezone
-from collections import Counter
+from collections import Counter, defaultdict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, case
@@ -108,16 +108,20 @@ async def get_dashboard_data(
     # Top recurring statements (Pareto repeat analysis)
     stmt_counter = Counter()
     stmt_cats = {}
+    stmt_ids = defaultdict(list)
     for fb in all_feedbacks:
         stmt_counter[fb.original_text] += 1
         if fb.original_text not in stmt_cats:
             stmt_cats[fb.original_text] = fb.source_category or "Uncategorized"
+        if len(stmt_ids[fb.original_text]) < 10:
+            stmt_ids[fb.original_text].append(fb.id)
 
     top_repeated_statements = [
         RepeatedStatement(
             statement=text,
             category=stmt_cats[text],
             count=count,
+            sample_feedback_ids=stmt_ids[text],
         )
         for text, count in stmt_counter.most_common(5)
         if count > 1
@@ -136,8 +140,8 @@ async def get_dashboard_data(
         temporal_available=False,
         temporal_message="Dataset does not contain valid timestamp data. Historical trend charts are unavailable.",
         analysis_status=analysis_status,
-        analysis_provider="hybrid-nlp" if analyzed_count > 0 else None,
-        analysis_model="v1.0-standard" if analyzed_count > 0 else None,
+        analysis_provider="rule-based baseline" if analyzed_count > 0 else None,
+        analysis_model="lexicon-rules-v1.0" if analyzed_count > 0 else None,
         source_category_distribution=dataset.category_distribution or {},
         sentiment_distribution=sentiment_dist,
         average_sentiment_score=avg_sentiment_score,

@@ -5,26 +5,56 @@ from app.services.analysis_service import AnalysisProvider
 
 def test_analysis_provider_taxonomy():
     provider = AnalysisProvider()
+    assert provider.provider_name == "rule-based baseline"
+    assert provider.model_name == "lexicon-rules-v1.0"
 
-    # Positive
+    # 1. Positive
     label, score, conf = provider.classify_sentiment("I absolutely love this product, it is fantastic and great!")
     assert label == "positive"
     assert score > 0
-    assert 0.0 <= conf <= 1.0
+    assert conf is None  # Confidence is uncalibrated in rule-based baseline, returned as None
 
-    # Negative
+    # 2. Negative
     label, score, conf = provider.classify_sentiment("This was a complete scam, damaged items and broken package.")
     assert label == "negative"
     assert score < 0
-    assert 0.0 <= conf <= 1.0
+    assert conf is None
 
-    # Mixed
-    label, score, conf = provider.classify_sentiment("The product is great and innovative but the delivery was a terrible scam.")
+    # 3. Negation handling: "not a scam" is NOT negative
+    label, score, _ = provider.classify_sentiment("The seller was responsive and it was definitely not a scam.")
+    assert label in ["positive", "neutral"]
+    assert score >= 0
+
+    # 4. Negation handling: "not good" is negative
+    label, score, _ = provider.classify_sentiment("The delivery was not good and not helpful.")
+    assert label == "negative"
+    assert score < 0
+
+    # 5. Contrastive clause ("They claim it's innovative but it fails constantly")
+    label, score, _ = provider.classify_sentiment("The features look innovative on paper, but the website crashed and failed.")
+    assert label == "negative"
+
+    # 6. Sarcasm detection ("Oh great, another crash") -> returns unknown/uncertain
+    label, score, _ = provider.classify_sentiment("Oh great, another crash when trying to pay.")
+    assert label == "unknown"
+
+    # 7. Mixed sentiment
+    label, score, _ = provider.classify_sentiment("The product features are innovative but the packaging was damaged.")
     assert label in ["mixed", "positive", "negative"]
 
-    # Neutral / Informational
-    label, score, conf = provider.classify_sentiment("The package arrived on Monday through the regional post.")
+    # 8. Neutral / Informational
+    label, score, _ = provider.classify_sentiment("The package arrived on Monday through the regional post.")
     assert label == "neutral"
+
+    # 9. Short / Empty / Whitespace
+    label, score, _ = provider.classify_sentiment("")
+    assert label == "unknown"
+
+    label, score, _ = provider.classify_sentiment("   ")
+    assert label == "unknown"
+
+    label, score, _ = provider.classify_sentiment("Ok")
+    assert label == "unknown"
 
 
 @pytest.mark.asyncio

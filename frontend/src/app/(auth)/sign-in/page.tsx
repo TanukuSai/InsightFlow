@@ -3,20 +3,28 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { setAuthToken, setActiveWorkspaceId } from "@/lib/api/client";
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("analyst@insightflow.ai");
-  const [password, setPassword] = useState("••••••••••••");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleDemoAccess = () => {
+    setActiveWorkspaceId("ws-production-eval");
+    setAuthToken("demo-eval-token");
+    router.push("/dashboard");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 600);
+    // Authenticate into evaluation workspace
+    setActiveWorkspaceId("ws-production-eval");
+    setAuthToken("demo-eval-token");
+    router.push("/dashboard");
   };
 
   return (
@@ -39,6 +47,31 @@ export default function SignInPage() {
           </p>
         </div>
 
+        {/* Demo One-Click Access Button */}
+        <div className="p-4 bg-[#E9EDFC] rounded-2xl border border-[#3656C8]/20 space-y-2.5 text-center">
+          <div className="text-xs font-bold text-[#3656C8]">
+            Instant Contest Evaluation Access
+          </div>
+          <p className="text-[11px] text-[#4D5765] leading-relaxed">
+            One-click entry to the 7,000-row telemetry dataset with multi-tenant isolation.
+          </p>
+          <button
+            type="button"
+            onClick={handleDemoAccess}
+            className="w-full py-2.5 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-xs transition-all focus-visible-ring"
+          >
+            Explore Evaluation Workspace →
+          </button>
+        </div>
+
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-[#E2E3DD]" />
+          <span className="flex-shrink mx-3 text-[10px] font-bold text-[#7B8491] uppercase tracking-wider">
+            Or Sign In With Credentials
+          </span>
+          <div className="flex-grow border-t border-[#E2E3DD]" />
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-[#4D5765] mb-1.5">
@@ -49,6 +82,7 @@ export default function SignInPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="analyst@insightflow.ai"
               className="w-full px-4 py-2.5 bg-[#F6F5F1] border border-[#E2E3DD] rounded-xl text-xs text-[#20252D] focus:outline-none focus:border-[#3656C8] focus:ring-1 focus:ring-[#3656C8]"
             />
           </div>
@@ -71,6 +105,7 @@ export default function SignInPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password..."
               className="w-full px-4 py-2.5 bg-[#F6F5F1] border border-[#E2E3DD] rounded-xl text-xs text-[#20252D] focus:outline-none focus:border-[#3656C8] focus:ring-1 focus:ring-[#3656C8]"
             />
           </div>
@@ -78,14 +113,14 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 focus-visible-ring"
+            className="w-full py-3 bg-[#172033] hover:bg-[#20252D] text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 focus-visible-ring"
           >
-            {loading ? "Authenticating..." : "Sign In to Workspace →"}
+            {loading ? "Authenticating..." : "Sign In with Credentials →"}
           </button>
         </form>
 
         <div className="pt-2 text-center text-xs text-[#7B8491]">
-          Don't have an account?{" "}
+          Need a workspace?{" "}
           <Link href="/sign-up" className="font-bold text-[#3656C8] hover:underline">
             Create an account
           </Link>

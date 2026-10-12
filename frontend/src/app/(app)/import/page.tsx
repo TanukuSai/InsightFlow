@@ -5,8 +5,10 @@ import Link from "next/link";
 import AppHeader from "@/components/navigation/AppHeader";
 import { datasetsApi } from "@/lib/api/client";
 import { ImportSummary } from "@/lib/api/types";
+import { useDataset } from "@/lib/context/DatasetContext";
 
 export default function CsvImportPage() {
+  const { setSelectedDatasetId, refreshDatasets } = useDataset();
   const [file, setFile] = useState<File | null>(null);
   const [datasetName, setDatasetName] = useState("");
   const [previewRows, setPreviewRows] = useState<string[][]>([]);
@@ -53,6 +55,10 @@ export default function CsvImportPage() {
       setError(null);
       const res = await datasetsApi.importCsv(file, datasetName);
       setSummary(res);
+      if (res?.dataset_id) {
+        setSelectedDatasetId(res.dataset_id);
+        refreshDatasets();
+      }
     } catch (err: any) {
       console.error("CSV Import error:", err);
       setError(err?.message || "Failed to process CSV file on backend");
@@ -128,13 +134,13 @@ export default function CsvImportPage() {
 
             <div className="pt-2 flex flex-wrap gap-3">
               <Link
-                href="/dashboard"
+                href={`/dashboard?dataset_id=${encodeURIComponent(summary.dataset_id)}`}
                 className="px-6 py-2.5 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-sm transition-colors focus-visible-ring"
               >
                 Launch Dashboard →
               </Link>
               <Link
-                href="/feedback"
+                href={`/feedback?dataset_id=${encodeURIComponent(summary.dataset_id)}`}
                 className="px-5 py-2.5 bg-[#F0F2F5] text-[#20252D] text-xs font-semibold rounded-xl hover:bg-[#E2E3DD] transition-colors focus-visible-ring"
               >
                 View Feedback Stream

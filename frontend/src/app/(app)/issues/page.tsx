@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import AppHeader from "@/components/navigation/AppHeader";
 import { issuesApi } from "@/lib/api/client";
 import { Issue } from "@/lib/api/types";
+import { useDataset } from "@/lib/context/DatasetContext";
 
 export default function IssuesTriagePage() {
+  const { selectedDatasetId } = useDataset();
+  const datasetId = selectedDatasetId || "ds-796d15b9a096";
+
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [priorityFilter, setPriorityFilter] = useState("");
@@ -14,9 +18,7 @@ export default function IssuesTriagePage() {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const datasetId = "ds-796d15b9a096";
-
-  const fetchIssues = async () => {
+  const fetchIssues = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -35,11 +37,11 @@ export default function IssuesTriagePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasetId, priorityFilter, statusFilter, selectedIssue]);
 
   useEffect(() => {
     fetchIssues();
-  }, [priorityFilter, statusFilter]);
+  }, [fetchIssues]);
 
   const handleStatusChange = async (issueId: string, newStatus: string) => {
     try {
@@ -79,7 +81,7 @@ export default function IssuesTriagePage() {
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
         title="Issues Triage & Evidence"
-        subtitle="10 Actionable Problem Clusters Prioritized by Customer Verbatim Evidence"
+        subtitle={`${issues.length > 0 ? issues.length : "Actionable"} Problem Clusters Prioritized by Customer Verbatim Evidence`}
       />
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">

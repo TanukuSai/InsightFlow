@@ -26,7 +26,14 @@ class Settings(BaseSettings):
 
     # Uploads & Limits
     MAX_UPLOAD_SIZE_MB: int = 50
-    CORS_ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "*"]
+    CORS_ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "https://frontend-bay-ten-95.vercel.app",
+        "https://frontend-rmj4w8w3m-tanukusais-projects.vercel.app",
+    ]
 
     # Storage paths
     DATA_DIR: str = str(Path(__file__).resolve().parent.parent.parent / "data")
@@ -35,11 +42,24 @@ class Settings(BaseSettings):
     @field_validator("CORS_ALLOWED_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        origins = []
         if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
+            origins = [i.strip() for i in v.split(",") if i.strip()]
         elif isinstance(v, str) and v.startswith("["):
-            return json.loads(v)
-        return v
+            origins = json.loads(v)
+        elif isinstance(v, list):
+            origins = v
+        else:
+            origins = []
+
+        # Remove dangerous wildcard origins when allow_credentials is used
+        cleaned = [o for o in origins if o != "*"]
+        return cleaned if cleaned else [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001",
+        ]
 
     model_config = SettingsConfigDict(
         env_file=str(Path(__file__).resolve().parent.parent.parent / ".env"),

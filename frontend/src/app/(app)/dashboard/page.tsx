@@ -2,10 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AppHeader from "@/components/navigation/AppHeader";
 import DataFieldCanvas from "@/components/background/DataFieldCanvas";
 import { dashboardApi, issuesApi, feedbackApi } from "@/lib/api/client";
 import { DashboardData, Issue, Feedback } from "@/lib/api/types";
+
+import { useDataset } from "@/lib/context/DatasetContext";
 
 // Category colors for the Signal Observatory palette (strictly distinct from sentiment)
 const CATEGORY_COLORS: Record<string, { bar: string; text: string; bg: string; border: string }> = {
@@ -16,6 +19,8 @@ const CATEGORY_COLORS: Record<string, { bar: string; text: string; bg: string; b
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { selectedDatasetId, loading: datasetLoading } = useDataset();
   const [data, setData] = useState<DashboardData | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [recentFeedbacks, setRecentFeedbacks] = useState<Feedback[]>([]);
@@ -26,17 +31,15 @@ export default function DashboardPage() {
   // Selected feedback for slide-over drawer
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
 
-  const datasetId = "ds-796d15b9a096";
-
-  const loadDashboard = async () => {
+  const loadDashboard = async (targetDatasetId: string) => {
     try {
       setLoading(true);
       setError(null);
 
       const [dashRes, issueList, fbList] = await Promise.all([
-        dashboardApi.get(datasetId),
-        issuesApi.list({ datasetId }),
-        feedbackApi.list({ datasetId, page: 1, pageSize: 6 }),
+        dashboardApi.get(targetDatasetId),
+        issuesApi.list({ datasetId: targetDatasetId }),
+        feedbackApi.list({ datasetId: targetDatasetId, page: 1, pageSize: 6 }),
       ]);
 
       setData(dashRes);
@@ -51,8 +54,12 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    if (selectedDatasetId) {
+      loadDashboard(selectedDatasetId);
+    } else if (!datasetLoading) {
+      setLoading(false);
+    }
+  }, [selectedDatasetId, datasetLoading]);
 
   const handleKpiKeyDown = (e: React.KeyboardEvent, index: number) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -81,6 +88,29 @@ export default function DashboardPage() {
     );
   }
 
+  if (!selectedDatasetId && !datasetLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
+        <AppHeader title="Feedback Overview" subtitle="Customer Signal Observatory" />
+        <div className="p-8 max-w-xl mx-auto my-16 text-center bg-white rounded-3xl border border-[#DDE2E9] p-8 shadow-sm space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#E9EDFC] text-[#3656C8] flex items-center justify-center text-2xl font-bold font-mono">
+            ✦
+          </div>
+          <h2 className="text-base font-bold text-[#111827]">No Dataset Selected</h2>
+          <p className="text-xs text-[#687386] leading-relaxed">
+            Please import a CSV dataset or select an active dataset from the header to view deduplication and intelligence telemetry.
+          </p>
+          <Link
+            href="/import"
+            className="inline-block px-5 py-2.5 bg-[#3656C8] text-white text-xs font-bold rounded-xl shadow-sm hover:bg-[#23387F] transition-colors focus-visible-ring"
+          >
+            + Import Feedback CSV
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (error || !data) {
     return (
       <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
@@ -90,9 +120,9 @@ export default function DashboardPage() {
             !
           </div>
           <h2 className="text-lg font-bold text-[#111827] mb-2">Unable to Connect to Telemetry Engine</h2>
-          <p className="text-xs text-[#687386] mb-6 leading-relaxed">{error}</p>
+          <p className="text-xs text-[#687386] mb-6 leading-relaxed">{error || "Dataset could not be loaded."}</p>
           <button
-            onClick={loadDashboard}
+            onClick={() => selectedDatasetId && loadDashboard(selectedDatasetId)}
             className="px-5 py-2.5 bg-[#3656C8] text-white text-xs font-bold rounded-xl shadow-sm hover:bg-[#23387F] transition-colors focus-visible-ring"
           >
             Retry Connection
@@ -105,7 +135,11 @@ export default function DashboardPage() {
   const categoryEntries = Object.entries(data.source_category_distribution || {}).sort(
     (a, b) => b[1] - a[1]
   );
-  const totalRows = data.total_source_rows || 7000;
+  const totalRows = data.total_source_rows || 0;
+  const uniqueStatements = data.unique_exact_statements || 0;
+  const repeatedRows = data.repeated_rows || 0;
+  const repeatPct = totalRows > 0 ? ((repeatedRows / totalRows) * 100).toFixed(1) : "0.0";
+  const uniquePct = totalRows > 0 ? ((uniqueStatements / totalRows) * 100).toFixed(1) : "0.0";
   const sentiment = data.sentiment_distribution;
 
   return (
@@ -113,7 +147,7 @@ export default function DashboardPage() {
       {/* Zone A: Page Header */}
       <AppHeader
         title="Feedback Overview"
-        subtitle={`Dataset: ${data.dataset_name} • 7,000 Source Rows (6,680 exact-repeat rows)`}
+        subtitle={`Dataset: ${data.dataset_name} • ${totalRows.toLocaleString()} Source Rows (${repeatedRows.toLocaleString()} exact-repeat rows)`}
         actions={
           <div className="flex items-center gap-2">
             <Link
@@ -155,11 +189,11 @@ export default function DashboardPage() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#F7F9FC] leading-snug">
-                Customer Signal Emerging from 7,000 Repeated Records
+                Customer Signal Emerging from {totalRows.toLocaleString()} Ingested Records
               </h1>
 
               <p className="text-xs sm:text-sm text-[#B8C2D5] leading-relaxed max-w-2xl">
-                Deterministic grouping isolates <strong className="text-[#F7F9FC]">320 unique verbatim complaints</strong> out of 7,000 imported reviews. An extraordinary <strong className="text-[#FAECEB] font-bold underline decoration-[#C6534D]">95.4% duplicate concentration</strong> reveals recurring systemic friction in operational logistics and seller fraud, without conflating phrase repetition with distinct customers.
+                Deterministic grouping isolates <strong className="text-[#F7F9FC]">{uniqueStatements.toLocaleString()} unique verbatim statements</strong> out of {totalRows.toLocaleString()} imported reviews. An identified <strong className="text-[#FAECEB] font-bold underline decoration-[#C6534D]">{repeatPct}% repetition rate</strong> reveals recurring systemic friction without conflating phrase repetition with distinct customers.
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -167,13 +201,13 @@ export default function DashboardPage() {
                   href="#repeated-statements"
                   className="px-4 py-2 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-md transition-colors focus-visible-ring"
                 >
-                  Inspect 5 Top Recurring Friction Phrases ↓
+                  Inspect Top Recurring Friction Phrases ↓
                 </a>
                 <Link
                   href="/feedback"
                   className="px-4 py-2 bg-white/10 hover:bg-white/15 text-[#F7F9FC] border border-white/15 text-xs font-semibold rounded-xl transition-colors focus-visible-ring"
                 >
-                  Explore 320 Unique Signals →
+                  Explore {uniqueStatements.toLocaleString()} Unique Signals →
                 </Link>
               </div>
             </div>
@@ -187,7 +221,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#B8C2D5]">Total Input Rows</span>
-                  <span className="font-mono font-bold text-[#F7F9FC]">7,000</span>
+                  <span className="font-mono font-bold text-[#F7F9FC]">{totalRows.toLocaleString()}</span>
                 </div>
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-[#3656C8] w-full" />
@@ -195,18 +229,18 @@ export default function DashboardPage() {
 
                 <div className="flex items-center justify-between text-xs pt-1">
                   <span className="text-[#B8C2D5]">Distinct Statements</span>
-                  <span className="font-mono font-bold text-[#9EB4FA]">320 (4.6%)</span>
+                  <span className="font-mono font-bold text-[#9EB4FA]">{uniqueStatements.toLocaleString()} ({uniquePct}%)</span>
                 </div>
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#5876B8] w-[4.6%]" />
+                  <div className="h-full bg-[#5876B8]" style={{ width: `${uniquePct}%` }} />
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1">
                   <span className="text-[#B8C2D5]">Identical Repeats</span>
-                  <span className="font-mono font-bold text-[#C6534D]">6,680 (95.4%)</span>
+                  <span className="font-mono font-bold text-[#C6534D]">{repeatedRows.toLocaleString()} ({repeatPct}%)</span>
                 </div>
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#C6534D] w-[95.4%]" />
+                  <div className="h-full bg-[#C6534D]" style={{ width: `${repeatPct}%` }} />
                 </div>
               </div>
 
@@ -223,7 +257,7 @@ export default function DashboardPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold tracking-wider uppercase text-[#687386]">
-              Key Intelligence Telemetry (N=7,000)
+              Key Intelligence Telemetry (N={totalRows.toLocaleString()})
             </h3>
             <span className="text-[11px] text-[#687386]">
               Click card or press Enter to inspect calculation provenance
@@ -298,12 +332,12 @@ export default function DashboardPage() {
                       <span className="text-[10px] text-[#4D5765] font-mono">↺ flip</span>
                     </div>
                     <div className="text-3xl font-extrabold text-[#5876B8] mt-2 tracking-tight">
-                      {data.unique_exact_statements.toLocaleString()}
+                      {uniqueStatements.toLocaleString()}
                     </div>
                   </div>
                   <div className="text-[11px] text-[#7B8491] pt-2 border-t border-[#E2E3DD] flex items-center justify-between">
                     <span>Distinct verbatim review texts</span>
-                    <span className="text-[10px] text-[#3B5899] font-bold">4.6%</span>
+                    <span className="text-[10px] text-[#3B5899] font-bold">{uniquePct}%</span>
                   </div>
                 </div>
 
@@ -315,7 +349,7 @@ export default function DashboardPage() {
                       <span>↺ return</span>
                     </div>
                     <p className="text-xs text-[#B8C2D5] mt-2 leading-relaxed">
-                      Exact text normalization compresses 7,000 rows into 320 distinct statements to isolate root causes.
+                      Exact text normalization compresses {totalRows.toLocaleString()} rows into {uniqueStatements.toLocaleString()} distinct statements to isolate root causes.
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-[#A2AEBD] pt-1 border-t border-white/10">
@@ -345,12 +379,12 @@ export default function DashboardPage() {
                       <span className="text-[10px] text-[#4D5765] font-mono">↺ flip</span>
                     </div>
                     <div className="text-3xl font-extrabold text-[#C6534D] mt-2 tracking-tight">
-                      {data.repeated_rows.toLocaleString()}
+                      {repeatedRows.toLocaleString()}
                     </div>
                   </div>
                   <div className="text-[11px] text-[#7B8491] pt-2 border-t border-[#E2E3DD] flex items-center justify-between">
                     <span>Recurring text instances</span>
-                    <span className="text-[10px] text-[#C6534D] font-bold">95.4%</span>
+                    <span className="text-[10px] text-[#C6534D] font-bold">{repeatPct}%</span>
                   </div>
                 </div>
 
@@ -409,7 +443,7 @@ export default function DashboardPage() {
                       <span>↺ return</span>
                     </div>
                     <p className="text-xs text-[#B8C2D5] mt-2 leading-relaxed">
-                      10 prioritized issue dossiers generated from evidence frequency, severity markers, and verbatim quote trails.
+                      {issues.length} prioritized issue dossiers generated from evidence frequency, severity markers, and verbatim quote trails.
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-[#A2AEBD] pt-1 border-t border-white/10">
@@ -497,212 +531,194 @@ export default function DashboardPage() {
 
             {/* Derived Sentiment Polarity Card */}
             <div className="p-6 solid-data rounded-3xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-[#20252D] uppercase tracking-wider">
-                    Model-Derived Sentiment Polarity
-                  </h3>
-                  <p className="text-xs text-[#7B8491] mt-0.5">
-                    Analyzed polarity across valid records (N=6,974)
-                  </p>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8F3EE] text-[#2E7D68] border border-[#2E7D68]/20">
-                  100% Analyzed
-                </span>
-              </div>
+              {(() => {
+                const sentimentTotal = (sentiment?.positive || 0) + (sentiment?.neutral || 0) + (sentiment?.negative || 0);
+                const posPct = sentimentTotal > 0 ? (((sentiment?.positive || 0) / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const neuPct = sentimentTotal > 0 ? (((sentiment?.neutral || 0) / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const negPct = sentimentTotal > 0 ? (((sentiment?.negative || 0) / sentimentTotal) * 100).toFixed(1) : "0.0";
+                const analyzedPct = totalRows > 0 ? (((sentimentTotal) / totalRows) * 100).toFixed(1) : "0.0";
 
-              {sentiment && (
-                <div className="space-y-3">
-                  {/* Segmented Linear Polarity Bar */}
-                  <div className="w-full h-3 rounded-full overflow-hidden flex bg-[#ECEFF3]">
-                    <div
-                      className="bg-[#2E7D68] h-full"
-                      style={{
-                        width: `${(
-                          (sentiment.positive /
-                            (sentiment.positive + sentiment.neutral + sentiment.negative)) *
-                          100
-                        ).toFixed(1)}%`,
-                      }}
-                      title={`Positive: ${sentiment.positive.toLocaleString()}`}
-                    />
-                    <div
-                      className="bg-[#6C7786] h-full"
-                      style={{
-                        width: `${(
-                          (sentiment.neutral /
-                            (sentiment.positive + sentiment.neutral + sentiment.negative)) *
-                          100
-                        ).toFixed(1)}%`,
-                      }}
-                      title={`Neutral: ${sentiment.neutral.toLocaleString()}`}
-                    />
-                    <div
-                      className="bg-[#C6534D] h-full"
-                      style={{
-                        width: `${(
-                          (sentiment.negative /
-                            (sentiment.positive + sentiment.neutral + sentiment.negative)) *
-                          100
-                        ).toFixed(1)}%`,
-                      }}
-                      title={`Negative: ${sentiment.negative.toLocaleString()}`}
-                    />
-                  </div>
+                return (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-[#20252D] uppercase tracking-wider">
+                          Model-Derived Sentiment Polarity
+                        </h3>
+                        <p className="text-xs text-[#7B8491] mt-0.5">
+                          Analyzed polarity across valid records (N={sentimentTotal.toLocaleString()})
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8F3EE] text-[#2E7D68] border border-[#2E7D68]/20">
+                        {analyzedPct}% Analyzed
+                      </span>
+                    </div>
 
-                  {/* 3 Pillars */}
-                  <div className="grid grid-cols-3 gap-2 pt-1">
-                    <div className="p-2.5 rounded-xl bg-[#E8F3EE] border border-[#2E7D68]/20 text-center">
-                      <div className="text-[10px] font-bold uppercase text-[#2E7D68]">Positive</div>
-                      <div className="text-base font-extrabold text-[#20252D]">
-                        {sentiment.positive.toLocaleString()}
+                    {sentiment && sentimentTotal > 0 ? (
+                      <div className="space-y-3">
+                        {/* Segmented Linear Polarity Bar */}
+                        <div className="w-full h-3 rounded-full overflow-hidden flex bg-[#ECEFF3]">
+                          <div
+                            className="bg-[#2E7D68] h-full"
+                            style={{ width: `${posPct}%` }}
+                            title={`Positive: ${(sentiment.positive || 0).toLocaleString()} (${posPct}%)`}
+                          />
+                          <div
+                            className="bg-[#6C7786] h-full"
+                            style={{ width: `${neuPct}%` }}
+                            title={`Neutral: ${(sentiment.neutral || 0).toLocaleString()} (${neuPct}%)`}
+                          />
+                          <div
+                            className="bg-[#C6534D] h-full"
+                            style={{ width: `${negPct}%` }}
+                            title={`Negative: ${(sentiment.negative || 0).toLocaleString()} (${negPct}%)`}
+                          />
+                        </div>
+
+                        {/* 3 Pillars */}
+                        <div className="grid grid-cols-3 gap-2 pt-1">
+                          <div className="p-2.5 rounded-xl bg-[#E8F3EE] border border-[#2E7D68]/20 text-center">
+                            <div className="text-[10px] font-bold uppercase text-[#2E7D68]">Positive</div>
+                            <div className="text-base font-extrabold text-[#20252D]">
+                              {(sentiment.positive || 0).toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-[#2E7D68] font-mono">{posPct}%</div>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-[#F0F2F5] border border-[#E2E3DD] text-center">
+                            <div className="text-[10px] font-bold uppercase text-[#6C7786]">Neutral</div>
+                            <div className="text-base font-extrabold text-[#20252D]">
+                              {(sentiment.neutral || 0).toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-[#4D5765] font-mono">{neuPct}%</div>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-[#FAECEB] border border-[#C6534D]/20 text-center">
+                            <div className="text-[10px] font-bold uppercase text-[#C6534D]">Negative</div>
+                            <div className="text-base font-extrabold text-[#20252D]">
+                              {(sentiment.negative || 0).toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-[#C6534D] font-mono">{negPct}%</div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-[10px] text-[#2E7D68] font-mono">32.3%</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-[#F0F2F5] border border-[#E2E3DD] text-center">
-                      <div className="text-[10px] font-bold uppercase text-[#6C7786]">Neutral</div>
-                      <div className="text-base font-extrabold text-[#20252D]">
-                        {sentiment.neutral.toLocaleString()}
+                    ) : (
+                      <div className="p-4 rounded-xl bg-[#F6F5F1] border border-dashed border-[#CCD0D7] text-center text-xs text-[#687386]">
+                        Sentiment analysis pending or not yet computed for this dataset.
                       </div>
-                      <div className="text-[10px] text-[#4D5765] font-mono">36.8%</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-[#FAECEB] border border-[#C6534D]/20 text-center">
-                      <div className="text-[10px] font-bold uppercase text-[#C6534D]">Negative</div>
-                      <div className="text-base font-extrabold text-[#20252D]">
-                        {sentiment.negative.toLocaleString()}
-                      </div>
-                      <div className="text-[10px] text-[#C6534D] font-mono">30.6%</div>
-                    </div>
-                  </div>
-                </div>
-              )}
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
 
           {/* Right 7 Columns: Most Repeated Statements (Signature Recurrence Ranking) */}
           <div id="repeated-statements" className="lg:col-span-7 space-y-6">
             <div className="p-6 solid-data rounded-3xl space-y-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#3656C8]">
-                    <span>✦ PRODUCT DIFFERENTIATOR</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-[#20252D] uppercase tracking-wider mt-0.5">
-                    Most Repeated Statements (Statement Recurrence Ranking)
-                  </h3>
-                  <p className="text-xs text-[#7B8491] mt-0.5">
-                    Identical complaint phrasing aggregated from 7,000 raw source reviews. Top 5 phrases account for 1,374 rows (19.6% cumulative share).
-                  </p>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#172033] text-white">
-                  Exact Aggregation
-                </span>
-              </div>
+              {(() => {
+                const topStatements = data.top_repeated_statements || [];
+                const topCountSum = topStatements.reduce((acc, s) => acc + s.count, 0);
+                const maxStatementCount = topStatements.length > 0 ? Math.max(...topStatements.map((s) => s.count)) : 1;
 
-              {/* Repeated Statements Ranking List */}
-              <div className="space-y-3">
-                {(data.top_repeated_statements && data.top_repeated_statements.length > 0
-                  ? data.top_repeated_statements
-                  : [
-                      {
-                        statement:
-                          "The packaging was damaged upon arrival, and some items were missing from my order.",
-                        count: 295,
-                        category: "Operational Issues",
-                      },
-                      {
-                        statement:
-                          "I encountered a scam where the seller asked for additional payment after placing the order.",
-                        count: 276,
-                        category: "Fraud and Scam",
-                      },
-                      {
-                        statement:
-                          "My order was processed incorrectly, and I received the wrong items.",
-                        count: 274,
-                        category: "Operational Issues",
-                      },
-                      {
-                        statement:
-                          "The features of this product are innovative and very useful for my daily needs.",
-                        count: 267,
-                        category: "Product Feedback",
-                      },
-                      {
-                        statement:
-                          "I faced several issues while placing my order on the website. It kept crashing.",
-                        count: 262,
-                        category: "Operational Issues",
-                      },
-                    ]
-                ).map((item, idx) => {
-                  const categoryStyle = CATEGORY_COLORS[item.category] || {
-                    bar: "#7B8491",
-                    text: "#20252D",
-                    bg: "#F0F2F5",
-                    border: "#E2E3DD",
-                  };
-
-                  return (
-                    <div
-                      key={idx}
-                      className="p-4 rounded-2xl bg-[#F6F5F1] border border-[#E2E3DD] hover:border-[#3656C8] hover:bg-white transition-all space-y-2 group cursor-pointer"
-                      onClick={() =>
-                        setSelectedFeedback({
-                          id: `rpt-${idx + 1}`,
-                          workspace_id: "ws-production-eval",
-                          dataset_id: datasetId,
-                          original_text: item.statement,
-                          source_category: item.category,
-                          sentiment_label: "neutral",
-                          analysis_status: "analyzed",
-                          created_at: new Date().toISOString(),
-                        })
-                      }
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-[#172033] text-white text-[10px] font-bold flex items-center justify-center font-mono">
-                            {idx + 1}
-                          </span>
-                          <span
-                            className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                            style={{
-                              backgroundColor: categoryStyle.bg,
-                              color: categoryStyle.text,
-                              borderColor: categoryStyle.border,
-                            }}
-                          >
-                            {item.category}
-                          </span>
+                return (
+                  <>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#3656C8]">
+                          <span>✦ PRODUCT DIFFERENTIATOR</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-extrabold text-[#20252D] text-xs">
-                            {item.count} repeats
-                          </span>
-                          <span className="text-[11px] text-[#3656C8] group-hover:underline font-semibold">
-                            Inspect Quote →
-                          </span>
-                        </div>
+                        <h3 className="text-sm font-bold text-[#20252D] uppercase tracking-wider mt-0.5">
+                          Most Repeated Statements (Statement Recurrence Ranking)
+                        </h3>
+                        <p className="text-xs text-[#7B8491] mt-0.5">
+                          Aggregated identical phrasing across {totalRows.toLocaleString()} rows.{topStatements.length > 0 ? ` Top ${topStatements.length} phrases account for ${topCountSum.toLocaleString()} occurrences.` : ""}
+                        </p>
                       </div>
-
-                      <p className="text-xs text-[#20252D] italic font-serif leading-relaxed line-clamp-2">
-                        "{item.statement}"
-                      </p>
-
-                      <div className="w-full h-1.5 bg-[#E2E3DD] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${(item.count / 295) * 100}%`,
-                            backgroundColor: categoryStyle.bar,
-                          }}
-                        />
-                      </div>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#172033] text-white">
+                        Exact Aggregation
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Repeated Statements Ranking List */}
+                    <div className="space-y-3">
+                      {topStatements.length === 0 ? (
+                        <div className="p-6 text-center bg-[#F6F5F1] rounded-2xl border border-dashed border-[#CCD0D7]">
+                          <p className="text-xs font-semibold text-[#687386]">
+                            No repeated verbatim phrase clusters identified yet for this dataset.
+                          </p>
+                        </div>
+                      ) : (
+                        topStatements.map((item, idx) => {
+                          const categoryStyle = CATEGORY_COLORS[item.category] || {
+                            bar: "#7B8491",
+                            text: "#20252D",
+                            bg: "#F0F2F5",
+                            border: "#E2E3DD",
+                          };
+
+                          return (
+                            <div
+                              key={idx}
+                              className="p-4 rounded-2xl bg-[#F6F5F1] border border-[#E2E3DD] hover:border-[#3656C8] hover:bg-white transition-all space-y-2 group cursor-pointer"
+                              onClick={async () => {
+                                if (item.sample_feedback_ids && item.sample_feedback_ids.length > 0) {
+                                  try {
+                                    const fb = await feedbackApi.get(item.sample_feedback_ids[0]);
+                                    setSelectedFeedback(fb);
+                                    return;
+                                  } catch (err) {
+                                    console.error("Failed to load feedback record:", err);
+                                  }
+                                }
+                                router.push(`/feedback?dataset_id=${encodeURIComponent(selectedDatasetId || "")}&search=${encodeURIComponent(item.statement.slice(0, 40))}`);
+                              }}
+                            >
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-5 h-5 rounded-full bg-[#172033] text-white text-[10px] font-bold flex items-center justify-center font-mono">
+                                    {idx + 1}
+                                  </span>
+                                  <span
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                                    style={{
+                                      backgroundColor: categoryStyle.bg,
+                                      color: categoryStyle.text,
+                                      borderColor: categoryStyle.border,
+                                    }}
+                                  >
+                                    {item.category}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-extrabold text-[#20252D] text-xs">
+                                    {item.count} repeats
+                                  </span>
+                                  <span className="text-[11px] text-[#3656C8] group-hover:underline font-semibold">
+                                    Inspect Quote →
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-xs text-[#20252D] italic font-serif leading-relaxed line-clamp-2">
+                                "{item.statement}"
+                              </p>
+
+                              <div className="w-full h-1.5 bg-[#E2E3DD] rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${Math.min(100, (item.count / maxStatementCount) * 100)}%`,
+                                    backgroundColor: categoryStyle.bar,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Data Honesty Callout */}
               <div className="p-3.5 bg-[#FAF5E8] rounded-xl border border-[#B58A43]/30 text-xs text-[#966C28] leading-relaxed">
@@ -730,7 +746,7 @@ export default function DashboardPage() {
               href="/issues"
               className="text-xs font-bold text-[#3656C8] hover:underline"
             >
-              View all 10 dossiers →
+              View all {issues.length} dossiers →
             </Link>
           </div>
 
@@ -821,7 +837,7 @@ export default function DashboardPage() {
               href="/feedback"
               className="text-xs font-bold text-[#3656C8] hover:underline"
             >
-              Open Full Feedback Grid (7,000 Records) →
+              Open Full Feedback Grid ({totalRows.toLocaleString()} Records) →
             </Link>
           </div>
 

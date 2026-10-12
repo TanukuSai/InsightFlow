@@ -10,10 +10,54 @@ import {
   ImportSummary,
 } from "./types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8001";
+function resolveApiBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/+$/, "");
+  }
+
+  // Development environment allows localhost fallback
+  if (process.env.NODE_ENV !== "production") {
+    return "http://127.0.0.1:8001";
+  }
+
+  // In production, do not silently fallback to localhost!
+  return "";
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 const DEFAULT_WORKSPACE =
   process.env.NEXT_PUBLIC_DEFAULT_WORKSPACE || "ws-production-eval";
+
+export function getActiveWorkspaceId(): string {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("insightflow_workspace_id") || DEFAULT_WORKSPACE;
+  }
+  return DEFAULT_WORKSPACE;
+}
+
+export function setActiveWorkspaceId(workspaceId: string): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("insightflow_workspace_id", workspaceId);
+  }
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("insightflow_auth_token");
+  }
+  return null;
+}
+
+export function setAuthToken(token: string | null): void {
+  if (typeof window !== "undefined") {
+    if (token) {
+      localStorage.setItem("insightflow_auth_token", token);
+    } else {
+      localStorage.removeItem("insightflow_auth_token");
+    }
+  }
+}
 
 class ApiError extends Error {
   status: number;
@@ -31,6 +75,14 @@ async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  if (!API_BASE_URL) {
+    throw new ApiError(
+      "Production API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL in your deployment environment variables.",
+      500,
+      { code: "API_CONFIGURATION_MISSING" }
+    );
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = new Headers(options.headers || {});
 
@@ -39,7 +91,12 @@ async function fetchJson<T>(
   }
 
   if (!headers.has("X-Workspace-Id")) {
-    headers.set("X-Workspace-Id", DEFAULT_WORKSPACE);
+    headers.set("X-Workspace-Id", getActiveWorkspaceId());
+  }
+
+  const token = getAuthToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(url, {
@@ -254,6 +311,43 @@ export const reportsApi = {
 
   getExportUrl: (reportId: string): string => {
     return `${API_BASE_URL}/api/v1/reports/${reportId}/export`;
+  },
+
+  download: async (reportId: string, filename: string): Promise<void> => {
+    if (!API_BASE_URL) {
+      throw new ApiError(
+        "Production API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.",
+        500
+      );
+    }
+
+    const url = `${API_BASE_URL}/api/v1/reports/${reportId}/export`;
+    const headers = new Headers();
+    const token = getAuthToken();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    headers.set("X-Workspace-Id", getActiveWorkspaceId());
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      let message = `Export download failed with status ${response.status}`;
+      try {
+        const errJson = await response.json();
+        message = errJson.detail || errJson.message || message;
+      } catch {}
+      throw new ApiError(message, response.status);
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(link);
   },
 };
 

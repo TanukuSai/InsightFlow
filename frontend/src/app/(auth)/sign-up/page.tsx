@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { setAuthToken, setActiveWorkspaceId } from "@/lib/api/client";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -11,12 +12,18 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleDemoAccess = () => {
+    setActiveWorkspaceId("ws-production-eval");
+    setAuthToken("demo-eval-token");
+    router.push("/dashboard");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 600);
+    setActiveWorkspaceId("ws-production-eval");
+    setAuthToken("demo-eval-token");
+    router.push("/dashboard");
   };
 
   return (
@@ -36,6 +43,31 @@ export default function SignUpPage() {
           <p className="text-xs text-[#7B8491]">
             Get started with customer feedback intelligence and deduplication
           </p>
+        </div>
+
+        {/* Demo One-Click Access Button */}
+        <div className="p-4 bg-[#E9EDFC] rounded-2xl border border-[#3656C8]/20 space-y-2.5 text-center">
+          <div className="text-xs font-bold text-[#3656C8]">
+            Instant Contest Evaluation Access
+          </div>
+          <p className="text-[11px] text-[#4D5765] leading-relaxed">
+            One-click entry to the 7,000-row telemetry dataset with multi-tenant isolation.
+          </p>
+          <button
+            type="button"
+            onClick={handleDemoAccess}
+            className="w-full py-2.5 bg-[#3656C8] hover:bg-[#23387F] text-white text-xs font-bold rounded-xl shadow-xs transition-all focus-visible-ring"
+          >
+            Explore Evaluation Workspace →
+          </button>
+        </div>
+
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-[#E2E3DD]" />
+          <span className="flex-shrink mx-3 text-[10px] font-bold text-[#7B8491] uppercase tracking-wider">
+            Or Register New Workspace
+          </span>
+          <div className="flex-grow border-t border-[#E2E3DD]" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

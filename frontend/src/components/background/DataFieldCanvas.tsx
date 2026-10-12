@@ -88,7 +88,12 @@ export default function DataFieldCanvas({
 
     let width = 0;
     let heightVal = 0;
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let prefersReducedMotion = mediaQuery.matches;
+    const handleMotionChange = (e: MediaQueryListEvent) => {
+      prefersReducedMotion = e.matches;
+    };
+    mediaQuery.addEventListener("change", handleMotionChange);
 
     const handleResize = () => {
       const rect = isBackground
@@ -104,6 +109,7 @@ export default function DataFieldCanvas({
       canvas.style.width = `${width}px`;
       canvas.style.height = `${heightVal}px`;
 
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
     };
 
@@ -339,9 +345,10 @@ export default function DataFieldCanvas({
     return () => {
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      mediaQuery.removeEventListener("change", handleMotionChange);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [mounted, mode]);
+  }, [mounted, mode, isBackground]);
 
   if (!mounted) return null;
 

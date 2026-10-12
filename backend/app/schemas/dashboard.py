@@ -19,6 +19,7 @@ class RepeatedStatement(BaseModel):
     statement: str
     category: str
     count: int
+    sample_feedback_ids: List[str] = []
 
 
 class DashboardResponse(BaseModel):

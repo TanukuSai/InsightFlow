@@ -9,6 +9,7 @@ export default function MarketingLandingPage() {
   const [scrollProgress, setScrollProgress] = useState<number>(1.0);
   const [activeStage, setActiveStage] = useState<DotFieldStage>(1);
   const isClickNavRef = useRef(false);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const storyStages = [
     {
@@ -58,14 +59,16 @@ export default function MarketingLandingPage() {
     let ticking = false;
 
     const handleScroll = () => {
+      if (isClickNavRef.current) return;
       if (ticking) return;
       ticking = true;
 
       requestAnimationFrame(() => {
         ticking = false;
+        if (isClickNavRef.current) return;
+
         const scrollY = window.scrollY;
         const howItWorksEl = document.getElementById("how-it-works");
-        const evidenceEl = document.getElementById("evidence");
 
         if (!howItWorksEl) return;
 
@@ -106,17 +109,34 @@ export default function MarketingLandingPage() {
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
     };
   }, []);
 
   const handleStageSelect = (stageId: DotFieldStage) => {
     setActiveStage(stageId);
     setScrollProgress(stageId);
+    isClickNavRef.current = true;
+    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+    clickTimeoutRef.current = setTimeout(() => {
+      isClickNavRef.current = false;
+    }, 900);
 
-    // Smooth scroll to How It Works section
+    // Calculate anchor scroll target matching the exact fraction for this stage
     const howItWorksEl = document.getElementById("how-it-works");
     if (howItWorksEl) {
-      const topOffset = howItWorksEl.offsetTop - 80;
+      const howItWorksTop = howItWorksEl.offsetTop;
+      const howItWorksHeight = howItWorksEl.offsetHeight;
+      const stageFractions: Record<DotFieldStage, number> = {
+        1: 0.0,
+        2: 0.33,
+        3: 0.66,
+        4: 0.98,
+      };
+      const fraction = stageFractions[stageId] ?? 0;
+      const topOffset = stageId === 1
+        ? Math.max(0, howItWorksTop - 120)
+        : howItWorksTop - 150 + (howItWorksHeight + 100) * fraction;
       window.scrollTo({ top: topOffset, behavior: "smooth" });
     }
   };
@@ -211,21 +231,24 @@ export default function MarketingLandingPage() {
 
               {/* Micro Metric Preview */}
               <div className="relative z-10 space-y-2 pt-4 border-t border-white/10">
+                <div className="text-[10px] uppercase font-bold text-[#9EB4FA] font-mono mb-1">
+                  Contest Dataset Benchmark (N=7,000)
+                </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#C5CCD7]">Operational Issues</span>
-                  <span className="font-mono font-bold text-[#398779]">1,750 (25.0%)</span>
+                  <span className="font-mono font-bold text-[#398779]">1,800 (25.7%)</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#C5CCD7]">Fraud &amp; Scam Alerts</span>
-                  <span className="font-mono font-bold text-[#8B6E9B]">1,750 (25.0%)</span>
+                  <span className="font-mono font-bold text-[#8B6E9B]">1,755 (25.1%)</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#C5CCD7]">Product Feedback</span>
-                  <span className="font-mono font-bold text-[#5876B8]">1,750 (25.0%)</span>
+                  <span className="font-mono font-bold text-[#5876B8]">1,738 (24.8%)</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#C5CCD7]">Customer Service</span>
-                  <span className="font-mono font-bold text-[#B58A43]">1,750 (25.0%)</span>
+                  <span className="font-mono font-bold text-[#B58A43]">1,707 (24.4%)</span>
                 </div>
               </div>
 

@@ -24,6 +24,11 @@ NEGATIVE_LEXICON = {
     "stolen", "unacceptable", "useless", "slow", "error", "complaint", "rude"
 }
 
+NEGATION_TOKENS = {
+    "not", "no", "never", "n't", "hardly", "barely", "scarcely",
+    "cannot", "wasn't", "isn't", "didn't", "won't", "doesn't", "without"
+}
+
 TOPIC_PATTERNS = [
     (r"scam|fraud|fake|phishing|additional payment", "Fraud & Payment Scams"),
     (r"damaged|broken|packaging|crushed|opened", "Damaged Packaging"),
@@ -37,52 +42,102 @@ TOPIC_PATTERNS = [
 
 class AnalysisProvider:
     """
-    Modular analysis provider implementing sentiment scoring and topic classification.
+    Transparent rule-based baseline analysis provider implementing lexicon matching,
+    negation resolution, and regex topic classification without fabricating probability confidence.
     """
-    def __init__(self, provider_name: str = "hybrid-nlp", model_name: str = "v1.0-balanced"):
+    def __init__(self, provider_name: str = "rule-based baseline", model_name: str = "lexicon-rules-v1.0"):
         self.provider_name = provider_name
         self.model_name = model_name
 
-    def classify_sentiment(self, text: str) -> Tuple[str, float, float]:
+    def classify_sentiment(self, text: Optional[str]) -> Tuple[str, float, Optional[float]]:
         """
         Classifies sentiment into explicit taxonomy:
         positive, neutral, negative, mixed, unknown.
-        Returns (label, score [-1.0 to 1.0], confidence [0.0 to 1.0]).
+        Returns (label, score [-1.0 to 1.0], confidence).
+        Note: Confidence is returned as None because rule-based heuristics do not produce
+        empirically calibrated probabilities.
         """
-        lower = text.lower()
-        words = set(re.findall(r"\b\w+\b", lower))
+        if not text or not text.strip():
+            return "unknown", 0.0, None
 
-        pos_matches = words.intersection(POSITIVE_LEXICON)
-        neg_matches = words.intersection(NEGATIVE_LEXICON)
+        cleaned = text.strip()
+        lower = cleaned.lower()
+        tokens = re.findall(r"\b\w+(?:'\w+)?\b", lower)
 
-        pos_count = len(pos_matches)
-        neg_count = len(neg_matches)
+        if len(tokens) < 2 and len(cleaned) < 4:
+            return "unknown", 0.0, None
+
+        # Sarcasm / irony heuristic check
+        sarcasm_indicators = [
+            r"oh great,\s*(?:another|the)?\s*(?:crash|bug|scam|delay)",
+            r"wonderful,\s*(?:another|the)?\s*(?:crash|bug|error|scam)",
+            r"just what i needed,\s*(?:a|another)?\s*(?:broken|damaged|delay)",
+        ]
+        for pattern in sarcasm_indicators:
+            if re.search(pattern, lower):
+                return "unknown", 0.0, None
+
+        # Contrastive clauses (e.g., "They claim it's innovative but it fails constantly")
+        if " but " in lower or " however " in lower or " yet " in lower:
+            parts = re.split(r"\b(?:but|however|yet)\b", lower, maxsplit=1)
+            if len(parts) == 2 and parts[1].strip():
+                # Primary sentiment is weighted towards the post-contrast clause
+                contrast_tokens = re.findall(r"\b\w+(?:'\w+)?\b", parts[1])
+                contrast_pos = sum(1 for w in contrast_tokens if w in POSITIVE_LEXICON)
+                contrast_neg = sum(1 for w in contrast_tokens if w in NEGATIVE_LEXICON)
+                if contrast_neg > contrast_pos:
+                    return "negative", -0.75, None
+                elif contrast_pos > contrast_neg:
+                    return "positive", 0.75, None
+
+        # Token analysis with window-based negation handling (window of up to 2 preceding tokens)
+        pos_count = 0
+        neg_count = 0
+
+        for i, word in enumerate(tokens):
+            is_negated = False
+            # Check previous 2 tokens for negation
+            for prev_idx in range(max(0, i - 2), i):
+                prev_token = tokens[prev_idx]
+                if prev_token in NEGATION_TOKENS or prev_token.endswith("n't"):
+                    is_negated = True
+                    break
+
+            if word in POSITIVE_LEXICON:
+                if is_negated:
+                    # "not good", "never helpful" -> inverted to negative signal
+                    neg_count += 1
+                else:
+                    pos_count += 1
+            elif word in NEGATIVE_LEXICON:
+                if is_negated:
+                    # "not a scam", "not broken", "no complaints" -> neutralized / positive leaning
+                    pos_count += 0.5
+                else:
+                    neg_count += 1
 
         if pos_count > 0 and neg_count > 0:
-            if pos_count == neg_count:
-                return "mixed", 0.0, 0.75
+            if abs(pos_count - neg_count) < 0.5:
+                return "mixed", 0.0, None
             elif pos_count > neg_count:
                 score = round((pos_count - neg_count) / (pos_count + neg_count), 2)
-                return "positive", score, 0.82
+                return "positive", score, None
             else:
                 score = round(-(neg_count - pos_count) / (pos_count + neg_count), 2)
-                return "negative", score, 0.85
+                return "negative", score, None
 
         if neg_count > 0:
-            # Calibrate score and confidence based on intensity
             score = max(-1.0, round(-0.4 - (neg_count * 0.15), 2))
-            confidence = min(0.96, round(0.78 + (neg_count * 0.05), 2))
-            return "negative", score, confidence
+            return "negative", score, None
 
         if pos_count > 0:
             score = min(1.0, round(0.4 + (pos_count * 0.15), 2))
-            confidence = min(0.95, round(0.78 + (pos_count * 0.05), 2))
-            return "positive", score, confidence
+            return "positive", score, None
 
-        # Inconclusive / informational statements
-        if len(words) < 3:
-            return "unknown", 0.0, 0.50
-        return "neutral", 0.0, 0.70
+        # Informational / neutral statements
+        if len(tokens) <= 2:
+            return "unknown", 0.0, None
+        return "neutral", 0.0, None
 
     def extract_topic(self, text: str, source_category: Optional[str] = None) -> str:
         """
@@ -107,8 +162,8 @@ class AnalysisService:
         job_id: str,
         db: AsyncSession,
         sample_size: Optional[int] = None,
-        provider_name: str = "hybrid-nlp",
-        model_name: str = "v1.0-balanced",
+        provider_name: str = "rule-based baseline",
+        model_name: str = "lexicon-rules-v1.0",
     ) -> AnalysisJob:
         # Fetch Job
         job_stmt = select(AnalysisJob).where(
@@ -122,6 +177,8 @@ class AnalysisService:
 
         job.status = "running"
         job.started_at = datetime.now(timezone.utc)
+        job.provider = provider_name
+        job.model = model_name
         await db.commit()
 
         provider = AnalysisProvider(provider_name=provider_name, model_name=model_name)

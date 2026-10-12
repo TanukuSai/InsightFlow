@@ -28,7 +28,13 @@ ENV/
 
 # Databases & local archives
 *.db-journal
+test_*.db
+backend/test_insightflow.db
 frontend.zip
+backend/reports/
+backend/data/adaption_input_*.csv
+backend/data/ds-*.csv
+!backend/data/ds-796d15b9a096.csv
 
 # Environment & secrets
 .env

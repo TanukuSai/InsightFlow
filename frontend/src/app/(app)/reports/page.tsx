@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import AppHeader from "@/components/navigation/AppHeader";
 import { reportsApi } from "@/lib/api/client";
 import { Report } from "@/lib/api/types";
+import { useDataset } from "@/lib/context/DatasetContext";
 
 export default function ReportsPage() {
+  const { selectedDatasetId } = useDataset();
+  const datasetId = selectedDatasetId || "ds-796d15b9a096";
+
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,10 +18,9 @@ export default function ReportsPage() {
   const [title, setTitle] = useState("Build Battle 2026 Executive Intelligence Briefing");
   const [format, setFormat] = useState<"pdf" | "json" | "csv">("pdf");
   const [generating, setGenerating] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const datasetId = "ds-796d15b9a096";
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -29,11 +32,25 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasetId]);
 
   useEffect(() => {
     fetchReports();
-  }, []);
+  }, [fetchReports]);
+
+  const handleDownload = async (report: Report) => {
+    try {
+      setDownloadingId(report.id);
+      const safeTitle = (report.title || "report").toLowerCase().replace(/[^a-z0-9]/g, "_");
+      const filename = `${safeTitle}.${report.format}`;
+      await reportsApi.download(report.id, filename);
+    } catch (err: any) {
+      console.error("Authenticated download failed:", err);
+      alert("Failed to download report: " + (err?.message || "Unknown error"));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const handleGenerateReport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,12 +62,9 @@ export default function ReportsPage() {
         format,
       });
 
-      // Add to list and trigger download
+      // Add to list and trigger authenticated download
       setReports((prev) => [newReport, ...prev]);
-
-      // Download file directly
-      const downloadUrl = reportsApi.getExportUrl(newReport.id);
-      window.open(downloadUrl, "_blank");
+      await handleDownload(newReport);
     } catch (err: any) {
       alert("Failed to generate report: " + (err?.message || "Unknown error"));
     } finally {
@@ -179,15 +193,23 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  <a
-                    href={reportsApi.getExportUrl(rep.id)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 bg-[#F0F2F5] hover:bg-[#E9EDFC] text-[#3656C8] text-xs font-bold rounded-xl border border-[#E2E3DD] transition-colors flex items-center gap-1.5 focus-visible-ring"
+                  <button
+                    onClick={() => handleDownload(rep)}
+                    disabled={downloadingId === rep.id}
+                    className="px-4 py-2 bg-[#F0F2F5] hover:bg-[#E9EDFC] text-[#3656C8] text-xs font-bold rounded-xl border border-[#E2E3DD] transition-colors flex items-center gap-1.5 focus-visible-ring disabled:opacity-50"
                   >
-                    <span>Download {rep.format.toUpperCase()}</span>
-                    <span>↓</span>
-                  </a>
+                    {downloadingId === rep.id ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-[#3656C8] border-t-transparent rounded-full animate-spin" />
+                        <span>Downloading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Download {rep.format.toUpperCase()}</span>
+                        <span>↓</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               ))}
             </div>

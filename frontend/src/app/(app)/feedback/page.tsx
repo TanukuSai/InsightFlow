@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import AppHeader from "@/components/navigation/AppHeader";
 import { feedbackApi } from "@/lib/api/client";
 import { Feedback } from "@/lib/api/types";
+import { useDataset } from "@/lib/context/DatasetContext";
 
 // Signal Observatory Category Badges (Section 4 Tokens)
 const CATEGORY_STYLES: Record<string, string> = {
@@ -14,6 +16,12 @@ const CATEGORY_STYLES: Record<string, string> = {
 };
 
 export default function FeedbackExplorerPage() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
+
+  const { selectedDatasetId, selectedDataset } = useDataset();
+  const datasetId = selectedDatasetId || "ds-796d15b9a096";
+
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -21,7 +29,7 @@ export default function FeedbackExplorerPage() {
   const pageSize = 15;
 
   // Filters
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [category, setCategory] = useState("");
   const [sentiment, setSentiment] = useState("");
 
@@ -37,9 +45,7 @@ export default function FeedbackExplorerPage() {
   const [newCategory, setNewCategory] = useState("Product Feedback");
   const [submitting, setSubmitting] = useState(false);
 
-  const datasetId = "ds-796d15b9a096";
-
-  const fetchFeedbacks = async () => {
+  const fetchFeedbacks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -62,11 +68,11 @@ export default function FeedbackExplorerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasetId, page, pageSize, category, sentiment, search]);
 
   useEffect(() => {
     fetchFeedbacks();
-  }, [page, category, sentiment]);
+  }, [fetchFeedbacks]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +113,7 @@ export default function FeedbackExplorerPage() {
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
         title="Feedback Stream"
-        subtitle="7,000 Source Rows • Ingestion Order Provenance"
+        subtitle={`${selectedDataset?.name || "Dataset"} • ${total.toLocaleString()} Rows • Ingestion Order Provenance`}
         actions={
           <button
             onClick={() => setShowAddModal(true)}

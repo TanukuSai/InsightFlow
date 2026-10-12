@@ -78,22 +78,25 @@ export interface Recommendation {
   workspace_id: string;
   dataset_id: string;
   issue_id?: string;
-  title: string;
-  problem_statement: string;
-  proposed_action: string;
+  action: string;
   rationale: string;
+  expected_benefit?: string;
   priority: string;
-  priority_explanation?: string;
   status: string;
   is_tracked: boolean;
   created_at: string;
   updated_at?: string;
+  // UI compatibility aliases
+  title?: string;
+  problem_statement?: string;
+  proposed_action?: string;
 }
 
 export interface RepeatedStatement {
   statement: string;
   category: string;
   count: number;
+  sample_feedback_ids?: string[];
 }
 
 export interface DashboardData {
