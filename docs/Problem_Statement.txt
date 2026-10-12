@@ -1,0 +1,61 @@
+=== Page 1 ===
+B U I L D  B A T T L E  2 0 2 6
+A I  ×  W e b  D e v e l o p m e n t  H a c k a t h o n
+P r o b l e m  S t a t e m e n t :  I n s i g h t F l o w  —  I n t e l l i g e n t  C u s t o m e r  F e e d b a c k  &  D e c i s i o n  P l a t f o r m
+D u r a t i o n :  4 8  H o u r s
+P a r t i c i p a t i o n :  I n d i v i d u a l
+O r g a n i z e d  b y :  F r o n t e n d  A r e n a
+P r o b l e m  O v e r v i e w
+B u s i n e s s e s  r e c e i v e  c u s t o m e r  f e e d b a c k  f r o m  m u l t i p l e  s o u r c e s ,  i n c l u d i n g  r e v i e w s ,  s u r v e y s ,  a n d
+s u p p o r t  m e s s a g e s .  H o w e v e r ,  i d e n t i f y i n g  r e c u r r i n g  i s s u e s ,  u n d e r s t a n d i n g  c u s t o m e r  s e n t i m e n t ,
+t r a c k i n g  c h a n g e s  o v e r  t i m e ,  a n d  d e c i d i n g  w h i c h  p r o b l e m s  t o  a d d r e s s  f i r s t  c a n  b e  c h a l l e n g i n g .
+Y o u r  c h a l l e n g e  i s  t o  b u i l d  I n s i g h t F l o w ,  a n  i n t e l l i g e n t  w e b  p l a t f o r m  t h a t  t r a n s f o r m s  r a w  c u s t o m e r
+f e e d b a c k  i n t o  m e a n i n g f u l  i n s i g h t s  a n d  h e l p s  b u s i n e s s e s  m a k e  b e t t e r  d e c i s i o n s  u s i n g  d a t a  a n d  A I .
+C o r e  R e q u i r e m e n t s
+1 .  F e e d b a c k  M a n a g e m e n t
+A l l o w  u s e r s  t o  s u b m i t  f e e d b a c k  a n d  i m p o r t  a  C S V  d a t a s e t .
+D i s p l a y ,  s e a r c h ,  f i l t e r ,  a n d  o r g a n i z e  f e e d b a c k  e n t r i e s .
+P r o v i d e  s a m p l e  d a t a  f o r  d e m o n s t r a t i o n .
+2 .  A I - P o w e r e d  A n a l y s i s
+A n a l y z e  f e e d b a c k  t o  i d e n t i f y  s e n t i m e n t ,  r e c u r r i n g  t o p i c s ,  a n d  c o m m o n  c o m p l a i n t s .
+G r o u p  s i m i l a r  f e e d b a c k  i n t o  m e a n i n g f u l  c a t e g o r i e s .
+U s e  A d a p t i o n  m e a n i n g f u l l y  w i t h i n  t h e  A I  o r  d a t a - p r o c e s s i n g  w o r k f l o w .
+3 .  A n a l y t i c s  D a s h b o a r d
+D i s p l a y  k e y  m e t r i c s ,  s e n t i m e n t  d i s t r i b u t i o n ,  a n d  f r e q u e n t l y  r e p o r t e d  i s s u e s .
+V i s u a l i z e  t r e n d s  a n d  c h a n g e s  i n  f e e d b a c k .
+A l l o w  u s e r s  t o  f i l t e r  r e s u l t s  b y  c a t e g o r y ,  s e n t i m e n t ,  o r  o t h e r  r e l e v a n t  a t t r i b u t e s .
+4 .  I n t e l l i g e n t  R e c o m m e n d a t i o n s
+I d e n t i f y  h i g h - p r i o r i t y  i s s u e s  b a s e d  o n  f e e d b a c k  p a t t e r n s .
+G e n e r a t e  a c t i o n a b l e  r e c o m m e n d a t i o n s  s u p p o r t e d  b y  t h e  a n a l y z e d  d a t a .
+E x p l a i n  w h y  p a r t i c u l a r  i s s u e s  d e s e r v e  a t t e n t i o n .
+5 .  R e p o r t s  &  I s s u e  T r a c k i n g
+A l l o w  u s e r s  t o  s a v e  o r  t r a c k  i m p o r t a n t  i s s u e s .
+P r o v i d e  a  w a y  t o  e x p o r t  o r  s h a r e  a n  i n s i g h t  r e p o r t .
+P r e s e n t  t h e  f i n d i n g s  i n  a  c l e a r ,  b u s i n e s s - f r i e n d l y  f o r m a t .
+
+
+=== Page 2 ===
+T e c h n i c a l  E x p e c t a t i o n s
+B u i l d  a  r e s p o n s i v e ,  f u n c t i o n a l  w e b  a p p l i c a t i o n  w i t h  a  p o l i s h e d  U I / U X .  P a r t i c i p a n t s  m a y  c h o o s e  t h e i r
+p r e f e r r e d  f r o n t e n d  f r a m e w o r k ,  b a c k e n d ,  d a t a b a s e ,  A P I s ,  a n d  s u p p o r t i n g  l i b r a r i e s .
+A d a p t i o n  m u s t  c o n t r i b u t e  t o  a  m e a n i n g f u l  p a r t  o f  t h e  A I  o r  d a t a  w o r k f l o w .  P a r t i c i p a n t s  s h o u l d  b e
+a b l e  t o  d e m o n s t r a t e  a n d  e x p l a i n  t h e i r  i n t e g r a t i o n .
+A I  c o d i n g  a s s i s t a n t s  a n d  V i b e  C o d i n g  a r e  p e r m i t t e d .  P a r t i c i p a n t s  m u s t  u n d e r s t a n d  t h e i r
+i m p l e m e n t a t i o n  a n d  s u b m i t  t h e i r  o w n  w o r k .
+S u b m i s s i o n  R e q u i r e m e n t s
+L i v e  d e p l o y e d  a p p l i c a t i o n
+S o u r c e  c o d e  r e p o s i t o r y
+S h o r t  p r o j e c t  d e m o n s t r a t i o n
+B r i e f  e x p l a n a t i o n  o f  t h e  A d a p t i o n  i n t e g r a t i o n
+R u l e s
+Individual participa tion only .
+A ll w ork must be complet ed within the of ficial 48 -hour windo w .
+Use of thir d-party libr aries , APIs , and AI t ools is permitt ed, subject t o their t erms .
+P articipan ts must comply with licensing r equir emen ts and a v oid plagiarism or
+misr epr esen ta tion.
+The submitt ed applica tion must be functional and demonstr able .
+O N E  P R O B L E M .  D I F F E R E N T  M I N D S .  S M A R T E R  S O L U T I O N S .
+B U I L D .  A D A P T .  S H I P .  C O M P E T E .
+F r o n t e n d  A r e n a  —  B u i l d  B a t t l e  2 0 2 6
+
+

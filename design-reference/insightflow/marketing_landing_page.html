@@ -1,0 +1,2810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InsightFlow — Autonomous Customer Feedback Intelligence</title>
+  <meta name="description" content="Turn 7,000 raw customer feedback verbatims into board-ready engineering action. Semantic deduplication, domain routing, and cryptographic data integrity.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       INSIGHTFLOW LIGHT-FIRST DESIGN SYSTEM
+       Primary: Pure White (#FFFFFF) | Accent: Very Light Shade of Blue (#E0F2FE)
+       ========================================================================== */
+    :root {
+      /* Pure White & Clean Light Canvas */
+      --bg-base: #FFFFFF;
+      --bg-subtle: #F8FAFC;
+      --bg-card: rgba(255, 255, 255, 0.88);
+      --bg-card-hover: rgba(255, 255, 255, 0.98);
+      --bg-card-solid: #FFFFFF;
+
+      /* Deep High-Legibility Slate Typography */
+      --ink: #0F172A;
+      --ink-muted: #475569;
+      --ink-subtle: #64748B;
+      --ink-faint: #94A3B8;
+
+      /* Light Blue Accent Palette */
+      --blue-accent-50: #F0F9FF;
+      --blue-accent-100: #E0F2FE;   /* Very light shade of blue (primary accent fill) */
+      --blue-accent-200: #BAE6FD;   /* Soft border / glow */
+      --blue-accent-300: #7DD3FC;
+      --blue-accent-500: #0EA5E9;
+      --blue-accent-600: #0284C7;   /* High-contrast accessible text / interactive */
+      --blue-accent-700: #0369A1;
+
+      /* High-Friction Crimson Alert */
+      --crimson-alert: #EF4444;
+      --crimson-subtle: #FEE2E2;
+      --crimson-text: #DC2626;
+
+      /* Domain Tokens */
+      --emerald-positive: #10B981;
+      --indigo-accent: #6366F1;
+
+      /* TRANSLUCENT FROSTED GLASS TOKENS (LIGHT THEME - SHOWS OFF BACKGROUND BUBBLES) */
+      --glass-panel: rgba(255, 255, 255, 0.32);
+      --glass-panel-elevated: rgba(255, 255, 255, 0.45);
+      --glass-panel-card: rgba(255, 255, 255, 0.35);
+      
+      /* Crisp Specular Hairline Edges */
+      --glass-border: rgba(255, 255, 255, 0.85);
+      --glass-border-specular: rgba(255, 255, 255, 0.95);
+      --glass-border-accent: rgba(56, 189, 248, 0.45);
+
+      /* Optical Blur - Balanced for glassmorphism so bubbles are clearly visible through the glass */
+      --glass-blur: blur(8px) saturate(180%);
+      --glass-blur-deep: blur(12px) saturate(190%);
+
+      /* Ambient Light Bevels & Shadows */
+      --shadow-glass: 
+        inset 0 1px 2px 0 rgba(255, 255, 255, 0.95), 
+        inset 0 0 0 1px rgba(255, 255, 255, 0.7),
+        0 20px 45px -12px rgba(2, 132, 199, 0.1), 
+        0 4px 12px rgba(15, 23, 42, 0.03);
+
+      --shadow-hover: 
+        inset 0 1px 2px 0 rgba(255, 255, 255, 0.95), 
+        0 25px 60px -10px rgba(2, 132, 199, 0.18), 
+        0 0 25px rgba(224, 242, 254, 0.9);
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-xl: 32px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: radial-gradient(ellipse at 50% 0%, #E0F2FE 0%, #F0F9FF 35%, #F8FAFC 70%, #FFFFFF 100%);
+      min-height: 100vh;
+    }
+
+    body {
+      background-color: transparent; /* Allows living background canvas to render beneath */
+      color: var(--ink);
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    /* ==========================================================================
+       FULLSCREEN LIVING DATA-DOTS BACKGROUND ENGINE (STRICTLY BACKGROUND)
+       ========================================================================== */
+    #bgCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0 !important;           /* STRICTLY IN THE BACKGROUND */
+      pointer-events: none !important; /* Never intercepts clicks or selections */
+    }
+
+    /* Ambient Soft Ice-Blue Aura Pools Behind Canvas */
+    .ambient-glow-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.65;
+      animation: floatOrb 26s infinite alternate ease-in-out;
+    }
+
+    .orb-1 {
+      top: -10%;
+      left: 15%;
+      width: 750px;
+      height: 750px;
+      background: radial-gradient(circle, rgba(224, 242, 254, 0.85) 0%, rgba(240, 249, 255, 0.5) 60%, transparent 80%);
+    }
+
+    .orb-2 {
+      top: 35%;
+      right: -8%;
+      width: 850px;
+      height: 850px;
+      background: radial-gradient(circle, rgba(186, 230, 253, 0.55) 0%, rgba(224, 242, 254, 0.35) 55%, transparent 75%);
+      animation-duration: 30s;
+      animation-delay: -6s;
+    }
+
+    .orb-3 {
+      bottom: -15%;
+      left: 25%;
+      width: 900px;
+      height: 900px;
+      background: radial-gradient(circle, rgba(224, 242, 254, 0.75) 0%, rgba(240, 249, 255, 0.4) 60%, transparent 75%);
+      animation-duration: 28s;
+      animation-delay: -12s;
+    }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(40px, 30px) scale(1.06); }
+      100% { transform: translate(-30px, 50px) scale(0.96); }
+    }
+
+    /* Subtle Architectural Coordinate Grid */
+    .bg-grid-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: 
+        linear-gradient(to right, rgba(2, 132, 199, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(2, 132, 199, 0.035) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* ==========================================================================
+       CONTAINERS & GLASS MORPHIC SHIELDS (TRANSLUCENT - SHOWS BUBBLES BENEATH)
+       ========================================================================== */
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10; /* Strictly elevated above background canvas */
+    }
+
+    /* Frosted Hero Stage: Translucent luminous frosted glass showing colorful bubbles drifting beneath */
+    .glass-hero-stage {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(240, 249, 255, 0.20) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid rgba(255, 255, 255, 0.88);
+      border-radius: var(--radius-xl);
+      box-shadow: 
+        inset 0 1px 2px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 2px 0 rgba(224, 242, 254, 0.5),
+        0 24px 60px -15px rgba(2, 132, 199, 0.12),
+        0 2px 10px rgba(15, 23, 42, 0.02);
+      padding: 30px 36px 26px;
+      margin-bottom: 26px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .glass-hero-stage::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.7), rgba(255, 255, 255, 0.98), rgba(56, 189, 248, 0.7), transparent);
+    }
+
+    /* Translucent Frosted Glass Card */
+    .glass-box {
+      background: var(--glass-panel);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow-glass);
+      border-radius: var(--radius-lg);
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .glass-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), rgba(186, 230, 253, 0.8), rgba(255, 255, 255, 0.95), transparent);
+    }
+
+    .glass-box:hover {
+      border-color: var(--blue-accent-200);
+      box-shadow: var(--shadow-hover);
+    }
+
+    /* ==========================================================================
+       TOP PERSISTENT FLOATING GLASS NAVIGATION
+       ========================================================================== */
+    .nav-wrapper {
+      position: fixed;
+      top: 18px;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      padding: 0 20px;
+      pointer-events: none;
+    }
+
+    .glass-nav {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 8px 14px 8px 20px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: var(--glass-blur-deep);
+      -webkit-backdrop-filter: var(--glass-blur-deep);
+      border: 1.5px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 16px 40px -10px rgba(2, 132, 199, 0.12), inset 0 1px 2px #FFFFFF, 0 0 0 1px rgba(224, 242, 254, 0.8);
+      transition: all 0.3s ease;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.025em;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #0284C7, #38BDF8);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+      font-size: 13px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--blue-accent-50);
+      padding: 4px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--blue-accent-100);
+    }
+
+    .nav-tab-btn {
+      padding: 7px 15px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .nav-tab-btn:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .nav-tab-btn.active {
+      background: #FFFFFF;
+      color: var(--blue-accent-600);
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12), inset 0 1px 0 #FFFFFF;
+      font-weight: 700;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      border: none;
+    }
+
+    .btn-glass {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1.5px solid var(--blue-accent-100);
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.05);
+    }
+
+    .btn-glass:hover {
+      background: #FFFFFF;
+      border-color: var(--blue-accent-300);
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284C7, #0EA5E9);
+      color: #FFFFFF;
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.38);
+    }
+
+    /* ==========================================================================
+       VIEW CONTAINER & SEAMLESS PAGE TRANSITIONS
+       ========================================================================== */
+    .view-container {
+      position: relative;
+      min-height: 100vh;
+      padding-top: 96px;
+      z-index: 10;
+    }
+
+    .view-section {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px) scale(0.995);
+      transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .view-section.active-view {
+      display: block;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* ==========================================================================
+       HERO: CRYSTAL-CLEAR EXPLANATION THAT SELLS WHAT THE APP DOES
+       ========================================================================== */
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue-accent-100);
+      backdrop-filter: blur(18px);
+      color: var(--blue-accent-700);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: var(--radius-full);
+      margin-bottom: 22px;
+      border: 1px solid var(--blue-accent-200);
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.08);
+    }
+
+    .hero-badge .pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--blue-accent-600);
+      box-shadow: 0 0 10px var(--blue-accent-600);
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    @keyframes bounceDown {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
+    }
+
+    .hero-title {
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      line-height: 1.18;
+      max-width: 960px;
+      margin: 0 auto 12px;
+      color: var(--ink);
+    }
+
+    .hero-title .glow-word {
+      background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 50%, #38BDF8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none !important;
+      display: inline-block;
+      filter: drop-shadow(0 2px 8px rgba(2, 132, 199, 0.25));
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--ink-muted);
+      max-width: 780px;
+      margin: 0 auto 20px;
+      line-height: 1.6;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
+    }
+
+    /* Core Problem-Solved Proof Pills */
+    .hero-proof-pills {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .proof-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.92);
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.05);
+    }
+
+    .proof-pill strong {
+      color: var(--blue-accent-600);
+    }
+
+    /* ==========================================================================
+       HOW IT WORKS: 4-STAGE INTERACTIVE WORKFLOW THAT SELLS THE APP
+       ========================================================================== */
+    .how-it-works-section {
+      margin-bottom: 70px;
+    }
+
+    .section-eyebrow {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--blue-accent-600);
+      margin-bottom: 6px;
+    }
+
+    .section-headline {
+      text-align: center;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+
+    .section-subheadline {
+      text-align: center;
+      font-size: 15px;
+      color: var(--ink-muted);
+      max-width: 740px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+
+    /* ==========================================================================
+       STAGGERED SCROLL-DRIVEN PIPELINE STORYLINE (LEFT/RIGHT NARRATIVE)
+       ========================================================================== */
+    .story-timeline {
+      position: relative;
+      max-width: 1220px;
+      margin: 0 auto 60px;
+      padding: 20px 0 50px;
+    }
+
+    /* Central Luminous Timeline Spine */
+    .timeline-spine {
+      position: absolute;
+      top: 40px;
+      bottom: 60px;
+      left: 50%;
+      width: 2px;
+      transform: translateX(-50%);
+      background: linear-gradient(to bottom, transparent, rgba(56, 189, 248, 0.45) 8%, rgba(56, 189, 248, 0.45) 92%, transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Floating Glass Stage Controller Tabs (Sticky While Exploring Timeline) */
+    .stage-controller-bar {
+      position: sticky;
+      top: 84px;
+      z-index: 80;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 56px;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(20px) saturate(190%);
+      -webkit-backdrop-filter: blur(20px) saturate(190%);
+      border: 1.5px solid rgba(255, 255, 255, 0.95);
+      border-radius: var(--radius-full);
+      box-shadow: 0 14px 34px -8px rgba(2, 132, 199, 0.12), inset 0 1px 2px #FFFFFF;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stage-tab-btn {
+      padding: 9px 20px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .stage-tab-btn:hover {
+      color: var(--ink);
+      background: rgba(224, 242, 254, 0.55);
+    }
+
+    .stage-tab-btn.active {
+      background: linear-gradient(135deg, #0284C7, #0EA5E9);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .stage-tab-btn .tab-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ==========================================================================
+       UNIVERSAL STAGGERED TIMELINE ARCHITECTURE (TRUE LEFT / RIGHT ZIGZAG)
+       ========================================================================== */
+    .timeline-container {
+      position: relative;
+      max-width: 1140px;
+      margin: 0 auto 75px;
+      padding: 20px 0;
+    }
+
+    .timeline-spine {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.2) 0%, rgba(2, 132, 199, 0.5) 20%, rgba(2, 132, 199, 0.5) 80%, rgba(56, 189, 248, 0.1) 100%);
+      z-index: 1;
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+    }
+
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 75px;
+      align-items: center;
+      margin-bottom: 75px;
+      position: relative;
+      z-index: 10;
+      transition: opacity 0.35s ease;
+    }
+
+    .timeline-row:last-child {
+      margin-bottom: 20px;
+    }
+
+    /* Central Milestone Orb on Spine */
+    .timeline-node {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 2px solid var(--blue-accent-200);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4), inset 0 1px 2px #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--blue-accent-600);
+      z-index: 2;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .timeline-row.active-row .timeline-node {
+      background: linear-gradient(135deg, #0284C7, #38BDF8);
+      color: #FFFFFF;
+      border-color: #FFFFFF;
+      box-shadow: 0 0 26px rgba(2, 132, 199, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+      transform: translate(-50%, -50%) scale(1.15);
+    }
+
+    /* Stagger Left: Card on Column 1, Column 2 is Empty Space */
+    .timeline-row.stagger-left > .timeline-card,
+    .timeline-row.stagger-left > .story-card,
+    .timeline-row.stagger-left > .tilt-card-wrapper,
+    .timeline-row.stagger-left > .pillar-card,
+    .timeline-row.stagger-left > .suite-card {
+      grid-column: 1;
+      width: 100%;
+    }
+
+    /* Stagger Right: Column 1 is Empty Space, Card on Column 2 */
+    .timeline-row.stagger-right > .timeline-card,
+    .timeline-row.stagger-right > .story-card,
+    .timeline-row.stagger-right > .tilt-card-wrapper,
+    .timeline-row.stagger-right > .pillar-card,
+    .timeline-row.stagger-right > .suite-card {
+      grid-column: 2;
+      width: 100%;
+    }
+
+    /* Horizontal branch connector from card to central spine node */
+    .timeline-row.stagger-left::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: calc(50% - 37px);
+      width: 37px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--blue-accent-300));
+      z-index: 1;
+    }
+
+    .timeline-row.stagger-right::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 37px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--blue-accent-300), transparent);
+      z-index: 1;
+    }
+
+    /* Open space that exposes the living background bubbles */
+    .empty-stagger-col {
+      min-height: 40px;
+      pointer-events: none;
+    }
+
+    /* Translucent Frosted Story Card (Staggered Left / Right) */
+    .story-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.42) 0%, rgba(240, 249, 255, 0.22) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 32px 30px;
+      cursor: pointer;
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-glass);
+      width: 100%;
+    }
+
+    .story-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      transition: background 0.25s ease;
+    }
+
+    .story-card:hover {
+      transform: translateY(-4px);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.58) 0%, rgba(224, 242, 254, 0.38) 100%);
+      border-color: var(--blue-accent-300);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .story-card.active-step {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.62) 0%, rgba(224, 242, 254, 0.42) 100%);
+      border-color: var(--blue-accent-500);
+      box-shadow: 0 22px 55px -12px rgba(2, 132, 199, 0.25), 0 0 0 2px var(--blue-accent-500);
+      transform: translateY(-3px);
+    }
+
+    .story-card.active-step::before {
+      background: linear-gradient(90deg, #0284C7, #38BDF8);
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      background: var(--blue-accent-100);
+      color: var(--blue-accent-700);
+      width: fit-content;
+      border: 1px solid var(--blue-accent-200);
+    }
+
+    .story-card.active-step .step-badge {
+      background: #0284C7;
+      color: #FFFFFF;
+      border-color: #0284C7;
+    }
+
+    .story-title {
+      font-size: 21px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+
+    .story-desc {
+      font-size: 13px;
+      color: var(--ink-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    .story-data-proof {
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(224, 242, 254, 0.9);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .story-data-proof strong {
+      color: var(--blue-accent-600);
+    }
+
+    .story-dot-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--blue-accent-100);
+      padding-top: 14px;
+    }
+
+    .story-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue-accent-600);
+      background: var(--blue-accent-50);
+      border: 1px solid var(--blue-accent-200);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .story-action-btn:hover {
+      background: #0284C7;
+      color: #FFFFFF;
+      border-color: #0284C7;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+
+    .story-dot-action .dot-mini {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue-accent-600);
+      box-shadow: 0 0 8px var(--blue-accent-600);
+    }
+
+    .telemetry-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      border: 1px solid rgba(224, 242, 254, 0.9);
+    }
+
+    .telemetry-stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .telemetry-stat-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      letter-spacing: 0.04em;
+    }
+
+    .telemetry-stat-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue-accent-600);
+    }
+
+    @media (max-width: 960px) {
+      .timeline-row {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        margin-bottom: 50px !important;
+        padding-left: 48px !important;
+      }
+      .timeline-spine {
+        left: 18px !important;
+      }
+      .timeline-node {
+        left: 18px !important;
+      }
+      .timeline-row::after {
+        display: none !important;
+      }
+      .timeline-row.stagger-right > .timeline-card,
+      .timeline-row.stagger-right > .story-card,
+      .timeline-row.stagger-right > .tilt-card-wrapper,
+      .timeline-row.stagger-right > .pillar-card,
+      .timeline-row.stagger-right > .suite-card {
+        grid-column: 1 !important;
+      }
+      .stage-controller-bar {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* Live Telemetry Card (Translucent Frosted Glass) */
+    .bg-hud-card {
+      padding: 20px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 60px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(240, 249, 255, 0.20) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid rgba(255, 255, 255, 0.88);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glass);
+    }
+
+    .hud-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .hud-badge {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background: var(--blue-accent-100);
+      color: var(--blue-accent-700);
+      border: 1px solid var(--blue-accent-200);
+    }
+
+    .hud-desc {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .hud-metrics {
+      display: flex;
+      gap: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+
+    .hud-metrics strong {
+      color: var(--blue-accent-600);
+    }
+
+    /* ==========================================================================
+       TACTILE 3D KPI FLIP CARDS (WHITE GLASS WITH ICE-BLUE ACCENTS)
+       ========================================================================== */
+    .cards-section-title {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    /* ==========================================================================
+       TACTILE 3D KPI FLIP CARDS (STAGGERED LEFT / RIGHT PIPELINE)
+       ========================================================================== */
+    .cards-section-title {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .staggered-kpi-container {
+      display: flex;
+      flex-direction: column;
+      gap: 75px;
+      max-width: 1220px;
+      margin: 0 auto 90px;
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 60px;
+      align-items: center;
+      transition: all 0.35s ease;
+    }
+
+    .kpi-row.stagger-reverse {
+      grid-template-columns: 0.85fr 1.15fr;
+    }
+
+    .kpi-companion-panel {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(240, 249, 255, 0.18) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 32px 30px;
+      box-shadow: var(--shadow-glass);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .kpi-companion-panel:hover {
+      transform: translateY(-3px);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.52) 0%, rgba(224, 242, 254, 0.32) 100%);
+      border-color: var(--blue-accent-300);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .tilt-card-wrapper {
+      perspective: 1400px;
+      height: 380px;
+    }
+
+    .tilt-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+    }
+
+    .tilt-card.flipped {
+      transform: rotateY(180deg) translateZ(35px);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(240, 249, 255, 0.20) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid rgba(255, 255, 255, 0.90);
+      box-shadow: var(--shadow-glass);
+      overflow: hidden;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .tilt-card:hover .card-face {
+      border-color: var(--blue-accent-200);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .card-face::before {
+      content: '';
+      position: absolute;
+      top: -60%;
+      left: -60%;
+      width: 220%;
+      height: 220%;
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, rgba(224, 242, 254, 0.4) 30%, transparent 60%);
+      opacity: 0;
+      transform: rotate(25deg);
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .tilt-card:hover .card-face::before {
+      opacity: 1;
+    }
+
+    .card-face::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), rgba(186, 230, 253, 0.9), transparent);
+    }
+
+    .card-face.back {
+      transform: rotateY(180deg);
+      background: rgba(255, 255, 255, 0.96);
+      border: 1.5px solid var(--blue-accent-200);
+    }
+
+    .face-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .face-tag {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--blue-accent-700);
+      background: var(--blue-accent-50);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--blue-accent-100);
+    }
+
+    .flip-pill-btn {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      background: var(--blue-accent-100);
+      color: var(--blue-accent-700);
+      border: 1px solid var(--blue-accent-200);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .tilt-card:hover .flip-pill-btn {
+      background: #0284C7;
+      color: #FFFFFF;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.25);
+    }
+
+    .face-metric {
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin: 14px 0 6px;
+      color: var(--ink);
+    }
+
+    .face-sub {
+      font-size: 13px;
+      color: var(--ink-muted);
+      font-weight: 500;
+    }
+
+    .spectrum-bar {
+      height: 9px;
+      border-radius: var(--radius-full);
+      background: rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+      display: flex;
+      margin: 14px 0;
+      border: 1px solid rgba(224, 242, 254, 0.8);
+    }
+
+    .spec-pos { background: #0284C7; width: 32.3%; }
+    .spec-neu { background: #94A3B8; width: 36.8%; }
+    .spec-neg { background: var(--crimson-alert); width: 30.6%; }
+
+    /* ==========================================================================
+       ENTERPRISE VALUE PILLARS (STAGGERED LEFT / RIGHT)
+       ========================================================================== */
+    .staggered-pillars-container {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      max-width: 1100px;
+      margin: 0 auto 90px;
+    }
+
+    .pillar-row {
+      display: flex;
+      width: 100%;
+    }
+
+    .pillar-row.stagger-left {
+      justify-content: flex-start;
+      padding-right: 12%;
+    }
+
+    .pillar-row.stagger-right {
+      justify-content: flex-end;
+      padding-left: 12%;
+    }
+
+    .pillar-card {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.40) 0%, rgba(240, 249, 255, 0.20) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 30px 34px;
+      box-shadow: var(--shadow-glass);
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: flex-start;
+      gap: 22px;
+    }
+
+    .pillar-card:hover {
+      transform: translateY(-4px);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.58) 0%, rgba(224, 242, 254, 0.35) 100%);
+      border-color: var(--blue-accent-300);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .pillar-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--blue-accent-100);
+      color: var(--blue-accent-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--blue-accent-200);
+      flex-shrink: 0;
+    }
+
+    .pillar-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .pillar-desc {
+      font-size: 13px;
+      color: var(--ink-muted);
+      line-height: 1.55;
+    }
+
+    /* ==========================================================================
+       SEAMLESS IN-APP SUITE FRAMES (FOR INSTANT SCREEN SWITCHING)
+       ========================================================================== */
+    .app-screen-frame {
+      width: 100%;
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: var(--glass-blur-deep);
+      border: 1.5px solid var(--glass-border-specular);
+      box-shadow: var(--shadow-glass);
+      overflow: hidden;
+      min-height: 850px;
+      margin-bottom: 60px;
+    }
+
+    .app-screen-frame iframe {
+      width: 100%;
+      height: 950px;
+      border: none;
+      display: block;
+    }
+
+    /* ==========================================================================
+       PRODUCT SUITE WORKSPACES (STAGGERED LEFT / RIGHT)
+       ========================================================================== */
+    .staggered-suite-container {
+      display: flex;
+      flex-direction: column;
+      gap: 55px;
+      max-width: 1220px;
+      margin: 0 auto 90px;
+    }
+
+    .suite-row {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 50px;
+      align-items: center;
+      transition: all 0.35s ease;
+    }
+
+    .suite-row.stagger-reverse {
+      grid-template-columns: 0.85fr 1.15fr;
+    }
+
+    .suite-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.40) 0%, rgba(240, 249, 255, 0.20) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 32px 30px;
+      cursor: pointer;
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-glass);
+      position: relative;
+    }
+
+    .suite-card:hover {
+      transform: translateY(-4px);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.58) 0%, rgba(224, 242, 254, 0.35) 100%);
+      border-color: var(--blue-accent-300);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .suite-preview-panel {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.32) 0%, rgba(240, 249, 255, 0.16) 100%);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 28px 26px;
+      box-shadow: var(--shadow-glass);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .suite-preview-panel:hover {
+      transform: translateY(-3px);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.50) 0%, rgba(224, 242, 254, 0.30) 100%);
+      border-color: var(--blue-accent-300);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .suite-tag {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--blue-accent-600);
+      margin-bottom: 6px;
+    }
+
+    .suite-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .suite-desc {
+      font-size: 13px;
+      color: var(--ink-muted);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .suite-action {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue-accent-600);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ==========================================================================
+       SLIDE-OVER EVIDENCE INSPECTION DRAWER (WHITE FROSTED GLASS)
+       ========================================================================== */
+    .drawer-scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .drawer-scrim.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .glass-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 540px;
+      max-width: 90vw;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: var(--glass-blur-deep);
+      -webkit-backdrop-filter: var(--glass-blur-deep);
+      border-left: 1.5px solid #FFFFFF;
+      box-shadow: -20px 0 60px rgba(15, 23, 42, 0.12), inset 1px 0 1px #FFFFFF;
+      z-index: 210;
+      transform: translateX(100%);
+      transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 34px;
+    }
+
+    .glass-drawer.active {
+      transform: translateX(0);
+    }
+
+    .drawer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .drawer-close-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--blue-accent-50);
+      border: 1px solid var(--blue-accent-100);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      transition: all 0.2s ease;
+    }
+
+    .drawer-close-btn:hover {
+      background: #FFFFFF;
+      border-color: var(--blue-accent-300);
+      transform: rotate(90deg);
+    }
+
+    .drawer-quote {
+      background: var(--blue-accent-50);
+      border: 1px solid var(--blue-accent-100);
+      border-radius: 14px;
+      padding: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      font-style: italic;
+      color: var(--ink);
+      margin-bottom: 20px;
+    }
+
+    /* Floating Tooltip for Hovering Background Dots */
+    .dot-tooltip {
+      position: fixed;
+      pointer-events: none;
+      transform: translate(-50%, -120%);
+      background: rgba(15, 23, 42, 0.94);
+      color: #FFFFFF;
+      backdrop-filter: blur(16px);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 11px;
+      line-height: 1.45;
+      max-width: 300px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 150;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .dot-tooltip.visible {
+      opacity: 1;
+      transform: translate(-50%, -130%);
+    }
+
+    footer {
+      border-top: 1px solid rgba(224, 242, 254, 0.9);
+      padding: 50px 0;
+      text-align: center;
+      font-size: 13px;
+      color: var(--ink-muted);
+      position: relative;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(16px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       AMBIENT ICE-BLUE GLOW ORBS & FULLSCREEN LIVING DATA-DOTS CANVAS (BACKGROUND)
+       ========================================================================== -->
+  <div class="ambient-glow-layer">
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+  </div>
+  <div class="bg-grid-overlay"></div>
+
+  <!-- THE LIVING DATA-DOTS CANVAS (STRICTLY BACKGROUND: Z-INDEX 0) -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- Interactive Dot Hover Tooltip -->
+  <div class="dot-tooltip" id="dotTooltip">
+    <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #38BDF8;" id="ttCategory">Category</div>
+    <div style="font-weight: 500; margin: 3px 0 6px;" id="ttText">Verbatim quote...</div>
+    <div style="display: flex; justify-content: space-between; font-size: 10px; color: #CBD5E1;">
+      <span id="ttId">#FB-0142</span>
+      <span id="ttRecurrence" style="color: #38BDF8; font-weight: 700;">88x occurrences</span>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       TOP PERSISTENT FROSTED GLASS NAVIGATION BAR
+       ========================================================================== -->
+  <div class="nav-wrapper">
+    <nav class="glass-nav">
+      <a href="#" onclick="switchView('landing')" class="nav-brand">
+        <div class="brand-icon">✦</div>
+        <span>InsightFlow</span>
+      </a>
+
+      <!-- Seamless In-App Tab Switcher -->
+      <div class="nav-tabs">
+        <button class="nav-tab-btn active" onclick="switchView('landing')" id="tab-landing">
+          <span>Data Universe</span>
+        </button>
+        <button class="nav-tab-btn" onclick="switchView('dashboard')" id="tab-dashboard">
+          <span>Executive Cockpit</span>
+        </button>
+        <button class="nav-tab-btn" onclick="switchView('feedback')" id="tab-feedback">
+          <span>Feedback Stream</span>
+        </button>
+        <button class="nav-tab-btn" onclick="switchView('issues')" id="tab-issues">
+          <span>Issues Triage</span>
+        </button>
+        <button class="nav-tab-btn" onclick="switchView('reports')" id="tab-reports">
+          <span>Briefings & Export</span>
+        </button>
+      </div>
+
+      <div>
+        <button class="btn btn-primary" onclick="openEvidenceDrawer(0)">Inspect Record ↗</button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ==========================================================================
+       MAIN VIEW CONTAINER (FLUID VIEW TRANSITIONS)
+       ========================================================================== -->
+  <main class="view-container">
+
+    <!-- VIEW 1: LANDING & HOW INSIGHTFLOW TRANSFORMS DATA CHAOS -->
+    <section class="view-section active-view" id="view-landing">
+      <div class="container">
+        
+        <!-- FROSTED HERO STAGE (PROTECTS TYPOGRAPHY WHILE REFRACTING BACKGROUND DOTS) -->
+        <div class="glass-hero-stage">
+          <div class="hero-badge">
+            <span class="pulse"></span>
+            ✦ Autonomous Feedback Intelligence • 7,000 Real Customer Verbatims
+          </div>
+
+          <h1 class="hero-title">
+            Stop Sifting Through 7,000 Support Complaints.<br>
+            <span class="glow-word">Turn Feedback Chaos into Verified Backlog</span>
+          </h1>
+
+          <p class="hero-subtitle">
+            Your customers are reporting hundreds of issues every week across support tickets, app reviews, and surveys. InsightFlow continuously ingests the raw feedback, semantically deduplicates 6,680 repetitive complaints into 320 actionable root causes, detects urgent P0 security fires, and auto-generates board-ready Linear & Jira fix specifications.
+          </p>
+
+          <!-- Core Problem-Solved Proof Pills -->
+          <div class="hero-proof-pills">
+            <div class="proof-pill">
+              <span>📊 Ingestion Scale:</span> <strong>7,000 Real Customer Tickets</strong>
+            </div>
+            <div class="proof-pill">
+              <span>⚡ Noise Elimination:</span> <strong>6,680 Repeats → 320 Root Causes (95.4% Deduplication)</strong>
+            </div>
+            <div class="proof-pill">
+              <span>🚨 Critical P0 Spike:</span> <strong>88x Phishing Scam Outbreak Detected</strong>
+            </div>
+            <div class="proof-pill">
+              <span>🔒 Cryptographic Lineage:</span> <strong>SHA-256 Audit Trail • 0 Hallucinated Timelines</strong>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 14px; margin-bottom: 14px;">
+            <button class="btn btn-primary" style="padding: 12px 26px; font-size: 13px;" onclick="switchView('dashboard')">Launch Executive Cockpit →</button>
+            <button class="btn btn-glass" style="padding: 12px 26px; font-size: 13px;" onclick="scrollToStory()">Watch How It Works ↓</button>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11px; font-weight: 700; color: var(--blue-accent-600); cursor: pointer; opacity: 0.9; transition: opacity 0.2s;" onclick="scrollToStory()">
+            <span>⚡ Scroll down to explore the Staggered Data Pipeline</span>
+            <span style="display: inline-block; animation: bounceDown 1.5s infinite; font-size: 13px;">↓</span>
+          </div>
+        </div>
+
+        <!-- ==========================================================================
+             HOW IT WORKS: 4-STAGE INTERACTIVE WORKFLOW (SELLING THE PRODUCT)
+             ========================================================================== -->
+        <section class="how-it-works-section" id="howItWorksSection">
+          <div class="section-eyebrow">Interactive Engine Demonstration</div>
+          <h2 class="section-headline">How InsightFlow Transforms Raw Feedback Chaos into Decisive Action</h2>
+          <p class="section-subheadline">
+            The particles floating gently in the background represent the 7,000 real customer reviews in your dataset. Select each pipeline stage below or scroll down to see how InsightFlow organizes the chaos step by step:
+          </p>
+
+          <!-- STICKY FROSTED STAGE CONTROLLER (TAP TO TOGGLE BETWEEN STAGES & SCROLL) -->
+          <div class="stage-controller-bar">
+            <button class="stage-tab-btn active" id="stageTab-1" onclick="triggerStage(1, true)">
+              <span class="tab-dot" style="color: #0284C7;"></span>
+              <span>01 • The Deluge</span>
+            </button>
+            <button class="stage-tab-btn" id="stageTab-2" onclick="triggerStage(2, true)">
+              <span class="tab-dot" style="color: #0EA5E9;"></span>
+              <span>02 • Dedup Engine</span>
+            </button>
+            <button class="stage-tab-btn" id="stageTab-3" onclick="triggerStage(3, true)">
+              <span class="tab-dot" style="color: #6366F1;"></span>
+              <span>03 • Team Streams</span>
+            </button>
+            <button class="stage-tab-btn" id="stageTab-4" onclick="triggerStage(4, true)">
+              <span class="tab-dot" style="color: #EF4444;"></span>
+              <span>04 • P0 Firestorm</span>
+            </button>
+          </div>
+
+          <!-- STAGGERED PIPELINE TIMELINE WITH CENTRAL LUMINOUS SPINE -->
+          <div class="timeline-container story-timeline">
+            <div class="timeline-spine"></div>
+
+            <!-- STAGE 01: (LEFT CARD • RIGHT OPEN SPACE) -->
+            <div class="timeline-row story-row stagger-left active-row" id="storyRow-1" data-stage="1">
+              <!-- Left Card -->
+              <div class="story-card timeline-card active-step" id="storyCard-1" onclick="triggerStage(1)">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span class="step-badge">Stage 01 • Data Deluge</span>
+                  <span style="font-size: 11px; font-weight: 800; color: var(--crimson-alert); background: var(--crimson-subtle); padding: 3px 8px; border-radius: var(--radius-full);">100% Entropy</span>
+                </div>
+                <h3 class="story-title">7,000 Unindexed Complaints (Maximum Noise)</h3>
+                <p class="story-desc">
+                  Customer feedback arrives scattered across Zendesk support tickets, Discord communities, 1-star App Store reviews, and NPS surveys. With zero indexing or semantic structure, critical security fires stay buried beneath thousands of mundane login questions.
+                </p>
+                <div class="story-data-proof">
+                  <span>📊 Ingestion Scale:</span>
+                  <strong>7,000 Raw Real-World Customer Verbatims</strong>
+                </div>
+                <div class="telemetry-stats-grid" style="margin-bottom: 16px;">
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Raw Noise</span>
+                    <span class="telemetry-stat-val" style="color: var(--crimson-alert);">100% Entropy</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Clusters</span>
+                    <span class="telemetry-stat-val">0 Causes</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Visibility</span>
+                    <span class="telemetry-stat-val">Buried</span>
+                  </div>
+                </div>
+                <div class="story-dot-action">
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--blue-accent-600);">
+                    <span class="dot-mini"></span>
+                    <span>Dots: Drifting in Brownian Chaos</span>
+                  </div>
+                  <button class="story-action-btn" onclick="event.stopPropagation(); triggerStage(1)">▶ Simulate Deluge</button>
+                </div>
+              </div>
+
+              <!-- Center Spine Milestone Node -->
+              <div class="timeline-node">01</div>
+
+              <!-- Right Empty Space: Exposes living background bubbles -->
+              <div class="empty-stagger-col"></div>
+            </div>
+
+            <!-- STAGE 02: (LEFT OPEN SPACE • RIGHT CARD) -->
+            <div class="timeline-row story-row stagger-right" id="storyRow-2" data-stage="2">
+              <!-- Left Empty Space: Exposes living background bubbles -->
+              <div class="empty-stagger-col"></div>
+
+              <!-- Center Spine Milestone Node -->
+              <div class="timeline-node">02</div>
+
+              <!-- Right Card -->
+              <div class="story-card timeline-card" id="storyCard-2" onclick="triggerStage(2)">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span class="step-badge">Stage 02 • Dedup Engine</span>
+                  <span style="font-size: 11px; font-weight: 800; color: var(--blue-accent-700); background: var(--blue-accent-100); padding: 3px 8px; border-radius: var(--radius-full);">95.4% Deduplicated</span>
+                </div>
+                <h3 class="story-title">Collapse 6,680 Repeats into 320 Root Causes</h3>
+                <p class="story-desc">
+                  Traditional keyword matching fails when users phrase problems 50 different ways. InsightFlow understands meaning: 88 separate complaints about "fake Telegram bots", "wallet drained", and "phishing admin" merge into 1 incident. 6,680 repeats condense into 320 root causes.
+                </p>
+                <div class="story-data-proof">
+                  <span>⚡ Semantic Efficiency:</span>
+                  <strong>6,680 Repeats → 320 Root Causes (95.4% Dedup)</strong>
+                </div>
+                <div class="telemetry-stats-grid" style="margin-bottom: 16px;">
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Dedup Rate</span>
+                    <span class="telemetry-stat-val" style="color: var(--blue-accent-600);">95.4%</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Root Causes</span>
+                    <span class="telemetry-stat-val">320 Clusters</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Voice Proof</span>
+                    <span class="telemetry-stat-val">100% Locked</span>
+                  </div>
+                </div>
+                <div class="story-dot-action">
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #0EA5E9;">
+                    <span class="dot-mini" style="background: #0EA5E9;"></span>
+                    <span>Dots: Condensing into 4 Celestial Galaxies</span>
+                  </div>
+                  <button class="story-action-btn" onclick="event.stopPropagation(); triggerStage(2)">▶ Condense Clusters</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 03: (LEFT CARD • RIGHT OPEN SPACE) -->
+            <div class="timeline-row story-row stagger-left" id="storyRow-3" data-stage="3">
+              <!-- Left Card -->
+              <div class="story-card timeline-card" id="storyCard-3" onclick="triggerStage(3)">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span class="step-badge">Stage 03 • Autonomous Triage</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #4338CA; background: #EEF2FF; padding: 3px 8px; border-radius: var(--radius-full);">4 Team Queues</span>
+                </div>
+                <h3 class="story-title">Auto-Route to Departmental Streams</h3>
+                <p class="story-desc">
+                  Eliminate weekly 2-hour cross-functional triage meetings. InsightFlow semantically routes operational API latency to DevOps, phishing attacks to InfoSec, checkout failures to Billing, and UX requests to Product.
+                </p>
+                <div class="story-data-proof">
+                  <span>🎯 Domain Channels:</span>
+                  <strong>DevOps (12%) • InfoSec (18%) • Product (46%) • Billing (24%)</strong>
+                </div>
+                <div class="telemetry-stats-grid" style="margin-bottom: 16px;">
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Routing</span>
+                    <span class="telemetry-stat-val" style="color: var(--emerald-positive);">100% Auto</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Manual Sync</span>
+                    <span class="telemetry-stat-val">0h / Week</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Departments</span>
+                    <span class="telemetry-stat-val">4 Streams</span>
+                  </div>
+                </div>
+                <div class="story-dot-action">
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #6366F1;">
+                    <span class="dot-mini" style="background: #6366F1;"></span>
+                    <span>Dots: Streaming in 4 Team Rivers</span>
+                  </div>
+                  <button class="story-action-btn" onclick="event.stopPropagation(); triggerStage(3)">▶ Stream to Queues</button>
+                </div>
+              </div>
+
+              <!-- Center Spine Milestone Node -->
+              <div class="timeline-node">03</div>
+
+              <!-- Right Empty Space: Exposes living background bubbles -->
+              <div class="empty-stagger-col"></div>
+            </div>
+
+            <!-- STAGE 04: (LEFT OPEN SPACE • RIGHT CARD) -->
+            <div class="timeline-row story-row stagger-right" id="storyRow-4" data-stage="4">
+              <!-- Left Empty Space: Exposes living background bubbles -->
+              <div class="empty-stagger-col"></div>
+
+              <!-- Center Spine Milestone Node -->
+              <div class="timeline-node" style="color: var(--crimson-alert); border-color: var(--crimson-alert);">04</div>
+
+              <!-- Right Card -->
+              <div class="story-card timeline-card" id="storyCard-4" onclick="triggerStage(4)">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span class="step-badge" style="background: var(--crimson-subtle); color: var(--crimson-text); border-color: rgba(239, 68, 68, 0.3);">Stage 04 • Action Dossier</span>
+                  <span style="font-size: 11px; font-weight: 800; color: var(--crimson-alert); background: var(--crimson-subtle); padding: 3px 8px; border-radius: var(--radius-full);">P0 Firestorm</span>
+                </div>
+                <h3 class="story-title">Isolate P0 Fires into Board-Ready Fix Specs</h3>
+                <p class="story-desc">
+                  Ranked by Severity × Recurrence Velocity, critical emergencies (88x Phishing Scam Outbreak and 42x SMS OTP failures) automatically compile full engineering specs with root causes, reproduction steps, and verbatim customer proof ready for Linear & Jira.
+                </p>
+                <div class="story-data-proof" style="background: rgba(254, 242, 242, 0.7); border-color: rgba(239, 68, 68, 0.25);">
+                  <span>🚨 Priority Action:</span>
+                  <strong style="color: var(--crimson-text);">88x Phishing Outbreak Ready for Sprint Push</strong>
+                </div>
+                <div class="telemetry-stats-grid" style="margin-bottom: 16px;">
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">P0 Outbreak</span>
+                    <span class="telemetry-stat-val" style="color: var(--crimson-alert);">88x Phish</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Linear Spec</span>
+                    <span class="telemetry-stat-val">Generated</span>
+                  </div>
+                  <div class="telemetry-stat-item">
+                    <span class="telemetry-stat-label">Integrity</span>
+                    <span class="telemetry-stat-val">SHA-256</span>
+                  </div>
+                </div>
+                <div class="story-dot-action" style="color: var(--crimson-alert);">
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;">
+                    <span class="dot-mini" style="background: var(--crimson-alert); box-shadow: 0 0 8px var(--crimson-alert);"></span>
+                    <span>Dots: P0 Fires Orbit in Glowing Halo</span>
+                  </div>
+                  <button class="story-action-btn" style="color: var(--crimson-text); border-color: rgba(239, 68, 68, 0.3); background: var(--crimson-subtle);" onclick="event.stopPropagation(); triggerStage(4)">▶ Trigger P0 Halo</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Summary Telemetry Card (Glass Box) -->
+          <div class="glass-box bg-hud-card">
+            <div class="hud-left">
+              <span class="hud-badge" id="hudBadge">Stage 1: The Feedback Deluge</span>
+              <span class="hud-desc" id="hudDesc">7,000 unindexed verbatims drifting across the ambient background with high entropy.</span>
+            </div>
+            <div class="hud-metrics">
+              <span>Ingested: <strong>7,000 tickets</strong></span>
+              <span>Deduplication: <strong id="hudEntropy" style="color: var(--crimson-alert);">0% (High Noise)</strong></span>
+              <span>Integrity: <strong>SHA-256 Validated</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================================================
+             3D PIZZAZ KPI FLIP CARDS (WHITE FROSTED GLASS & ICE ACCENTS)
+             ========================================================================== -->
+        <div class="cards-section-title">
+          <div class="section-eyebrow">Tactile Physics & Microinteractions</div>
+          <h2 class="section-headline">Executive Metric Engines with Real Data Lineage</h2>
+          <p class="section-subheadline">
+            Move your cursor across each frosted card to see the dynamic specular glare sheen, or click to trigger a physical 180° flip revealing data lineage proofs and repetition rationales.
+          </p>
+        </div>
+
+        <div class="timeline-container">
+          <div class="timeline-spine"></div>
+          
+          <!-- KPI ROW 1: (LEFT TILT CARD • RIGHT OPEN CANVAS) -->
+          <div class="timeline-row stagger-left">
+            <!-- Left Tilt Card 1: Ingested Volume -->
+            <div class="tilt-card-wrapper timeline-card">
+              <div class="tilt-card" onclick="flipTiltCard(this)">
+                <div class="card-face front">
+                  <div class="face-header">
+                    <span class="face-tag">01 • Ingested Volume</span>
+                    <button class="flip-pill-btn">↺ Flip Lineage</button>
+                  </div>
+                  <div>
+                    <div class="face-metric">7,000</div>
+                    <div class="face-sub">Verified Customer Verbatims Ingested Straight from CSV</div>
+                  </div>
+                  <div class="spectrum-bar">
+                    <div class="spec-pos" style="width: 100%;"></div>
+                  </div>
+                  <div style="font-size: 11px; font-weight: 700; color: var(--blue-accent-600); display: flex; align-items: center; gap: 5px;">
+                    <span>✓</span> 320 Unique Root Statements • 6,680 Repetitive Rows Collapsed
+                  </div>
+                  <div style="background: rgba(255, 255, 255, 0.65); border: 1px solid var(--blue-accent-100); border-radius: 10px; padding: 10px 12px; font-size: 11px; color: var(--ink); font-style: italic; margin-top: 8px;">
+                    "Cannot receive SMS verification code when logging in from international numbers"
+                    <div style="margin-top: 4px; font-size: 10px; font-style: normal; font-weight: 700; color: var(--blue-accent-600); display: flex; justify-content: space-between;">
+                      <span>Record #FB-0100</span>
+                      <span>42x repetitions verified</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-face back">
+                  <div class="face-header">
+                    <span class="face-tag">✦ Cryptographic Lineage</span>
+                    <button class="flip-pill-btn">↺ Return</button>
+                  </div>
+                  <p style="font-size: 12px; color: var(--ink-muted); line-height: 1.55; margin: 12px 0;">
+                    <strong>Repetition Rationale:</strong> Highest repeated complaint occurs 88 times. 0 timestamps present in source data; historical timeline extrapolation disabled per data integrity rules.
+                  </p>
+                  <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; background: var(--blue-accent-50); padding: 8px 12px; border-radius: 8px; color: var(--blue-accent-700); font-weight: 700; border: 1px solid var(--blue-accent-100); margin-bottom: 12px;">
+                    SHA-256: 8f42a901c83d... Verified
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" style="flex: 1; font-size: 11px; padding: 6px 12px;" onclick="event.stopPropagation(); switchView('feedback')">Explore Feedback Stream →</button>
+                    <button class="btn btn-glass" style="font-size: 11px; padding: 6px 12px;" onclick="event.stopPropagation(); openEvidenceDrawer(0)">Inspect Record ↗</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Central Spine Milestone Node -->
+            <div class="timeline-node">01</div>
+
+            <!-- Right Open Canvas -->
+            <div class="empty-stagger-col"></div>
+          </div>
+
+          <!-- KPI ROW 2: (LEFT OPEN CANVAS • RIGHT TILT CARD) -->
+          <div class="timeline-row stagger-right">
+            <!-- Left Open Canvas -->
+            <div class="empty-stagger-col"></div>
+
+            <!-- Central Spine Milestone Node -->
+            <div class="timeline-node" style="color: var(--crimson-alert); border-color: var(--crimson-alert);">02</div>
+
+            <!-- Right Tilt Card 2: Severe Friction Spike -->
+            <div class="tilt-card-wrapper timeline-card">
+              <div class="tilt-card" onclick="flipTiltCard(this)">
+                <div class="card-face front">
+                  <div class="face-header">
+                    <span class="face-tag" style="background: var(--crimson-subtle); color: var(--crimson-text); border-color: #FECACA;">02 • Friction Spike</span>
+                    <button class="flip-pill-btn">↺ Flip Spectrum</button>
+                  </div>
+                  <div>
+                    <div class="face-metric" style="color: var(--crimson-alert);">2,141</div>
+                    <div class="face-sub">30.6% Ingested Feedback Requiring Immediate Triage</div>
+                  </div>
+                  <div class="spectrum-bar">
+                    <div class="spec-pos"></div>
+                    <div class="spec-neu"></div>
+                    <div class="spec-neg"></div>
+                  </div>
+                  <div style="font-size: 11px; font-weight: 700; color: var(--crimson-alert); display: flex; align-items: center; gap: 5px;">
+                    <span>⚠️</span> Concentrated in Phishing Scams (88x) & OTP Failures (42x)
+                  </div>
+                  <div style="background: rgba(254, 242, 242, 0.7); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 10px 12px; font-size: 11px; margin-top: 8px;">
+                    <div style="font-weight: 800; color: var(--crimson-text); display: flex; justify-content: space-between;">
+                      <span>Top Emergency: Phishing Outbreak</span>
+                      <span>P0 • 96/100</span>
+                    </div>
+                    <div style="color: var(--ink-muted); font-size: 10px; margin-top: 3px;">
+                      88 customer accounts targeted via spoofed Telegram support bots
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-face back">
+                  <div class="face-header">
+                    <span class="face-tag" style="background: var(--crimson-subtle); color: var(--crimson-text); border-color: #FECACA;">✦ Sentiment Spectrum</span>
+                    <button class="flip-pill-btn">↺ Return</button>
+                  </div>
+                  <p style="font-size: 12px; color: var(--ink-muted); line-height: 1.55; margin: 12px 0;">
+                    <strong>Model Inference:</strong> Lexicon-Enhanced Transformer. Neutral: 2,573 (36.8%) | Positive: 2,260 (32.3%) | Negative: 2,141 (30.6%). Decoupled compute guarantees raw voice is never altered.
+                  </p>
+                  <div class="spectrum-bar" style="margin-bottom: 12px;">
+                    <div class="spec-pos"></div>
+                    <div class="spec-neu"></div>
+                    <div class="spec-neg"></div>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" style="flex: 1; font-size: 11px; padding: 6px 12px; background: var(--crimson-alert);" onclick="event.stopPropagation(); switchView('issues')">Filter Negative Records →</button>
+                    <button class="btn btn-glass" style="font-size: 11px; padding: 6px 12px;" onclick="event.stopPropagation(); switchView('dashboard')">View Distribution ↗</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI ROW 3: (LEFT TILT CARD • RIGHT OPEN CANVAS) -->
+          <div class="timeline-row stagger-left">
+            <!-- Left Tilt Card 3: Prioritized Issues -->
+            <div class="tilt-card-wrapper timeline-card">
+              <div class="tilt-card" onclick="flipTiltCard(this)">
+                <div class="card-face front">
+                  <div class="face-header">
+                    <span class="face-tag">03 • Prioritized Triage</span>
+                    <button class="flip-pill-btn">↺ Flip Action</button>
+                  </div>
+                  <div>
+                    <div class="face-metric" style="color: var(--blue-accent-600);">10</div>
+                    <div class="face-sub">Evidence-Linked Friction Clusters Formed</div>
+                  </div>
+                  <div class="spectrum-bar">
+                    <div class="spec-pos" style="width: 40%;"></div>
+                    <div class="spec-neg" style="width: 60%;"></div>
+                  </div>
+                  <div style="font-size: 11px; font-weight: 700; color: var(--blue-accent-600); display: flex; align-items: center; gap: 5px;">
+                    <span>✦</span> Top P0 Issue: Fraud & Phishing Impersonation Scam (88x)
+                  </div>
+                  <div style="background: rgba(255, 255, 255, 0.65); border: 1px solid var(--blue-accent-200); border-radius: 10px; padding: 10px 12px; font-size: 11px; margin-top: 8px;">
+                    <div style="font-weight: 800; color: var(--blue-accent-700); margin-bottom: 2px;">TICKET [SEC-01] • PRE-GENERATED SPEC</div>
+                    <div style="color: var(--ink); font-weight: 600;">Deploy verified domain modal + spoof warning banner</div>
+                    <div style="margin-top: 4px; font-size: 10px; color: var(--ink-muted); display: flex; justify-content: space-between;">
+                      <span>Priority: <strong style="color: var(--crimson-alert);">96/100 (P0)</strong></span>
+                      <span>Impact: <strong>-82% Phishing Reports</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-face back">
+                  <div class="face-header">
+                    <span class="face-tag">✦ Planned Resolution</span>
+                    <button class="flip-pill-btn">↺ Return</button>
+                  </div>
+                  <p style="font-size: 12px; color: var(--ink-muted); line-height: 1.55; margin: 12px 0;">
+                    <strong>Action REC-01:</strong> In-app verification banner rollout expected to eliminate >80% of impersonation confusion within 48h. Ready to sync directly into Linear & Jira backlogs.
+                  </p>
+                  <div style="font-size: 11px; font-weight: 700; color: var(--ink); margin-bottom: 12px;">
+                    Status: Proposed • Awaiting Sign-off • Linear Sync Ready
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" style="flex: 1; font-size: 11px; padding: 6px 12px;" onclick="event.stopPropagation(); switchView('issues')">Open Issue Dossier →</button>
+                    <button class="btn btn-glass" style="font-size: 11px; padding: 6px 12px;" onclick="event.stopPropagation(); switchView('reports')">Export Briefing ↗</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Central Spine Milestone Node -->
+            <div class="timeline-node">03</div>
+
+            <!-- Right Open Canvas -->
+            <div class="empty-stagger-col"></div>
+          </div>
+
+        </div>
+
+        <!-- ==========================================================================
+             WHY EXECUTIVES TRUST INSIGHTFLOW (VALUE PILLARS - STAGGERED LEFT/RIGHT)
+             ========================================================================== -->
+        <div class="cards-section-title">
+          <div class="section-eyebrow">Enterprise Data Integrity Principles</div>
+          <h2 class="section-headline">Why InsightFlow Succeeds Where Naive Dashboards Fail</h2>
+          <p class="section-subheadline">
+            Standard BI tools fabricate time trends and hallucinate sentiment. InsightFlow was engineered with strict epistemological boundaries.
+          </p>
+        </div>
+
+        <div class="timeline-container">
+          <div class="timeline-spine"></div>
+          
+          <!-- PILLAR ROW 1: (STAGGER LEFT) -->
+          <div class="timeline-row stagger-left">
+            <div class="pillar-card timeline-card">
+              <div class="pillar-icon">🛡️</div>
+              <div style="flex: 1;">
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue-accent-600); margin-bottom: 4px;">Epistemological Integrity • Principle 01</div>
+                <h4 class="pillar-title">Zero Timeline Hallucination</h4>
+                <p class="pillar-desc">
+                  When imported datasets lack timestamps, InsightFlow explicitly refuses to synthesize fake monthly trendlines. We never compromise epistemological truth for decorative aesthetics.
+                </p>
+                <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--blue-accent-700); background: var(--blue-accent-50); padding: 4px 12px; border-radius: var(--radius-full); border: 1px solid var(--blue-accent-100);">
+                  <span>🔒</span> 0 Synthetic Months Fabricated • 100% Ground Truth
+                </div>
+              </div>
+            </div>
+            <div class="timeline-node">01</div>
+            <div class="empty-stagger-col"></div>
+          </div>
+
+          <!-- PILLAR ROW 2: (STAGGER RIGHT) -->
+          <div class="timeline-row stagger-right">
+            <div class="empty-stagger-col"></div>
+            <div class="timeline-node">02</div>
+            <div class="pillar-card timeline-card">
+              <div class="pillar-icon">🔍</div>
+              <div style="flex: 1;">
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue-accent-600); margin-bottom: 4px;">Bidirectional Lineage • Principle 02</div>
+                <h4 class="pillar-title">Verbatim Evidence Ledgers</h4>
+                <p class="pillar-desc">
+                  Every cluster, percentage, and severity score is bidirectionally linked to the unaltered customer words. Click any metric to inspect the exact quote, source channel, and recurrence frequency in our slide-over drawer.
+                </p>
+                <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--blue-accent-700); background: var(--blue-accent-50); padding: 4px 12px; border-radius: var(--radius-full); border: 1px solid var(--blue-accent-100);">
+                  <span>📖</span> 7,000 Linked Verbatims • One-Click Slide-Over Inspection
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PILLAR ROW 3: (STAGGER LEFT) -->
+          <div class="timeline-row stagger-left">
+            <div class="pillar-card timeline-card">
+              <div class="pillar-icon">⚡</div>
+              <div style="flex: 1;">
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue-accent-600); margin-bottom: 4px;">Isolated Compute Layer • Principle 03</div>
+                <h4 class="pillar-title">Decoupled AI Inference</h4>
+                <p class="pillar-desc">
+                  Raw feedback verbatims are cryptographically locked with SHA-256 validation. Machine learning classifications, sentiment categorizations, and route suggestions live in an isolated metadata layer with audit trails.
+                </p>
+                <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--blue-accent-700); background: var(--blue-accent-50); padding: 4px 12px; border-radius: var(--radius-full); border: 1px solid var(--blue-accent-100);">
+                  <span>⚙️</span> Audited Metadata Layer • Pristine Customer Verbatims
+                </div>
+              </div>
+            </div>
+            <div class="timeline-node">03</div>
+            <div class="empty-stagger-col"></div>
+          </div>
+
+          <!-- PILLAR ROW 4: (STAGGER RIGHT) -->
+          <div class="timeline-row stagger-right">
+            <div class="empty-stagger-col"></div>
+            <div class="timeline-node">04</div>
+            <div class="pillar-card timeline-card">
+              <div class="pillar-icon">📊</div>
+              <div style="flex: 1;">
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue-accent-600); margin-bottom: 4px;">Executive Enablement • Principle 04</div>
+                <h4 class="pillar-title">Instant Board-Ready Briefings</h4>
+                <p class="pillar-desc">
+                  Transform dense unstructured feedback into crisp executive memos, audit-ready CSV exports, and Linear-compatible JSON payloads with one click. Ready for VP product reviews and board presentations without manual deck creation.
+                </p>
+                <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--blue-accent-700); background: var(--blue-accent-50); padding: 4px 12px; border-radius: var(--radius-full); border: 1px solid var(--blue-accent-100);">
+                  <span>📑</span> Instant PDF Briefing • CSV & JSON Developer Sync
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==========================================================================
+             EXPLORE COMPLETE PRODUCT SUITE (STAGGERED LEFT/RIGHT WORKSPACES)
+             ========================================================================== -->
+        <div style="text-align: center; margin-bottom: 36px;">
+          <div class="section-eyebrow">Complete Workspace Architecture</div>
+          <h3 style="font-size: 26px; font-weight: 800; color: var(--ink); margin-top: 4px;">Explore The 4 Specialized Product Modules</h3>
+          <p style="font-size: 14px; color: var(--ink-muted); margin-top: 6px;">Staggered workspace suites with instant zero-reload transitions</p>
+        </div>
+
+        <div class="timeline-container">
+          <div class="timeline-spine"></div>
+          
+          <!-- SUITE ROW 1: (STAGGER LEFT: EXECUTIVE COMMAND COCKPIT) -->
+          <div class="timeline-row stagger-left">
+            <div class="suite-card timeline-card" onclick="switchView('dashboard')">
+              <span class="suite-tag">Module 01 • Executive Command</span>
+              <div class="suite-name">Feedback Overview (Balanced Cockpit)</div>
+              <div class="suite-desc">
+                High-level operational overview tracking 7,000 ingested verbatims, sentiment distribution breakdown, category matrix, and high-velocity friction fires.
+              </div>
+              <!-- Embedded Telemetry Preview -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 16px;">
+                <div style="background: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--blue-accent-100);">
+                  <div style="font-size: 10px; color: var(--ink-faint); text-transform: uppercase; font-weight: 700;">Ingested Volume</div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--ink);">7,000</div>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--blue-accent-100);">
+                  <div style="font-size: 10px; color: var(--ink-faint); text-transform: uppercase; font-weight: 700;">Critical Friction</div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--crimson-alert);">30.6%</div>
+                </div>
+              </div>
+              <div class="suite-action">Launch Executive Cockpit →</div>
+            </div>
+            <div class="timeline-node">01</div>
+            <div class="empty-stagger-col"></div>
+          </div>
+
+          <!-- SUITE ROW 2: (STAGGER RIGHT: EVIDENCE REPOSITORY) -->
+          <div class="timeline-row stagger-right">
+            <div class="empty-stagger-col"></div>
+            <div class="timeline-node">02</div>
+            <div class="suite-card timeline-card" onclick="switchView('feedback')">
+              <span class="suite-tag">Module 02 • Evidence Repository</span>
+              <div class="suite-name">Feedback Stream & Detail Drawer</div>
+              <div class="suite-desc">
+                High-density interactive data table with 7,000 real customer complaints, category filters, and Level-3 slide-over inspection drawer for deep evidence audit.
+              </div>
+              <!-- Embedded Verbatim Preview -->
+              <div style="background: rgba(255, 255, 255, 0.75); border: 1px solid var(--blue-accent-200); border-radius: 10px; padding: 10px 12px; font-size: 12px; margin: 12px 0 16px;">
+                <div style="font-weight: 700; color: var(--ink); margin-bottom: 2px;">#FB-0142 • Fraud & Scam</div>
+                <div style="color: var(--ink-muted); font-size: 11px; font-style: italic;">"Suspicious phishing message claiming to be security team..."</div>
+                <div style="margin-top: 6px; font-size: 10px; color: var(--crimson-alert); font-weight: 800; display: flex; justify-content: space-between;">
+                  <span>88x verified repetitions</span>
+                  <span style="color: var(--blue-accent-600);">Level-3 Drawer Ready</span>
+                </div>
+              </div>
+              <div class="suite-action">Inspect Verbatim Records →</div>
+            </div>
+          </div>
+
+          <!-- SUITE ROW 3: (STAGGER LEFT: DECISION CENTER) -->
+          <div class="timeline-row stagger-left">
+            <div class="suite-card timeline-card" onclick="switchView('issues')">
+              <span class="suite-tag" style="color: var(--crimson-text);">Module 03 • Decision Center</span>
+              <div class="suite-name">Issues Triage & Action Dossier</div>
+              <div class="suite-desc">
+                Asymmetric workspace ranking 10 friction clusters by severity × velocity, with pre-written Linear tickets and reproducible evidence ready to push.
+              </div>
+              <!-- Embedded Emergency Dossier Preview -->
+              <div style="background: rgba(254, 242, 242, 0.7); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 10px 12px; font-size: 12px; margin: 12px 0 16px;">
+                <div style="display: flex; justify-content: space-between; font-weight: 800; color: var(--crimson-text);">
+                  <span>Issue #01: Phishing Scam Outbreak</span>
+                  <span>P0 • 96/100</span>
+                </div>
+                <div style="font-size: 11px; color: var(--ink); margin-top: 4px;">Linear Ticket [SEC-01] generated with full reproduction steps.</div>
+              </div>
+              <div class="suite-action" style="color: var(--crimson-alert);">Open Triage Workspace →</div>
+            </div>
+            <div class="timeline-node" style="color: var(--crimson-alert); border-color: var(--crimson-alert);">03</div>
+            <div class="empty-stagger-col"></div>
+          </div>
+
+          <!-- SUITE ROW 4: (STAGGER RIGHT: BRIEFING CENTER) -->
+          <div class="timeline-row stagger-right">
+            <div class="empty-stagger-col"></div>
+            <div class="timeline-node">04</div>
+            <div class="suite-card timeline-card" onclick="switchView('reports')">
+              <span class="suite-tag">Module 04 • Briefing Center</span>
+              <div class="suite-name">Briefing & Multi-Format Export</div>
+              <div class="suite-desc">
+                Board-ready briefing document preview with instant PDF, CSV, and JSON download for VP product reviews and board audits.
+              </div>
+              <!-- Embedded Export Channels Preview -->
+              <div style="display: flex; gap: 8px; margin: 12px 0 16px;">
+                <div style="flex: 1; background: rgba(255, 255, 255, 0.7); padding: 7px 8px; border-radius: 8px; border: 1px solid var(--blue-accent-100); text-align: center; font-size: 11px; font-weight: 700; color: var(--ink);">
+                  📄 PDF Memo
+                </div>
+                <div style="flex: 1; background: rgba(255, 255, 255, 0.7); padding: 7px 8px; border-radius: 8px; border: 1px solid var(--blue-accent-100); text-align: center; font-size: 11px; font-weight: 700; color: var(--ink);">
+                  📊 CSV Ledger
+                </div>
+                <div style="flex: 1; background: rgba(255, 255, 255, 0.7); padding: 7px 8px; border-radius: 8px; border: 1px solid var(--blue-accent-100); text-align: center; font-size: 11px; font-weight: 700; color: var(--ink);">
+                  ⚙️ JSON API
+                </div>
+              </div>
+              <div class="suite-action">Generate Executive Briefing →</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 2: EXECUTIVE DASHBOARD (SEAMLESS IN-APP VIEW) -->
+    <section class="view-section" id="view-dashboard">
+      <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <span class="section-eyebrow" style="text-align: left; display: block;">Module 1 • Executive Workspace</span>
+            <h2 style="font-size: 28px; font-weight: 800; color: var(--ink);">Feedback Overview (Balanced Cockpit)</h2>
+          </div>
+          <button class="btn btn-glass" onclick="switchView('landing')">← Back to Data Universe</button>
+        </div>
+        <div class="app-screen-frame">
+          <iframe src="dashboard_overview.html"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: FEEDBACK TABLE & INSPECTION DRAWER -->
+    <section class="view-section" id="view-feedback">
+      <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <span class="section-eyebrow" style="text-align: left; display: block;">Module 2 • Feedback Repository</span>
+            <h2 style="font-size: 28px; font-weight: 800; color: var(--ink);">Verbatim Stream & Detail Drawer</h2>
+          </div>
+          <button class="btn btn-glass" onclick="switchView('landing')">← Back to Data Universe</button>
+        </div>
+        <div class="app-screen-frame">
+          <iframe src="feedback_table_drawer.html"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: ISSUES TRIAGE & DOSSIER -->
+    <section class="view-section" id="view-issues">
+      <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <span class="section-eyebrow" style="text-align: left; display: block;">Module 3 • Decision Center</span>
+            <h2 style="font-size: 28px; font-weight: 800; color: var(--ink);">Issues Triage & Actionable Recommendation Dossier</h2>
+          </div>
+          <button class="btn btn-glass" onclick="switchView('landing')">← Back to Data Universe</button>
+        </div>
+        <div class="app-screen-frame">
+          <iframe src="issues_triage_dossier.html"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: EXECUTIVE REPORTS -->
+    <section class="view-section" id="view-reports">
+      <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <span class="section-eyebrow" style="text-align: left; display: block;">Module 4 • Reports & Exports</span>
+            <h2 style="font-size: 28px; font-weight: 800; color: var(--ink);">Executive Briefing & Multi-Format Export</h2>
+          </div>
+          <button class="btn btn-glass" onclick="switchView('landing')">← Back to Data Universe</button>
+        </div>
+        <div class="app-screen-frame">
+          <iframe src="executive_report_export.html"></iframe>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       SLIDE-OVER EVIDENCE INSPECTION DRAWER (WHITE FROSTED GLASS)
+       ========================================================================== -->
+  <div class="drawer-scrim" id="drawerScrim" onclick="closeEvidenceDrawer()"></div>
+  <aside class="glass-drawer" id="evidenceDrawer">
+    <div class="drawer-head">
+      <div>
+        <span class="section-eyebrow" style="text-align: left; display: block;">Verbatim Inspection</span>
+        <h3 style="font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 2px;" id="drawerRecordId">Record #FB-0142</h3>
+      </div>
+      <button class="drawer-close-btn" onclick="closeEvidenceDrawer()">✕</button>
+    </div>
+
+    <div style="font-size: 11px; background: var(--blue-accent-100); color: var(--blue-accent-700); padding: 6px 14px; border-radius: var(--radius-full); margin-bottom: 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--blue-accent-200);">
+      <span>🔒</span> Raw Source Verbatim • Unaltered Customer Input
+    </div>
+
+    <div class="drawer-quote" id="drawerQuoteText">
+      "Suspicious phishing message claiming to be from security team asking for wallet transfer and private key export."
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; font-size: 12px;">
+      <div style="background: #FFFFFF; padding: 16px; border-radius: 14px; border: 1.5px solid var(--blue-accent-100); box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+        <div style="color: var(--ink-subtle); font-size: 10px; text-transform: uppercase; font-weight: 800;">Recurrence Count</div>
+        <div style="font-size: 20px; font-weight: 900; color: var(--crimson-alert); margin-top: 2px;" id="drawerRecurrence">88 Repetitions</div>
+      </div>
+      <div style="background: #FFFFFF; padding: 16px; border-radius: 14px; border: 1.5px solid var(--blue-accent-100); box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+        <div style="color: var(--ink-subtle); font-size: 10px; text-transform: uppercase; font-weight: 800;">Detected Category</div>
+        <div style="font-size: 16px; font-weight: 800; color: var(--ink); margin-top: 4px;" id="drawerCategory">Fraud & Scam</div>
+      </div>
+    </div>
+
+    <div style="background: var(--blue-accent-50); border: 1.5px dashed var(--blue-accent-500); border-radius: 14px; padding: 18px; margin-bottom: auto;">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--blue-accent-700); letter-spacing: 0.04em; margin-bottom: 8px;">
+        ✦ Inferred Intelligence (Adaption Transformer)
+      </div>
+      <div style="font-size: 13px; margin-bottom: 6px; color: var(--ink);"><strong>Inferred Sentiment:</strong> <span style="color: var(--crimson-alert); font-weight: 800;">Negative (Severe Friction)</span></div>
+      <div style="font-size: 13px; margin-bottom: 6px; color: var(--ink);"><strong>Root Cluster:</strong> Credential Phishing Campaign</div>
+      <div style="font-size: 13px; color: var(--ink);"><strong>Triage Link:</strong> <span style="color: var(--blue-accent-600); font-weight: 700;">Issue #01: Security Spike (P0)</span></div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 24px;">
+      <button class="btn btn-primary" style="flex: 1;" onclick="switchView('issues'); closeEvidenceDrawer();">Link to Issue #01 →</button>
+      <button class="btn btn-glass" onclick="closeEvidenceDrawer()">Close</button>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer>
+    <div class="container">
+      <p style="font-weight: 800; color: var(--ink); margin-bottom: 6px;">InsightFlow Intelligence OS — Build Battle 2026 Edition</p>
+      <p>Clean White & Light Blue Glassmorphism • Fullscreen Ambient Background Dots • Grounded in 7,000 Real Customer Verbatims</p>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       FULLSCREEN LIVING BACKGROUND DATA-DOTS ENGINE (POLISHED MICRO-PARTICLES)
+       ========================================================================== -->
+  <script>
+    // -------------------------------------------------------------
+    // 1. DATASET EVIDENCE SAMPLES (GROUNDED IN AUTHENTIC DATASET)
+    // -------------------------------------------------------------
+    const datasetSamples = [
+      { text: "Cannot receive SMS verification code when logging in from international numbers", cat: "Operational Issues", catIndex: 0, count: 42, sentiment: "negative", color: "#0284C7" },
+      { text: "Suspicious phishing message claiming to be from security team asking for wallet transfer", cat: "Fraud & Scam", catIndex: 1, count: 88, sentiment: "negative", color: "#EF4444" },
+      { text: "The analytics export took less than 2 seconds, amazing improvement over last quarter", cat: "Product Feedback", catIndex: 2, count: 1, sentiment: "positive", color: "#0EA5E9" },
+      { text: "Customer service agent resolved my billing dispute within 10 minutes", cat: "Customer Service", catIndex: 3, count: 15, sentiment: "positive", color: "#6366F1" },
+      { text: "Encountered double charging error during checkout with Stripe webhook delay", cat: "Operational Issues", catIndex: 0, count: 19, sentiment: "negative", color: "#0284C7" },
+      { text: "Fake investment advisor claiming to represent company in Telegram group", cat: "Fraud & Scam", catIndex: 1, count: 54, sentiment: "negative", color: "#EF4444" },
+      { text: "Interface is clean but dark mode toggle is missing in accessibility preferences", cat: "Product Feedback", catIndex: 2, count: 27, sentiment: "neutral", color: "#0EA5E9" },
+      { text: "Support agent took 4 days to answer initial onboarding question", cat: "Customer Service", catIndex: 3, count: 31, sentiment: "negative", color: "#6366F1" },
+      { text: "API endpoint latency spiked above 450ms during batch upload job", cat: "Operational Issues", catIndex: 0, count: 23, sentiment: "negative", color: "#0284C7" },
+      { text: "Security alert triggered false positive blocking legitimate login", cat: "Operational Issues", catIndex: 0, count: 18, sentiment: "neutral", color: "#0284C7" },
+      { text: "Received unauthorized password reset request email", cat: "Fraud & Scam", catIndex: 1, count: 62, sentiment: "negative", color: "#EF4444" },
+      { text: "Search filtering by category is instantaneous now, very smooth UX", cat: "Product Feedback", catIndex: 2, count: 8, sentiment: "positive", color: "#0EA5E9" }
+    ];
+
+    // -------------------------------------------------------------
+    // 2. FULLSCREEN LIVING BACKGROUND DATA CONSTELLATION ENGINE
+    // -------------------------------------------------------------
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 0;
+    let height = 0;
+    const NUM_DOTS = 220; // Radiant, tactile living data-bubbles
+    const particles = [];
+    let currentBackgroundStage = 1;
+    let mouseX = -1000;
+    let mouseY = -1000;
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    // Sophisticated Category Theme Palette (Luminous Translucent Glass Bubbles)
+    const categoryPalette = {
+      0: { 
+        name: "DevOps & Infrastructure", 
+        core: "#0284C7", 
+        fill: "rgba(14, 165, 233, 0.78)", 
+        glow: "rgba(56, 189, 248, 0.65)", 
+        rim: "rgba(224, 242, 254, 0.95)" 
+      },
+      1: { 
+        name: "Trust & Security (P0 Alert)", 
+        core: "#E11D48", 
+        fill: "rgba(244, 63, 94, 0.82)", 
+        glow: "rgba(251, 113, 133, 0.75)", 
+        rim: "rgba(254, 205, 211, 0.95)" 
+      },
+      2: { 
+        name: "Product UX & Design", 
+        core: "#0284C7", 
+        fill: "rgba(56, 189, 248, 0.78)", 
+        glow: "rgba(125, 211, 252, 0.68)", 
+        rim: "rgba(224, 242, 254, 0.95)" 
+      },
+      3: { 
+        name: "Customer Operations & Billing", 
+        core: "#4F46E5", 
+        fill: "rgba(99, 102, 241, 0.80)", 
+        glow: "rgba(165, 180, 252, 0.72)", 
+        rim: "rgba(224, 231, 255, 0.95)" 
+      }
+    };
+
+    class BackgroundDot {
+      constructor(index) {
+        this.index = index;
+        this.sample = datasetSamples[index % datasetSamples.length];
+        this.palette = categoryPalette[this.sample.catIndex] || categoryPalette[0];
+        this.x = Math.random() * (width || window.innerWidth || 1400);
+        this.y = Math.random() * (height || window.innerHeight || 900);
+        
+        // Gentle, fluid drift velocity
+        this.vx = (Math.random() - 0.5) * 0.65;
+        this.vy = (Math.random() - 0.5) * 0.65;
+
+        // Rich, tactile bubble radius (7px - 18px, clearly visible through translucent glass)
+        this.baseRadius = 7.0 + (this.sample.count / 88) * 11.0;
+        this.radius = this.baseRadius;
+        this.pulsePhase = Math.random() * Math.PI * 2;
+        this.opacity = 0.85 + Math.random() * 0.15;
+      }
+
+      update() {
+        this.pulsePhase += 0.024;
+
+        // Soft ambient mouse deflection
+        const mdx = this.x - mouseX;
+        const mdy = this.y - mouseY;
+        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mdist < 140) {
+          const force = (140 - mdist) / 140;
+          this.x += (mdx / mdist) * force * 2.5;
+          this.y += (mdy / mdist) * force * 2.5;
+        }
+
+        if (currentBackgroundStage === 1) {
+          // STAGE 1: THE DELUGE (Graceful Brownian chaos across entire viewport background)
+          this.x += this.vx;
+          this.y += this.vy;
+
+          if (this.x < 25) { this.x = 25; this.vx *= -1; }
+          if (this.x > width - 25) { this.x = width - 25; this.vx *= -1; }
+          if (this.y < 25) { this.y = 25; this.vy *= -1; }
+          if (this.y > height - 25) { this.y = height - 25; this.vy *= -1; }
+
+        } else if (currentBackgroundStage === 2) {
+          // STAGE 2: SEMANTIC DEDUPLICATION (Condense into 4 rotating celestial galaxies)
+          const hubX = (width / 5) * (this.sample.catIndex + 1);
+          const hubY = height * 0.46;
+          const angle = this.pulsePhase * 0.4 + (this.index * 0.32);
+          const dist = 38 + ((this.index * 21) % 85);
+          const targetX = hubX + Math.cos(angle) * dist;
+          const targetY = hubY + Math.sin(angle) * (dist * 0.65);
+          this.x += (targetX - this.x) * 0.045;
+          this.y += (targetY - this.y) * 0.045;
+
+        } else if (currentBackgroundStage === 3) {
+          // STAGE 3: AUTOMATED TEAM INBOX STREAMS (Wide flowing rivers, zero single-file zippers!)
+          const channelX = (width / 5) * (this.sample.catIndex + 1);
+          // Wide Gaussian lateral spread across 150px channel
+          const lateralSpread = ((this.index * 47) % 160) - 80;
+          const waveOffset = Math.sin(this.pulsePhase * 0.6 + this.index * 0.15) * 35;
+          const targetX = channelX + lateralSpread + waveOffset;
+          
+          this.x += (targetX - this.x) * 0.04;
+          // Smooth downward fluid flow
+          this.y = (this.y + 0.95 + (this.sample.catIndex * 0.18)) % (height || window.innerHeight);
+
+        } else if (currentBackgroundStage === 4) {
+          // STAGE 4: P0 ISOLATION (Critical fires orbit in glowing halo; remainder in tranquil grid)
+          if (this.sample.sentiment === 'negative' && this.sample.count > 40) {
+            const angle = this.pulsePhase * 0.85 + (this.index * 0.55);
+            const targetX = width / 2 + Math.cos(angle) * 280;
+            const targetY = height * 0.36 + Math.sin(angle) * 115;
+            this.x += (targetX - this.x) * 0.06;
+            this.y += (targetY - this.y) * 0.06;
+          } else {
+            // Calm, orderly background lattice for the 95% resolved verbatims
+            const col = (this.index % 14);
+            const row = Math.floor(this.index / 14);
+            const targetX = (width * 0.08) + col * (width * 0.84 / 14);
+            const targetY = height * 0.58 + row * 28;
+            this.x += (targetX - this.x) * 0.04;
+            this.y += (targetY - this.y) * 0.04;
+          }
+        }
+      }
+
+      draw() {
+        ctx.save();
+        let r = this.radius;
+        let pal = this.palette;
+        let coreColor = pal.core;
+        let fillColor = pal.fill;
+        let glowColor = pal.glow;
+
+        if (currentBackgroundStage === 4 && this.sample.sentiment === 'negative' && this.sample.count > 40) {
+          r += Math.sin(this.pulsePhase * 3) * 2.0;
+          coreColor = '#E11D48';
+          fillColor = 'rgba(225, 29, 72, 0.75)';
+          glowColor = 'rgba(244, 63, 94, 0.8)';
+        }
+
+        // 1. Radiant Ambient Chromatic Aura (shines beautifully through frosted glass cards)
+        const aura = ctx.createRadialGradient(this.x, this.y, r * 0.3, this.x, this.y, r * 2.8);
+        aura.addColorStop(0, glowColor);
+        aura.addColorStop(0.55, glowColor.replace(/[\d\.]+\)$/, '0.35)'));
+        aura.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = aura;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r * 2.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. 3D Translucent Glass Bubble Volume
+        const sphereGrad = ctx.createRadialGradient(
+          this.x - r * 0.35, this.y - r * 0.35, r * 0.05,
+          this.x, this.y, r
+        );
+        sphereGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        sphereGrad.addColorStop(0.25, fillColor);
+        sphereGrad.addColorStop(0.7, fillColor.replace(/[\d\.]+\)$/, '0.45)'));
+        sphereGrad.addColorStop(1, coreColor);
+
+        ctx.fillStyle = sphereGrad;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. Crisp Perimeter Glass Rim Light
+        ctx.strokeStyle = pal.rim;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // 4. Glossy Specular Surface Glare Arc / Glint
+        ctx.beginPath();
+        ctx.arc(this.x - r * 0.35, this.y - r * 0.35, Math.max(1.8, r * 0.32), 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.98)';
+        ctx.fill();
+
+        // 5. Secondary bottom-right inner refraction
+        ctx.beginPath();
+        ctx.arc(this.x + r * 0.3, this.y + r * 0.3, Math.max(1.2, r * 0.22), 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    function initBackgroundDots() {
+      resizeCanvas();
+      particles.length = 0;
+      for (let i = 0; i < NUM_DOTS; i++) {
+        particles.push(new BackgroundDot(i));
+      }
+    }
+
+    // Delicate, Whisper-thin Constellation Filaments
+    function drawFilaments() {
+      if (currentBackgroundStage > 2) return;
+      ctx.lineWidth = 0.6;
+      for (let i = 0; i < particles.length; i += 2) {
+        for (let j = i + 1; j < particles.length; j += 3) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110) {
+            ctx.strokeStyle = `rgba(14, 165, 233, ${0.16 * (1 - dist / 110)})`;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function animateBackground() {
+      ctx.clearRect(0, 0, width, height);
+      drawFilaments();
+
+      for (let p of particles) {
+        p.update();
+        p.draw();
+      }
+
+      requestAnimationFrame(animateBackground);
+    }
+
+    // -------------------------------------------------------------
+    // 3. 4-STAGE INTERACTIVE WORKFLOW ENGINE (DOTS + CARDS SYNC)
+    // -------------------------------------------------------------
+    function triggerStage(stage, shouldScroll = false) {
+      currentBackgroundStage = stage;
+
+      for (let s = 1; s <= 4; s++) {
+        // Toggle Card highlight
+        const card = document.getElementById(`storyCard-${s}`);
+        if (card) {
+          if (s === stage) card.classList.add('active-step');
+          else card.classList.remove('active-step');
+        }
+
+        // Toggle Timeline Row highlight
+        const row = document.getElementById(`storyRow-${s}`);
+        if (row) {
+          if (s === stage) row.classList.add('active-row');
+          else row.classList.remove('active-row');
+        }
+
+        // Toggle Stage Controller Tab
+        const tab = document.getElementById(`stageTab-${s}`);
+        if (tab) {
+          if (s === stage) tab.classList.add('active');
+          else tab.classList.remove('active');
+        }
+      }
+
+      // Smoothly scroll to the corresponding staggered card if triggered via tab or button
+      if (shouldScroll) {
+        const targetRow = document.getElementById(`storyRow-${stage}`);
+        if (targetRow) {
+          targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      const badge = document.getElementById('hudBadge');
+      const desc = document.getElementById('hudDesc');
+      const entropy = document.getElementById('hudEntropy');
+
+      if (stage === 1) {
+        badge.textContent = 'Stage 1: The Feedback Deluge';
+        desc.textContent = '7,000 unindexed verbatims drifting across the ambient background in Brownian chaos with high entropy.';
+        entropy.textContent = '0% (High Noise)';
+        entropy.style.color = 'var(--crimson-alert)';
+        for (let p of particles) {
+          p.vx = (Math.random() - 0.5) * 1.2;
+          p.vy = (Math.random() - 0.5) * 1.2;
+        }
+      } else if (stage === 2) {
+        badge.textContent = 'Stage 2: Semantic Deduplication';
+        desc.textContent = '6,680 repetitive complaints collapse into 320 unique root-cause galaxies (e.g. 88x phishing repeats).';
+        entropy.textContent = '95.4% Deduplicated';
+        entropy.style.color = 'var(--blue-accent-600)';
+      } else if (stage === 3) {
+        badge.textContent = 'Stage 3: Automated Team Streams';
+        desc.textContent = 'Feedback streams into 4 wide department rivers (DevOps, InfoSec, Product UX, Customer Ops).';
+        entropy.textContent = '100% Routed';
+        entropy.style.color = 'var(--emerald-positive)';
+      } else if (stage === 4) {
+        badge.textContent = 'Stage 4: P0 Fire Isolation';
+        desc.textContent = 'Urgent P0 Phishing (88x) & OTP (42x) emergencies isolated into orbital alert halo for Linear/Jira.';
+        entropy.textContent = 'Ready for Backlog';
+        entropy.style.color = 'var(--blue-accent-600)';
+      }
+    }
+
+    function scrollToStory() {
+      const el = document.getElementById('howItWorksSection');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // High-Precision Intersection Observer for Staggered Rows Scroll Sync
+    if ('IntersectionObserver' in window) {
+      const rowObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const st = parseInt(entry.target.getAttribute('data-stage'), 10);
+            if (st && st !== currentBackgroundStage) {
+              triggerStage(st, false); // Don't scroll window while user is actively scrolling!
+            }
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: "-25% 0px -25% 0px",
+        threshold: 0.3
+      });
+
+      document.querySelectorAll('.story-row').forEach(row => {
+        rowObserver.observe(row);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 4. 3D TACTILE KPI FLIP CARDS
+    // -------------------------------------------------------------
+    function flipTiltCard(card) {
+      card.classList.toggle('flipped');
+    }
+
+    document.querySelectorAll('.tilt-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        if (card.classList.contains('flipped')) return;
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -10;
+        const rotateY = ((x - centerX) / centerX) * 10;
+        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      });
+
+      card.addEventListener('mouseleave', () => {
+        if (!card.classList.contains('flipped')) {
+          card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        }
+      });
+    });
+
+    // -------------------------------------------------------------
+    // 5. SEAMLESS IN-APP VIEW SWITCHING (ZERO HARD RELOADS)
+    // -------------------------------------------------------------
+    const views = ['landing', 'dashboard', 'feedback', 'issues', 'reports'];
+
+    function switchView(viewName) {
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const tab = document.getElementById(`tab-${v}`);
+        if (el) {
+          if (v === viewName) {
+            el.classList.add('active-view');
+          } else {
+            el.classList.remove('active-view');
+          }
+        }
+        if (tab) {
+          if (v === viewName) tab.classList.add('active');
+          else tab.classList.remove('active');
+        }
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // -------------------------------------------------------------
+    // 6. SLIDE-OVER EVIDENCE INSPECTION DRAWER
+    // -------------------------------------------------------------
+    function openEvidenceDrawer(sampleIndex = 0) {
+      const sample = datasetSamples[sampleIndex % datasetSamples.length];
+      document.getElementById('drawerRecordId').textContent = `Record #FB-${String(1000 + sampleIndex * 42).slice(-4)}`;
+      document.getElementById('drawerQuoteText').textContent = `"${sample.text}"`;
+      document.getElementById('drawerRecurrence').textContent = `${sample.count} Repetitions`;
+      document.getElementById('drawerCategory').textContent = sample.cat;
+
+      document.getElementById('drawerScrim').classList.add('active');
+      document.getElementById('evidenceDrawer').classList.add('active');
+    }
+
+    function closeEvidenceDrawer() {
+      document.getElementById('drawerScrim').classList.remove('active');
+      document.getElementById('evidenceDrawer').classList.remove('active');
+    }
+
+    // -------------------------------------------------------------
+    // 7. INITIALIZE
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      initBackgroundDots();
+      animateBackground();
+    });
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>

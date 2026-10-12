@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InsightFlow - Issues Triage &amp; Actionable Recommendation Dossier</title>
+<!-- Typography & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-container": "#91422e",
+            "secondary-container": "#dce5de",
+            "secondary": "#58605b",
+            "inverse-surface": "#2a322b",
+            "surface-container-highest": "#dce5da",
+            "on-primary-fixed": "#002115",
+            "primary-container": "#28644d",
+            "surface-bright": "#f3fcf1",
+            "surface-variant": "#dce5da",
+            "tertiary-fixed-dim": "#ffb4a2",
+            "on-tertiary-fixed-variant": "#79301e",
+            "surface-container-lowest": "#ffffff",
+            "surface": "#f3fcf1",
+            "on-background": "#161d17",
+            "on-secondary-fixed": "#151d19",
+            "on-primary": "#ffffff",
+            "inverse-primary": "#96d3b7",
+            "inverse-on-surface": "#eaf3e8",
+            "on-primary-container": "#a1dec1",
+            "surface-container-low": "#edf6eb",
+            "on-secondary-container": "#5e6661",
+            "surface-dim": "#d4dcd2",
+            "on-tertiary-fixed": "#3c0700",
+            "surface-container": "#e8f0e5",
+            "outline-variant": "#bfc9c2",
+            "outline": "#707973",
+            "primary-fixed-dim": "#96d3b7",
+            "primary-fixed": "#b2f0d2",
+            "surface-tint": "#2d6952",
+            "on-secondary": "#ffffff",
+            "error": "#ba1a1a",
+            "background": "#f3fcf1",
+            "error-container": "#ffdad6",
+            "secondary-fixed": "#dce5de",
+            "surface-container-high": "#e2ebe0",
+            "on-primary-fixed-variant": "#10513b",
+            "tertiary-fixed": "#ffdad2",
+            "on-tertiary": "#ffffff",
+            "on-error": "#ffffff",
+            "secondary-fixed-dim": "#c0c9c2",
+            "on-tertiary-container": "#ffc3b5",
+            "on-secondary-fixed-variant": "#404944",
+            "on-surface": "#161d17",
+            "on-error-container": "#93000a",
+            "tertiary": "#732c1a",
+            "primary": "#084c36",
+            "on-surface-variant": "#404944"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "0.75rem",
+            "space-lg": "1.25rem",
+            "margin": "1.5rem",
+            "gutter-lg": "1.5rem",
+            "space-xl": "1.75rem",
+            "space-xs": "0.25rem",
+            "space-2xs": "0.125rem",
+            "margin-mobile": "1rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-2xl": "2.5rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Geist", "sans-serif"],
+            "label-sm": ["Geist", "sans-serif"],
+            "display-lg": ["Geist", "sans-serif"],
+            "headline-xl": ["Geist", "sans-serif"],
+            "label-md": ["Geist", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "headline-md": ["Geist", "sans-serif"],
+            "body-sm": ["Geist", "sans-serif"],
+            "body-lg": ["Geist", "sans-serif"],
+            "body-md": ["Geist", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-lg": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "display-lg": ["38px", { "lineHeight": "46px", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+            "headline-xl": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "code-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Editorial Light-First Glassmorphic Tokens */
+    .bg-porcelain {
+      background-color: #F8F8F5;
+    }
+    .glass-panel-subtle {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 20px -2px rgba(32, 40, 33, 0.03), 0 1px 3px rgba(32, 40, 33, 0.02);
+    }
+    .glass-panel-elevated {
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 12px 32px -4px rgba(32, 40, 33, 0.05), 0 2px 6px rgba(32, 40, 33, 0.02);
+    }
+    .glass-panel-deep {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 1px solid #FFFFFF;
+      box-shadow: 0 20px 40px -6px rgba(32, 40, 33, 0.08), 0 4px 12px rgba(32, 40, 33, 0.03);
+    }
+    .frosted-inner-bevel {
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+    }
+    .active-card-glow {
+      border: 1.5px solid #28644D;
+      box-shadow: 0 14px 34px -4px rgba(40, 100, 77, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+    }
+    /* Custom Scrollbar for Sleek Editorial Feel */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(112, 121, 115, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(40, 100, 77, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-porcelain text-on-surface font-body-md antialiased min-h-screen flex selection:bg-secondary-container selection:text-primary">
+<!-- ========================================================================= -->
+<!-- 1. PERSISTENT LEFT NAVIGATION RAIL                                       -->
+<!-- ========================================================================= -->
+<aside class="fixed left-0 top-0 h-screen w-64 glass-panel-subtle border-r border-outline-variant/30 flex flex-col justify-between p-4 z-40 select-none">
+<!-- Top Brand & Project Section -->
+<div class="flex flex-col gap-4">
+<!-- Brand Header -->
+<div class="flex items-center justify-between px-2 pt-1">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="filter_vintage">filter_vintage</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md tracking-tight text-primary leading-none">InsightFlow</div>
+<div class="font-label-sm text-label-sm text-secondary leading-none mt-1">v2.4 Enterprise</div>
+</div>
+</div>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-code-sm bg-secondary-container text-on-secondary-container border border-outline-variant/20">PRO</span>
+</div>
+<!-- Workspace Selector Dropdown -->
+<div class="glass-panel-elevated rounded-lg p-2 flex items-center justify-between cursor-pointer hover:border-primary/40 transition-colors">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></div>
+<div class="truncate">
+<div class="font-label-sm text-label-sm text-secondary">ACTIVE WORKSPACE</div>
+<div class="font-label-md text-label-md text-on-surface font-medium truncate">Build Battle 2026</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[18px]" data-icon="unfold_more">unfold_more</span>
+</div>
+<!-- Divider -->
+<div class="h-px bg-outline-variant/25 mx-1"></div>
+<!-- Primary Navigation Links -->
+<nav class="flex flex-col gap-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/80 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[19px] group-hover:text-primary transition-colors" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<!-- Feedback Inbox -->
+<a class="flex items-center justify-between text-secondary rounded-lg px-3 py-2 hover:bg-white/80 transition-colors group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[19px] group-hover:text-primary transition-colors" data-icon="inbox">inbox</span>
+<span class="font-body-md text-body-md">Feedback Inbox</span>
+</div>
+<span class="font-code-sm text-code-sm px-1.5 py-0.2 rounded-full bg-secondary-container text-on-secondary-container">7k</span>
+</a>
+<!-- Issues & Triage (ACTIVE DESTINATION) -->
+<a class="flex items-center justify-between bg-primary-container text-on-primary rounded-lg px-3 py-2 font-medium shadow-sm transition-all duration-150" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[19px]" data-icon="emergency" data-weight="fill" style="font-variation-settings: 'FILL' 1;">emergency</span>
+<span class="font-body-md text-body-md font-medium text-white">Issues &amp; Triage</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary-fixed"></span>
+</a>
+<!-- AI Recommendations -->
+<a class="flex items-center justify-between text-secondary rounded-lg px-3 py-2 hover:bg-white/80 transition-colors group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[19px] group-hover:text-primary transition-colors" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-body-md text-body-md">AI Recommendations</span>
+</div>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container/80"></span>
+</a>
+<!-- Reports & Exports -->
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/80 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[19px] group-hover:text-primary transition-colors" data-icon="insert_chart">insert_chart</span>
+<span class="font-body-md text-body-md">Reports &amp; Exports</span>
+</a>
+<!-- Integrations -->
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/80 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[19px] group-hover:text-primary transition-colors" data-icon="hub">hub</span>
+<span class="font-body-md text-body-md">Integrations</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/80 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[19px] group-hover:text-primary transition-colors" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Rail / Ingestion Lineage & Status -->
+<div class="flex flex-col gap-3 pt-3 border-t border-outline-variant/25">
+<div class="glass-panel-elevated p-2.5 rounded-lg border border-white/80">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary-container text-[16px]" data-icon="check_circle">check_circle</span>
+<span class="font-label-sm text-label-sm font-semibold text-primary">100% Clean</span>
+</div>
+<span class="font-code-sm text-[10px] text-secondary">SHA-256</span>
+</div>
+<div class="w-full bg-secondary-container h-1 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full w-full"></div>
+</div>
+<div class="flex items-center justify-between mt-1.5">
+<span class="font-label-sm text-[10px] text-secondary">7,000 / 7,000 Synced</span>
+<span class="font-label-sm text-[10px] text-primary font-medium">Batch-A</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-1">
+<button class="flex items-center gap-2 text-secondary hover:text-on-surface text-label-md font-label-md transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="help">help</span>
+<span>Help &amp; Schema</span>
+</button>
+<button class="text-secondary hover:text-on-surface p-1 rounded hover:bg-white/60 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="left_panel_close">left_panel_close</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- 2. MAIN APPLICATION WORKSPACE CANVAS                                      -->
+<!-- ========================================================================= -->
+<div class="ml-64 flex-1 flex flex-col min-w-0">
+<!-- Top Bar (Sticky Glass Header) -->
+<header class="sticky top-0 z-30 glass-panel-elevated px-8 py-3.5 flex items-center justify-between border-b border-white/80">
+<!-- Breadcrumbs & Focus Hierarchy -->
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span class="hover:text-on-surface cursor-pointer">Workspace</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="font-medium text-on-surface">Issues &amp; Action Intelligence</span>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-secondary-container text-on-secondary-container border border-outline-variant/30">
+          10 Prioritized Clusters
+        </span>
+</div>
+<!-- Center Search & Hotkey Field -->
+<div class="w-96 relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[18px]" data-icon="search">search</span>
+<input class="w-full bg-white/70 border border-outline-variant/40 rounded-lg pl-9 pr-14 py-1.5 text-body-sm font-body-sm text-on-surface placeholder-secondary focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all shadow-sm" placeholder="Search issues, verbatim clusters, keywords... Cmd+K" type="text"/>
+<kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 font-code-sm text-[10px] px-1.5 py-0.5 rounded bg-surface-container text-secondary border border-outline-variant/30">⌘K</kbd>
+</div>
+<!-- Header Actions & Strategist Profile -->
+<div class="flex items-center gap-3">
+<button class="glass-panel-subtle hover:bg-white text-on-surface font-label-md text-label-md px-3.5 py-1.5 rounded-lg border border-white flex items-center gap-1.5 transition-all shadow-sm active:scale-95">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="tune">tune</span>
+<span>Bulk Triage</span>
+</button>
+<button class="relative w-9 h-9 rounded-lg glass-panel-subtle flex items-center justify-center hover:bg-white text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-tertiary-container border border-white"></span>
+</button>
+<div class="h-5 w-px bg-outline-variant/30"></div>
+<!-- User Identity Badge -->
+<div class="flex items-center gap-2.5 pl-1 cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-headline-md text-xs font-semibold shadow-inner">
+            EV
+          </div>
+<div class="text-left hidden lg:block">
+<div class="font-label-md text-label-md font-semibold text-on-surface leading-tight group-hover:text-primary transition-colors">Elena Vance</div>
+<div class="font-label-sm text-[10px] text-secondary leading-tight">Lead Strategist</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Subheader / Triage Summary Bar (Level 1 Glass) -->
+<section class="px-8 pt-6 pb-4">
+<div class="glass-panel-elevated rounded-xl p-5 border border-white shadow-sm flex flex-col gap-4">
+<!-- Metrics Row -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-outline-variant/20">
+<!-- Metric 1 -->
+<div class="flex flex-col pr-4">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Cluster Topology</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-lg text-headline-xl font-bold text-on-surface">10</span>
+<span class="font-body-sm text-body-sm text-secondary font-medium">Friction Clusters Identified</span>
+</div>
+<span class="font-label-sm text-[11px] text-secondary mt-0.5">Synthesized from 7,000 ingested verbatims</span>
+</div>
+<!-- Metric 2 -->
+<div class="flex flex-col md:px-4 pt-3 md:pt-0">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Repetition Volume</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-lg text-headline-xl font-bold text-on-surface">2,141</span>
+<span class="font-body-sm text-body-sm text-tertiary font-medium">High-Friction Records</span>
+</div>
+<span class="font-label-sm text-[11px] text-secondary mt-0.5">Representing 30.6% of verified feedback</span>
+</div>
+<!-- Metric 3 -->
+<div class="flex flex-col md:px-4 pt-3 md:pt-0">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Immediate Risk</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-lg text-headline-xl font-bold text-tertiary">3</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary/10 text-tertiary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+                Critical Severity
+              </span>
+</div>
+<span class="font-label-sm text-[11px] text-secondary mt-0.5">High financial or authentication risk</span>
+</div>
+<!-- Metric 4 -->
+<div class="flex flex-col md:pl-4 pt-3 md:pt-0">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Remediation Velocity</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-lg text-headline-xl font-bold text-primary">4</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary font-semibold">
+                Active Recommendations
+              </span>
+</div>
+<span class="font-label-sm text-[11px] text-secondary mt-0.5">2 In Planned Pipeline • 2 Deployed</span>
+</div>
+</div>
+<div class="h-px bg-outline-variant/20 w-full"></div>
+<!-- Quick Filter Control Cluster -->
+<div class="flex flex-wrap items-center justify-between gap-3">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-label-sm text-label-sm text-secondary mr-1">Filter View:</span>
+<button class="px-3 py-1 rounded-full text-label-sm font-label-sm bg-primary-container text-white font-semibold shadow-sm">
+              All Priorities (10)
+            </button>
+<button class="px-3 py-1 rounded-full text-label-sm font-label-sm bg-white/70 hover:bg-white text-tertiary border border-outline-variant/30 transition-colors flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+              Critical (3)
+            </button>
+<button class="px-3 py-1 rounded-full text-label-sm font-label-sm bg-white/70 hover:bg-white text-[#A87522] border border-outline-variant/30 transition-colors flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#A87522]"></span>
+              High (4)
+            </button>
+<button class="px-3 py-1 rounded-full text-label-sm font-label-sm bg-white/70 hover:bg-white text-secondary border border-outline-variant/30 transition-colors">
+              Medium (3)
+            </button>
+<div class="h-4 w-px bg-outline-variant/30 mx-1"></div>
+<button class="px-3 py-1 rounded-lg text-label-sm font-label-sm bg-white/60 hover:bg-white text-on-surface border border-outline-variant/30 flex items-center gap-1 transition-colors">
+<span>Status: In Investigation</span>
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+<button class="px-3 py-1 rounded-lg text-label-sm font-label-sm bg-white/60 hover:bg-white text-on-surface border border-outline-variant/30 flex items-center gap-1 transition-colors">
+<span>Category: All</span>
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+</div>
+<!-- Summary Export Action -->
+<div class="flex items-center gap-2">
+<button class="glass-panel-subtle hover:bg-white text-secondary hover:text-on-surface px-3 py-1 rounded-lg border border-white text-label-sm font-label-sm flex items-center gap-1.5 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[15px]" data-icon="file_download">file_download</span>
+<span>Export Summary</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 3. ASYMMETRICAL WORKSPACE CONTENT GRID                                    -->
+<!-- ========================================================================= -->
+<main class="flex-1 px-8 pb-10">
+<div class="grid grid-cols-12 gap-6 items-start">
+<!-- LEFT COLUMN: Prioritized Issues Board (7 Cols / ~58%) -->
+<section class="col-span-12 xl:col-span-7 flex flex-col gap-4">
+<!-- Board Controls / Sort Bar -->
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md text-on-surface font-semibold">Prioritized Issues</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-0.5 rounded-full">Ranked by Friction Repetition Index</span>
+</div>
+<div class="flex items-center gap-2 text-label-md font-label-md text-secondary">
+<span>Sort by:</span>
+<button class="font-semibold text-on-surface flex items-center gap-1 hover:text-primary transition-colors">
+                Severity Score (Desc)
+                <span class="material-symbols-outlined text-[16px]" data-icon="arrow_drop_down">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<!-- CARD 1 (ACTIVE / SELECTED STATE) -->
+<article class="glass-panel-deep active-card-glow rounded-xl p-5 relative transition-all duration-200 cursor-pointer">
+<div class="absolute -left-1 top-6 bottom-6 w-1.5 bg-primary-container rounded-r-full"></div>
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-tertiary/10 text-tertiary border border-tertiary/20 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    ISSUE #01 • CRITICAL SEVERITY
+                  </span>
+<span class="font-code-sm text-code-sm text-secondary">Last updated 12m ago</span>
+<span class="font-code-sm text-[10px] text-primary-container bg-primary-fixed/30 px-1.5 py-0.2 rounded font-medium">INDEX 96.0</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg font-bold text-on-surface mt-1 tracking-tight">
+                  Fraud &amp; Phishing Impersonation Scam Targeting Wallets
+                </h3>
+</div>
+<!-- Selection Pin Glyph -->
+<div class="w-7 h-7 rounded-full bg-primary-container text-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[16px]" data-icon="check">check</span>
+</div>
+</div>
+<!-- Metadata Pills Row -->
+<div class="flex flex-wrap items-center gap-2 mt-3 text-label-sm font-label-sm">
+<span class="bg-secondary-container/80 text-on-secondary-container px-2.5 py-1 rounded-md font-medium border border-outline-variant/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary" data-icon="shield">shield</span>
+                Category: Fraud &amp; Scam
+              </span>
+<span class="bg-white/80 text-on-surface px-2.5 py-1 rounded-md font-semibold border border-outline-variant/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="repeat">repeat</span>
+                88 exact occurrences (Highest Repeated Friction)
+              </span>
+<span class="bg-tertiary/10 text-tertiary px-2.5 py-1 rounded-md font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span>
+                +412% velocity spike
+              </span>
+</div>
+<!-- Urgency Justification -->
+<p class="mt-3 text-body-md text-body-md text-on-surface-variant font-normal leading-relaxed bg-white/40 p-2.5 rounded-lg border border-white/80">
+<span class="font-semibold text-on-surface">Algorithmic Rationale:</span> High operational urgency driven by severe negative sentiment and direct customer financial risk. Reports cluster around unauthorized private key requests spoofing official customer channels.
+            </p>
+<!-- Card Footer Controls -->
+<div class="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-3">
+<!-- Status Dropdown Pill -->
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container text-label-sm font-label-sm text-on-surface border border-outline-variant/40 hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-[14px] text-[#A87522]" data-icon="search">search</span>
+<span class="font-medium">In Investigation</span>
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Assignee -->
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-secondary">
+<span class="w-5 h-5 rounded-full bg-secondary text-white flex items-center justify-center text-[10px] font-bold">ST</span>
+<span>Security Triage Team</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm font-medium text-primary">
+<span class="material-symbols-outlined text-[15px]" data-icon="task_alt">task_alt</span>
+                  1 Action Plan Proposed
+                </span>
+</div>
+</div>
+</article>
+<!-- CARD 2: Critical Severity -->
+<article class="glass-panel-elevated hover:bg-white/95 rounded-xl p-5 border border-white/90 transition-all duration-200 cursor-pointer group">
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-tertiary/10 text-tertiary border border-tertiary/20 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    ISSUE #02 • CRITICAL SEVERITY
+                  </span>
+<span class="font-code-sm text-code-sm text-secondary">Last updated 48m ago</span>
+<span class="font-code-sm text-[10px] text-secondary bg-surface-container px-1.5 py-0.2 rounded">INDEX 88.5</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg font-bold text-on-surface mt-1 group-hover:text-primary transition-colors tracking-tight">
+                  International SMS OTP Verification Gateway Timeout
+                </h3>
+</div>
+<span class="material-symbols-outlined text-secondary/40 group-hover:text-secondary text-[20px]" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Metadata Row -->
+<div class="flex flex-wrap items-center gap-2 mt-3 text-label-sm font-label-sm">
+<span class="bg-secondary-container/80 text-on-secondary-container px-2.5 py-1 rounded-md font-medium border border-outline-variant/30">
+                Category: Operational Issues
+              </span>
+<span class="bg-white/80 text-on-surface px-2.5 py-1 rounded-md font-semibold border border-outline-variant/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="repeat">repeat</span>
+                42 occurrences
+              </span>
+<span class="bg-surface-container text-on-surface-variant px-2.5 py-1 rounded-md">
+                Route Impact: LatAm &amp; EMEA carriers
+              </span>
+</div>
+<p class="mt-2.5 text-body-md text-body-md text-secondary leading-relaxed">
+<span class="font-medium text-on-surface">Algorithmic Rationale:</span> Authentication roadblock directly preventing legitimate logins across 3 international carrier routes. Upstream Twilio latency exceeding 45,000ms.
+            </p>
+<div class="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/15">
+<div class="flex items-center gap-3">
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-label-sm font-label-sm text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="assignment">assignment</span>
+<span>Open Triage</span>
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="expand_more">expand_more</span>
+</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-secondary">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-[10px] font-bold">AI</span>
+<span>Auth Infrastructure</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">No Action Plan Yet</span>
+</div>
+</article>
+<!-- CARD 3: High Priority -->
+<article class="glass-panel-elevated hover:bg-white/95 rounded-xl p-5 border border-white/90 transition-all duration-200 cursor-pointer group">
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[#A87522]/10 text-[#A87522] border border-[#A87522]/20 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A87522]"></span>
+                    ISSUE #03 • HIGH PRIORITY
+                  </span>
+<span class="font-code-sm text-code-sm text-secondary">Last updated 2h ago</span>
+<span class="font-code-sm text-[10px] text-secondary bg-surface-container px-1.5 py-0.2 rounded">INDEX 74.2</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg font-bold text-on-surface mt-1 group-hover:text-primary transition-colors tracking-tight">
+                  Double Billing &amp; Webhook Synchronization Failure
+                </h3>
+</div>
+<span class="material-symbols-outlined text-secondary/40 group-hover:text-secondary text-[20px]" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Metadata Row -->
+<div class="flex flex-wrap items-center gap-2 mt-3 text-label-sm font-label-sm">
+<span class="bg-secondary-container/80 text-on-secondary-container px-2.5 py-1 rounded-md font-medium border border-outline-variant/30">
+                Category: Operational Issues
+              </span>
+<span class="bg-white/80 text-on-surface px-2.5 py-1 rounded-md font-semibold border border-outline-variant/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="repeat">repeat</span>
+                19 occurrences
+              </span>
+<span class="bg-surface-container text-on-surface-variant px-2.5 py-1 rounded-md">
+                Stripe v2024-06 Webhook Listener
+              </span>
+</div>
+<p class="mt-2.5 text-body-md text-body-md text-secondary leading-relaxed">
+<span class="font-medium text-on-surface">Algorithmic Rationale:</span> Post-purchase invoice race condition triggering redundant capture webhooks and customer confusion during instant checkout.
+            </p>
+<div class="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/15">
+<div class="flex items-center gap-3">
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-label-sm font-label-sm text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="bolt">bolt</span>
+<span>In Progress</span>
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="expand_more">expand_more</span>
+</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-secondary">
+<span class="w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-[10px] font-bold">PC</span>
+<span>Payments Core</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm font-medium text-primary">
+<span class="material-symbols-outlined text-[15px]" data-icon="sync">sync</span>
+                Fix PR Queued
+              </span>
+</div>
+</article>
+<!-- CARD 4: Medium Priority -->
+<article class="glass-panel-elevated hover:bg-white/95 rounded-xl p-5 border border-white/90 transition-all duration-200 cursor-pointer group">
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-secondary-container text-on-secondary-container border border-outline-variant/30 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    ISSUE #04 • MEDIUM PRIORITY
+                  </span>
+<span class="font-code-sm text-code-sm text-secondary">Last updated 4h ago</span>
+<span class="font-code-sm text-[10px] text-secondary bg-surface-container px-1.5 py-0.2 rounded">INDEX 52.8</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg font-bold text-on-surface mt-1 group-hover:text-primary transition-colors tracking-tight">
+                  Accessibility Preference: Missing Dark Mode Contrast Theme
+                </h3>
+</div>
+<span class="material-symbols-outlined text-secondary/40 group-hover:text-secondary text-[20px]" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Metadata Row -->
+<div class="flex flex-wrap items-center gap-2 mt-3 text-label-sm font-label-sm">
+<span class="bg-secondary-container/80 text-on-secondary-container px-2.5 py-1 rounded-md font-medium border border-outline-variant/30">
+                Category: Product Feedback
+              </span>
+<span class="bg-white/80 text-on-surface px-2.5 py-1 rounded-md font-semibold border border-outline-variant/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="repeat">repeat</span>
+                27 occurrences
+              </span>
+</div>
+<p class="mt-2.5 text-body-md text-body-md text-secondary leading-relaxed">
+<span class="font-medium text-on-surface">Algorithmic Rationale:</span> Low operational friction but consistent usability requests from power traders operating in low-light environments.
+            </p>
+<div class="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/15">
+<div class="flex items-center gap-3">
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-label-sm font-label-sm text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="lightbulb">lightbulb</span>
+<span>Backlog</span>
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">Design Tokens Scheduled</span>
+</div>
+</article>
+</section>
+<!-- RIGHT COLUMN: Deep Issue Dossier & Action Center (5 Cols / ~42%, Sticky Level 2/3) -->
+<section class="col-span-12 xl:col-span-5 sticky top-20 flex flex-col gap-5">
+<!-- Dossier Outer Container -->
+<div class="glass-panel-deep rounded-2xl p-6 border border-white shadow-md flex flex-col gap-5 frosted-inner-bevel">
+<!-- Dossier Header -->
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant/25">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary font-bold">
+<span class="material-symbols-outlined text-[14px]" data-icon="auto_awesome" data-weight="fill" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                  Evidence Dossier &amp; Action Plan
+                </span>
+<span class="font-code-sm text-code-sm text-secondary">#ISSUE-01</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-secondary transition-colors" title="Expand View">
+<span class="material-symbols-outlined text-[18px]" data-icon="open_in_full">open_in_full</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-secondary transition-colors" title="Close Panel">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Priority Calculation Rationale Card -->
+<div class="glass-panel-subtle rounded-xl p-4 border border-white flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div>
+<div class="font-label-sm text-label-sm uppercase tracking-wide text-secondary font-semibold">Priority Calculation Rationale</div>
+<div class="font-headline-lg text-headline-lg font-bold text-on-surface mt-0.5">Score 96 <span class="font-body-md text-secondary font-normal">/ 100</span></div>
+</div>
+<div class="px-2.5 py-1 rounded-lg bg-tertiary text-white font-code-sm text-code-sm font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="warning">warning</span>
+                  P0 SEV-1
+                </div>
+</div>
+<!-- Micro Breakdown Bars & Chips -->
+<div class="grid grid-cols-3 gap-2 pt-1 text-center">
+<div class="bg-white/80 p-2 rounded-lg border border-outline-variant/20">
+<div class="font-headline-md text-body-md font-bold text-tertiary">100%</div>
+<div class="font-label-sm text-[10px] text-secondary mt-0.5">Negative Sentiment</div>
+</div>
+<div class="bg-white/80 p-2 rounded-lg border border-outline-variant/20">
+<div class="font-headline-md text-body-md font-bold text-on-surface">88 / 7k</div>
+<div class="font-label-sm text-[10px] text-secondary mt-0.5">Repetitive Incidents</div>
+</div>
+<div class="bg-white/80 p-2 rounded-lg border border-outline-variant/20">
+<div class="font-headline-md text-body-md font-bold text-primary">Tier 1</div>
+<div class="font-label-sm text-[10px] text-secondary mt-0.5">Compliance Impact</div>
+</div>
+</div>
+<!-- Essential Data Integrity Principle Callout -->
+<div class="flex items-start gap-2.5 bg-surface-container-high/60 rounded-lg p-3 border border-outline-variant/30 text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5" data-icon="verified_user">verified_user</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+<strong class="text-on-surface font-semibold">Data Integrity Principle:</strong> 88 occurrences indicate repeated reporting of this specific incident, not unique confirmed victims. Lineage verified against ingest hash.
+                </p>
+</div>
+</div>
+<!-- Direct Source Verbatim Evidence Stream -->
+<div class="flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-semibold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="chat">chat</span>
+                  Direct Source Verbatim &amp; Cryptographic Lineage
+                </span>
+<span class="font-code-sm text-[11px] text-secondary">Verified Batch-2026-A</span>
+</div>
+<!-- Verbatim Quote Block -->
+<div class="bg-white/90 p-4 rounded-xl border border-outline-variant/30 shadow-sm relative overflow-hidden">
+<div class="absolute -right-2 -bottom-4 text-outline-variant/15 select-none pointer-events-none">
+<span class="material-symbols-outlined text-[90px]" data-icon="format_quote">format_quote</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface italic relative z-10 leading-relaxed font-normal">
+                  “Suspicious phishing message claiming to be from security team asking for wallet transfer and private key export.”
+                </p>
+<!-- Lineage details footer -->
+<div class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-outline-variant/20 text-label-sm font-label-sm relative z-10">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-primary font-medium">
+<span class="material-symbols-outlined text-[14px]" data-icon="tag">tag</span>
+                      88 Source Matches across Batch-2026-CSV-A
+                    </span>
+</div>
+<span class="font-code-sm text-[10px] text-secondary bg-surface-container px-1.5 py-0.5 rounded">
+                    SHA: 8f42…39b1
+                  </span>
+</div>
+</div>
+<a class="inline-flex items-center gap-1 text-body-sm font-body-sm text-primary hover:underline font-medium self-start mt-0.5" href="#">
+<span>View all 88 matching customer verbatims</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<!-- AI Actionable Recommendation Card (Frosted Level 3 with Forest Green rim) -->
+<div class="glass-panel-elevated rounded-xl p-4 border-2 border-primary-container/30 relative flex flex-col gap-3 shadow-md bg-white/95">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-md text-label-md font-bold text-primary">RECOMMENDED ACTION #REC-01</span>
+</div>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="bolt">bolt</span>
+                  96.4% Model Confidence
+                </span>
+</div>
+<!-- Recommendation Proposal -->
+<div>
+<h4 class="font-headline-md text-headline-md font-bold text-on-surface leading-tight">
+                  Deploy In-App Phishing Verification Banner &amp; Block Known Impersonation Handles
+                </h4>
+<p class="font-body-sm text-body-sm text-secondary mt-1.5 leading-relaxed">
+<strong class="text-on-surface font-medium">Expected Impact:</strong> Eliminates immediate confusion on official communications; algorithmic synthesis projects a <strong>&gt;80% resolution of impersonation friction reports</strong> within 48 hours of deployment.
+                </p>
+</div>
+<!-- Checklist -->
+<div class="flex flex-col gap-1.5 bg-surface-container-low/70 p-3 rounded-lg border border-outline-variant/20">
+<div class="font-label-sm text-label-sm font-semibold text-secondary uppercase tracking-wider mb-0.5">Tactical Action Plan:</div>
+<label class="flex items-center gap-2 cursor-pointer text-body-sm font-body-sm text-on-surface">
+<input checked="" class="w-4 h-4 rounded text-primary-container focus:ring-primary-container border-outline-variant/60" type="checkbox"/>
+<span class="line-through text-secondary">In-app safety warning banner on balance page</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer text-body-sm font-body-sm text-on-surface">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-primary-container border-outline-variant/60" type="checkbox"/>
+<span>Revoke unauthorized verification tokens &amp; reset API keys</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer text-body-sm font-body-sm text-on-surface">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-primary-container border-outline-variant/60" type="checkbox"/>
+<span>Publish official announcement &amp; help center scam advisory</span>
+</label>
+</div>
+<!-- Status & Action Buttons Bar -->
+<div class="flex flex-col gap-2.5 pt-2">
+<div class="flex items-center justify-between text-label-sm font-label-sm text-secondary">
+<span>Execution Status:</span>
+<span class="font-semibold text-tertiary flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    Proposed / Awaiting Sign-off
+                  </span>
+</div>
+<div class="flex items-center gap-2 pt-1">
+<!-- Primary Action -->
+<button class="flex-1 bg-primary-container hover:bg-primary text-white font-label-md text-label-md font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all duration-150 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+<span>Approve &amp; Track Action</span>
+</button>
+<!-- Secondary Linear/Jira Button -->
+<button class="glass-panel-subtle hover:bg-white text-on-surface font-label-md text-label-md font-medium px-3.5 py-2.5 rounded-lg border border-outline-variant/40 flex items-center gap-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="rocket_launch">rocket_launch</span>
+<span>Push to Linear</span>
+</button>
+<!-- Export Dossier Button -->
+<button class="glass-panel-subtle hover:bg-white text-secondary hover:text-on-surface p-2.5 rounded-lg border border-outline-variant/40 transition-colors shadow-sm" title="Export PDF Dossier">
+<span class="material-symbols-outlined text-[18px]" data-icon="picture_as_pdf">picture_as_pdf</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

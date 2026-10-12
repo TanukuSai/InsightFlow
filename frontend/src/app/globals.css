@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+:root {
+  /* =========================================================================
+     1. MASTER ART DIRECTION DESIGN TOKENS (Section 4)
+     Editorial Warm Canvas × Disciplined Brand Blue × Fixed Category Palette
+     ========================================================================= */
+
+  /* 4.1 Foundation Surfaces */
+  --canvas: #F6F5F1;
+  --surface: #FFFFFF;
+  --surface-muted: #EFEEE8;
+  --surface-hover: #F2F4F6;
+  --border-subtle: #E2E3DD;
+  --border-strong: #C8CEC8;
+
+  /* Backward-compatible aliases */
+  --bg-paper: var(--canvas);
+  --bg-white: var(--surface);
+  --bg-porcelain: var(--canvas);
+  --bg-surface: var(--surface);
+  --border-hairline: var(--border-subtle);
+  --bg-neutral-soft: var(--surface-muted);
+
+  /* 4.2 Typography and Dark Focal Surfaces */
+  --ink: #20252D;
+  --ink-secondary: #505966;
+  --ink-muted: #727B86;
+  --midnight: #172033;
+  --midnight-raised: #202C43;
+  --midnight-border: rgba(255, 255, 255, 0.12);
+  --text-on-dark: #F7F8FA;
+  --text-on-dark-muted: #C5CCD7;
+
+  /* Typography aliases */
+  --ink-primary: var(--ink);
+  --text-light-primary: var(--text-on-dark);
+  --text-light-secondary: var(--text-on-dark-muted);
+  --midnight-base: var(--midnight);
+
+  /* 4.3 Brand / Action Accent (Confident Blue) */
+  --brand: #3656C8;
+  --brand-hover: #2946B2;
+  --brand-soft: #E9EDFC;
+  --brand-ink: #263F9B;
+  --focus-ring: var(--brand);
+  --signal-cobalt: var(--brand);
+  --signal-cobalt-hover: var(--brand-hover);
+
+  /* 4.4 Semantic Meaning Dimensions */
+  --semantic-positive: #2E7D68;
+  --semantic-neutral: #6C7786;
+  --semantic-negative: #C6534D;
+  --semantic-unknown: #7A8088;
+  --semantic-attention: #B87922;
+  --semantic-critical: #B83D42;
+
+  /* Strict Sentiment Dimensions */
+  --sentiment-positive: var(--semantic-positive);
+  --sentiment-neutral: var(--semantic-neutral);
+  --sentiment-negative: var(--semantic-negative);
+  --signal-teal: var(--semantic-positive);
+  --signal-coral: var(--semantic-negative);
+  --signal-amber: var(--semantic-attention);
+
+  /* 4.5 Source-Category Chart Palette (Stable & Fixed) */
+  --category-product: #5876B8;
+  --category-service: #B58A43;
+  --category-fraud: #8B6E9B;
+  --category-ops: #398779;
+
+  /* Semantic Data Series Dimensions */
+  --series-cobalt: var(--category-ops);
+  --series-cyan: var(--category-product);
+  --series-amber: var(--category-service);
+  --series-orchid: var(--category-fraud);
+  --signal-cyan: var(--category-product);
+  --signal-orchid: var(--category-fraud);
+
+  /* Multi-level Glassmorphism Primitives */
+  --glass-nav-bg: rgba(255, 255, 255, 0.88);
+  --glass-nav-blur: blur(20px) saturate(180%);
+  --glass-nav-border: 1px solid rgba(226, 227, 221, 0.8);
+
+  --glass-dark-bg: rgba(23, 32, 51, 0.82);
+  --glass-dark-blur: blur(24px) saturate(190%);
+  --glass-dark-border: 1px solid rgba(255, 255, 255, 0.14);
+
+  --glass-popover-bg: rgba(255, 255, 255, 0.95);
+  --glass-popover-blur: blur(28px) saturate(200%);
+  --glass-popover-border: 1px solid var(--border-subtle);
+
+  --glass-raised-bg: rgba(255, 255, 255, 0.86);
+  --glass-raised-blur: blur(20px) saturate(180%);
+  --glass-raised-border: 1px solid rgba(255, 255, 255, 0.95);
+  --glass-subtle-bg: rgba(255, 255, 255, 0.85);
+  --glass-subtle-blur: blur(14px) saturate(160%);
+  --glass-subtle-border: 1px solid var(--border-subtle);
+  --glass-overlay-bg: rgba(255, 255, 255, 0.94);
+  --glass-overlay-blur: blur(26px) saturate(200%);
+  --glass-overlay-border: 1px solid rgba(255, 255, 255, 0.98);
+
+  --surface-shadow: 0 1px 3px rgba(32, 37, 45, 0.04), 0 4px 12px -2px rgba(32, 37, 45, 0.04);
+  --surface-shadow-lg: 0 12px 32px -6px rgba(32, 37, 45, 0.08);
+  --midnight-shadow: 0 16px 40px -8px rgba(10, 15, 28, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--canvas);
+  color: var(--ink);
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--ink);
+  min-height: 100vh;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* =========================================================================
+   2. REUSABLE SURFACE VARIANTS
+   ========================================================================= */
+
+/* 1. glass-nav: Floating light header/nav */
+.glass-nav {
+  background: var(--glass-nav-bg);
+  backdrop-filter: var(--glass-nav-blur);
+  -webkit-backdrop-filter: var(--glass-nav-blur);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 12px -2px rgba(32, 37, 45, 0.03);
+}
+
+/* 2. glass-dark: Translucent white over midnight surface */
+.glass-dark {
+  background: var(--glass-dark-bg);
+  backdrop-filter: var(--glass-dark-blur);
+  -webkit-backdrop-filter: var(--glass-dark-blur);
+  border: var(--glass-dark-border);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.3);
+}
+
+/* 3. glass-popover: Elevated translucent for menus */
+.glass-popover {
+  background: var(--glass-popover-bg);
+  backdrop-filter: var(--glass-popover-blur);
+  -webkit-backdrop-filter: var(--glass-popover-blur);
+  border: var(--glass-popover-border);
+  box-shadow: var(--surface-shadow-lg);
+}
+
+/* 4. solid-data: Opaque high-readability card for charts, tables, feedback */
+.solid-data {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--surface-shadow);
+}
+
+/* 5. signal-panel: Prominent midnight focal panel with living-dot signal */
+.signal-panel {
+  background: linear-gradient(135deg, #172033 0%, #202C43 100%);
+  border: 1px solid var(--midnight-border);
+  box-shadow: var(--midnight-shadow);
+  color: var(--text-on-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Legacy utility classes mapping to new design tokens */
+.solid-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--surface-shadow);
+}
+
+.glass-nav-bar {
+  background: var(--glass-nav-bg);
+  backdrop-filter: var(--glass-nav-blur);
+  -webkit-backdrop-filter: var(--glass-nav-blur);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.glass-subtle {
+  background: var(--glass-subtle-bg);
+  backdrop-filter: var(--glass-subtle-blur);
+  -webkit-backdrop-filter: var(--glass-subtle-blur);
+  border: var(--glass-subtle-border);
+  box-shadow: var(--surface-shadow);
+}
+
+.glass-raised {
+  background: var(--glass-raised-bg);
+  backdrop-filter: var(--glass-raised-blur);
+  -webkit-backdrop-filter: var(--glass-raised-blur);
+  border: var(--glass-raised-border);
+  box-shadow: var(--surface-shadow);
+}
+
+.glass-overlay {
+  background: var(--glass-overlay-bg);
+  backdrop-filter: var(--glass-overlay-blur);
+  -webkit-backdrop-filter: var(--glass-overlay-blur);
+  border: var(--glass-overlay-border);
+  box-shadow: var(--surface-shadow-lg);
+}
+
+/* =========================================================================
+   3. 3D FLIP CARD ARCHITECTURE
+   ========================================================================= */
+.perspective-1000 {
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+
+.card-flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-flipper.is-flipped {
+  transform: rotateY(180deg) !important;
+}
+
+.card-face-front {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  transform: rotateY(0deg) !important;
+  z-index: 2;
+}
+
+.card-face-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  transform: rotateY(180deg) !important;
+  z-index: 1;
+}
+
+/* Accessible focus ring */
+.focus-visible-ring:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(54, 86, 200, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(54, 86, 200, 0.4);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InsightFlow - CSV Ingestion Engine &amp; Schema Mapping</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#084c36",
+            "on-primary-container": "#a1dec1",
+            "inverse-surface": "#2a322b",
+            "tertiary-container": "#91422e",
+            "inverse-on-surface": "#eaf3e8",
+            "secondary-container": "#dce5de",
+            "background": "#f3fcf1",
+            "inverse-primary": "#96d3b7",
+            "surface-container-highest": "#dce5da",
+            "surface": "#f3fcf1",
+            "on-tertiary-fixed": "#3c0700",
+            "on-primary-fixed": "#002115",
+            "secondary-fixed-dim": "#c0c9c2",
+            "on-secondary-fixed": "#151d19",
+            "outline": "#707973",
+            "on-surface-variant": "#404944",
+            "error-container": "#ffdad6",
+            "tertiary": "#732c1a",
+            "surface-container-low": "#edf6eb",
+            "surface-variant": "#dce5da",
+            "on-tertiary-fixed-variant": "#79301e",
+            "surface-container-high": "#e2ebe0",
+            "tertiary-fixed-dim": "#ffb4a2",
+            "surface-tint": "#2d6952",
+            "on-error-container": "#93000a",
+            "on-tertiary-container": "#ffc3b5",
+            "surface-dim": "#d4dcd2",
+            "on-tertiary": "#ffffff",
+            "on-surface": "#161d17",
+            "surface-container": "#e8f0e5",
+            "primary-fixed": "#b2f0d2",
+            "on-background": "#161d17",
+            "surface-container-lowest": "#ffffff",
+            "on-error": "#ffffff",
+            "secondary-fixed": "#dce5de",
+            "on-secondary-fixed-variant": "#404944",
+            "tertiary-fixed": "#ffdad2",
+            "primary-container": "#28644d",
+            "error": "#ba1a1a",
+            "outline-variant": "#bfc9c2",
+            "on-secondary-container": "#5e6661",
+            "on-primary-fixed-variant": "#10513b",
+            "surface-bright": "#f3fcf1",
+            "secondary": "#58605b",
+            "on-secondary": "#ffffff",
+            "on-primary": "#ffffff",
+            "primary-fixed-dim": "#96d3b7"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-2xl": "2.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "1.75rem",
+            "space-sm": "0.5rem",
+            "margin-mobile": "1rem",
+            "gutter-lg": "1.5rem",
+            "gutter": "1rem",
+            "space-md": "0.75rem",
+            "space-lg": "1.25rem",
+            "margin": "1.5rem",
+            "space-2xs": "0.125rem"
+          },
+          fontFamily: {
+            "body-lg": ["Geist", "sans-serif"],
+            "body-sm": ["Geist", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "label-sm": ["Geist", "sans-serif"],
+            "display-lg": ["Geist", "sans-serif"],
+            "headline-xl": ["Geist", "sans-serif"],
+            "headline-md": ["Geist", "sans-serif"],
+            "label-md": ["Geist", "sans-serif"],
+            "headline-lg": ["Geist", "sans-serif"],
+            "body-md": ["Geist", "sans-serif"]
+          },
+          fontSize: {
+            "body-lg": ["15px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "400" }],
+            "body-sm": ["12px", { lineHeight: "18px", letterSpacing: "0.005em", fontWeight: "400" }],
+            "code-sm": ["11px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" }],
+            "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }],
+            "display-lg": ["38px", { lineHeight: "46px", letterSpacing: "-0.03em", fontWeight: "600" }],
+            "headline-xl": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "headline-md": ["18px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "500" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
+            "headline-lg": ["22px", { lineHeight: "30px", letterSpacing: "-0.015em", fontWeight: "600" }],
+            "body-md": ["13px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Custom light-first glassmorphic styling tokens */
+    body {
+      background-color: #F8F8F5;
+      color: #202821;
+    }
+    .glass-surface {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.88);
+      box-shadow: 0 4px 24px -2px rgba(32, 40, 33, 0.035), 0 1px 3px rgba(32, 40, 33, 0.02);
+    }
+    .glass-surface-elevated {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid #ffffff;
+      box-shadow: 0 12px 32px -4px rgba(32, 40, 33, 0.06), 0 2px 6px rgba(32, 40, 33, 0.03);
+    }
+    .glass-surface-subtle {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+    }
+    .frosted-inner-bevel {
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+    }
+    .primary-btn-shadow {
+      box-shadow: 0 2px 8px rgba(40, 100, 77, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(248, 248, 245, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(32, 40, 33, 0.15);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(32, 40, 33, 0.25);
+    }
+  </style>
+</head>
+<body class="h-full font-body-md text-on-surface antialiased overflow-x-hidden selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- ==================== PERSISTENT SIDEBAR NAVIGATION ==================== -->
+<aside class="fixed left-0 top-0 h-screen w-64 glass-surface-subtle border-r border-white/80 z-40 flex flex-col justify-between p-4 shadow-sm">
+<!-- Top Brand & Workspace Group -->
+<div class="space-y-5">
+<!-- Workspace Brand Header -->
+<div class="flex items-center gap-3 px-2 pt-1">
+<div class="h-9 w-9 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-sm ring-1 ring-white/60">
+<span class="material-symbols-outlined text-[20px]" data-icon="scatter_plot">scatter_plot</span>
+</div>
+<div>
+<span class="font-headline-md text-headline-md tracking-tight text-primary font-semibold block leading-none">InsightFlow</span>
+<span class="font-label-sm text-label-sm text-secondary block mt-1">Customer Intelligence</span>
+</div>
+</div>
+<!-- Workspace Selector Dropdown -->
+<div class="glass-surface rounded-lg p-2.5 flex items-center justify-between border border-white/90 shadow-sm cursor-pointer hover:border-primary/20 transition-all">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+<div class="truncate">
+<span class="text-[10px] uppercase tracking-wider text-secondary font-label-sm block">Active Workspace</span>
+<span class="font-body-md text-body-md font-medium text-on-surface truncate block">Build Battle 2026</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="unfold_more">unfold_more</span>
+</div>
+<!-- Main Navigation Rails -->
+<nav class="space-y-1 pt-1">
+<!-- Inactive items -->
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/70 hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/70 hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat_bubble">chat_bubble</span>
+<span>Feedback Inbox</span>
+<span class="ml-auto text-[10px] font-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-secondary font-medium">320</span>
+</a>
+<!-- ACTIVE NAVIGATION: CSV Import / Ingestion Engine -->
+<a class="flex items-center gap-3 bg-primary-container text-on-primary-container rounded-lg px-3 py-2 font-body-md text-body-md font-medium shadow-sm frosted-inner-bevel" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="upload_file">upload_file</span>
+<span class="text-white font-medium">CSV Import</span>
+<span class="ml-auto h-2 w-2 rounded-full bg-on-primary-container"></span>
+</a>
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/70 hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="alt_route">alt_route</span>
+<span>Issues &amp; Triage</span>
+</a>
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/70 hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_awesome">auto_awesome</span>
+<span>AI Recommendations</span>
+</a>
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/70 hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="donut_small">donut_small</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-3 text-secondary rounded-lg px-3 py-2 hover:bg-white/70 hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Telemetry Card: Ingestion Flow Indicator -->
+<div class="space-y-3 pt-3 border-t border-white/60">
+<div class="glass-surface rounded-xl p-3 border border-white/80 space-y-2.5">
+<div class="flex items-center justify-between text-xs">
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="verified">verified</span>
+            Ingestion Pipeline
+          </span>
+<span class="font-code-sm text-code-sm font-medium text-primary">100% Clean</span>
+</div>
+<!-- Progress mini bar -->
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full w-full"></div>
+</div>
+<div class="flex items-center justify-between text-[11px] text-secondary font-body-sm">
+<span>Buffer: In Sync</span>
+<span class="text-primary font-medium">Zero Drop</span>
+</div>
+</div>
+<!-- Quick Footer Links -->
+<div class="flex items-center justify-between px-2 text-[11px] text-secondary font-label-sm">
+<a class="hover:text-on-surface transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[13px]" data-icon="help">help</span>
+          Documentation
+        </a>
+<a class="hover:text-on-surface transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[13px]" data-icon="history">history</span>
+          Audit Log
+        </a>
+</div>
+</div>
+</aside>
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="ml-64 flex flex-col min-h-screen">
+<!-- TOP HEADER BAR (Glassmorphic) -->
+<header class="sticky top-0 z-30 glass-surface px-8 py-3.5 flex items-center justify-between border-b border-white/80">
+<!-- Breadcrumb Trail -->
+<nav class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span class="hover:text-on-surface transition-colors">Workspace</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="hover:text-on-surface transition-colors">Data Pipeline</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface font-medium text-primary">CSV Ingestion Wizard</span>
+</nav>
+<!-- Right Tools & Profile Cluster -->
+<div class="flex items-center gap-4">
+<!-- Search bar -->
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-secondary" data-icon="search">search</span>
+<input class="w-full bg-white/70 border border-white/80 rounded-lg pl-8 pr-3 py-1.5 text-body-sm font-body-sm text-on-surface placeholder-secondary/60 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-white shadow-sm" placeholder="Search schemas or logs..." type="text"/>
+</div>
+<!-- Action Icons -->
+<button class="relative h-8 w-8 rounded-lg glass-surface hover:bg-white transition-all flex items-center justify-center text-secondary hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary ring-2 ring-white"></span>
+</button>
+<div class="h-4 w-px bg-outline-variant/40"></div>
+<!-- User Profile Avatar Card -->
+<div class="flex items-center gap-2.5 pl-1">
+<img class="h-8 w-8 rounded-full object-cover ring-1 ring-white/90 shadow-sm" data-alt="Editorial portrait of Elena Vance, Lead Data Strategist, poised in a bright minimalist architectural workspace illuminated by daylight. The image exudes quiet authority with crisp natural styling and an elegant professional atmosphere matching a clean light aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ-sDC87F3kNZJ1QRw13t1vFyGNRtSQGSeQdssweV7KO9xugNy2s9Ik5JDTU4Ivf8zSTTakDh80LPgmnpyL5E-egTt8E6gvyUkPd5hjP_Hb7BoWJ6YFB-LO8G86Qnt4JqyVNDckEstA2AXxr-bod_xC9ZkngK3HtoUrgKWZhZnBU_BtjhAZAduok4JPTSIiTPTBje8NyPZb0yoKqGCQ67dcGwdcMssLkj3YrLh9UaKQL2PL4NwVIIH9r2l9FMzPA2wIs3pjqK2hZQ"/>
+<div class="text-left hidden lg:block">
+<span class="font-body-md text-body-md font-medium text-on-surface block leading-tight">Elena Vance</span>
+<span class="font-label-sm text-label-sm text-secondary block">Lead Strategist</span>
+</div>
+</div>
+</div>
+</header>
+<!-- WORKSPACE CANVAS BODY -->
+<main class="flex-1 px-8 py-8 space-y-6 max-w-[1520px] w-full mx-auto pb-28">
+<!-- ==================== 1. INGESTION WIZARD STEPPER ==================== -->
+<section class="glass-surface rounded-2xl p-5 border border-white/90 shadow-sm">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+<!-- Step 1: Upload File (Completed) -->
+<div class="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-low/60 border border-white/60">
+<div class="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs ring-2 ring-primary/20">
+<span class="material-symbols-outlined text-[18px]" data-icon="check">check</span>
+</div>
+<div>
+<span class="text-[10px] font-label-sm uppercase tracking-wider text-secondary">Step 1</span>
+<h3 class="font-headline-md text-body-md font-medium text-on-surface">Upload File</h3>
+</div>
+<span class="ml-auto text-[11px] font-label-sm text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">Completed</span>
+</div>
+<!-- Step 2: Column Mapping & Schema (Active) -->
+<div class="flex items-center gap-3 p-2.5 rounded-xl bg-white shadow-sm ring-2 ring-primary/30 border border-white">
+<div class="h-8 w-8 rounded-full bg-primary-container text-white flex items-center justify-center font-semibold text-xs shadow-sm">
+              2
+            </div>
+<div>
+<span class="text-[10px] font-label-sm uppercase tracking-wider text-primary font-semibold">Active Step</span>
+<h3 class="font-headline-md text-body-md font-semibold text-primary">Column Mapping &amp; Schema</h3>
+</div>
+<span class="ml-auto h-2 w-2 rounded-full bg-primary animate-ping"></span>
+</div>
+<!-- Step 3: Integrity Check & Dedup (Upcoming) -->
+<div class="flex items-center gap-3 p-2.5 rounded-xl opacity-60">
+<div class="h-8 w-8 rounded-full bg-surface-container text-secondary flex items-center justify-center font-medium text-xs border border-outline-variant/30">
+              3
+            </div>
+<div>
+<span class="text-[10px] font-label-sm uppercase tracking-wider text-secondary">Step 3</span>
+<h3 class="font-headline-md text-body-md font-medium text-secondary">Integrity Check &amp; Dedup</h3>
+</div>
+</div>
+<!-- Step 4: Synthesis & Ingestion (Upcoming) -->
+<div class="flex items-center gap-3 p-2.5 rounded-xl opacity-60">
+<div class="h-8 w-8 rounded-full bg-surface-container text-secondary flex items-center justify-center font-medium text-xs border border-outline-variant/30">
+              4
+            </div>
+<div>
+<span class="text-[10px] font-label-sm uppercase tracking-wider text-secondary">Step 4</span>
+<h3 class="font-headline-md text-body-md font-medium text-secondary">Synthesis &amp; Ingestion</h3>
+</div>
+</div>
+</div>
+</section>
+<!-- ==================== 2. UPLOADED FILE METADATA SUMMARY CARD ==================== -->
+<section class="glass-surface rounded-2xl p-6 border border-white/90 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+<div class="flex items-center gap-4">
+<div class="h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined text-[26px]" data-icon="description">description</span>
+</div>
+<div>
+<div class="flex items-center gap-2.5">
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface">BuildBattle_2026_Customer_Feedback_Dataset.csv</h2>
+<span class="font-code-sm text-code-sm bg-surface-container px-2 py-0.5 rounded text-secondary font-medium">1.42 MB</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mt-1">Uploaded by Elena Vance on Oct 24, 2026 · Parsed via InsightFlow Heuristic Parser v4.1</p>
+</div>
+</div>
+<!-- Telemetry Chips -->
+<div class="flex flex-wrap items-center gap-2">
+<div class="px-3 py-1 rounded-full bg-white border border-white/90 shadow-xs flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface">
+<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+<span class="font-medium">7,000</span> Rows Detected
+          </div>
+<div class="px-3 py-1 rounded-full bg-surface-container-low border border-white/80 shadow-xs flex items-center gap-1.5 font-label-sm text-label-sm text-primary">
+<span class="material-symbols-outlined text-[13px]" data-icon="filter_vintage">filter_vintage</span>
+<span class="font-semibold">320</span> Unique Verbatims
+          </div>
+<div class="px-3 py-1 rounded-full bg-white border border-white/90 shadow-xs font-label-sm text-label-sm text-secondary font-code-sm">
+            UTF-8 Encoded
+          </div>
+<div class="px-3 py-1 rounded-full bg-primary-fixed/60 text-on-primary-fixed font-label-sm text-label-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+            Status: Schema Parsed
+          </div>
+</div>
+</section>
+<!-- ==================== 3. COLUMN MAPPING & SCHEMA VERIFICATION TABLE ==================== -->
+<section class="glass-surface-elevated rounded-2xl border border-white shadow-sm overflow-hidden">
+<!-- Table Header Panel -->
+<div class="p-6 border-b border-surface-container-high/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-lg text-headline-lg font-semibold text-on-surface tracking-tight">Column Schema Verification</h2>
+<span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-[11px] font-label-sm font-semibold">2 of 3 Auto-Mapped</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mt-1">Review inferred schema correspondences between the raw CSV stream and InsightFlow's target analytical graph.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-3 py-1.5 rounded-lg glass-surface hover:bg-white text-secondary font-body-sm text-body-sm font-medium flex items-center gap-1.5 transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="restart_alt">restart_alt</span>
+              Reset Mapping
+            </button>
+<button class="px-3.5 py-1.5 rounded-lg bg-primary-container text-white font-body-sm text-body-sm font-medium flex items-center gap-1.5 primary-btn-shadow transition-all hover:bg-primary">
+<span class="material-symbols-outlined text-[16px]" data-icon="auto_fix_high">auto_fix_high</span>
+              Re-run AI Matching
+            </button>
+</div>
+</div>
+<!-- Table Container -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-surface-container-high/60 bg-surface-container-low/40">
+<th class="py-3.5 px-6 font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">SOURCE CSV COLUMN</th>
+<th class="py-3.5 px-6 font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">SAMPLE VALUES (FIRST 3 RECORDS)</th>
+<th class="py-3.5 px-6 font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">INSIGHTFLOW TARGET FIELD</th>
+<th class="py-3.5 px-6 font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">DATA TYPE</th>
+<th class="py-3.5 px-6 font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">INTEGRITY STATUS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/40">
+<!-- Row 1: feedback_text -->
+<tr class="hover:bg-white/60 transition-colors">
+<td class="py-4 px-6 align-top">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="text_fields">text_fields</span>
+<span class="font-code-sm text-body-md font-semibold text-on-surface">feedback_text</span>
+</div>
+<span class="text-[11px] font-label-sm text-secondary block mt-0.5">Col Index: 0 · 100% Filled</span>
+</td>
+<td class="py-4 px-6 align-top max-w-sm">
+<p class="font-body-sm text-body-sm text-on-surface line-clamp-2 bg-surface-container-low/60 p-2 rounded-lg border border-white/60">
+                    "Cannot receive SMS verification code when logging in with 2FA..."
+                  </p>
+<span class="text-[11px] text-secondary font-label-sm block mt-1">+6,999 additional raw strings</span>
+</td>
+<td class="py-4 px-6 align-top">
+<div class="relative min-w-[220px]">
+<select class="w-full bg-white border border-white/90 rounded-lg px-3 py-2 text-body-sm font-body-sm text-on-surface shadow-xs focus:ring-2 focus:ring-primary focus:outline-none">
+<option selected="">Verbatim Feedback (Required)</option>
+<option>Customer Notes</option>
+<option>Sentiment Source Text</option>
+</select>
+</div>
+</td>
+<td class="py-4 px-6 align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container font-code-sm text-code-sm text-on-surface">
+<span class="material-symbols-outlined text-[13px] text-secondary" data-icon="notes">notes</span>
+                    Text / Unstructured
+                  </span>
+</td>
+<td class="py-4 px-6 align-top">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+                    Matched ✓
+                  </span>
+</td>
+</tr>
+<!-- Row 2: category -->
+<tr class="hover:bg-white/60 transition-colors">
+<td class="py-4 px-6 align-top">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="label">label</span>
+<span class="font-code-sm text-body-md font-semibold text-on-surface">category</span>
+</div>
+<span class="text-[11px] font-label-sm text-secondary block mt-0.5">Col Index: 1 · 100% Filled</span>
+</td>
+<td class="py-4 px-6 align-top max-w-sm">
+<div class="flex flex-wrap gap-1 p-2 bg-surface-container-low/60 rounded-lg border border-white/60">
+<span class="px-2 py-0.5 rounded bg-white text-[11px] font-label-sm text-on-surface shadow-xs">Operational Issues</span>
+<span class="px-2 py-0.5 rounded bg-white text-[11px] font-label-sm text-on-surface shadow-xs">Fraud &amp; Scam</span>
+<span class="px-2 py-0.5 rounded bg-white text-[11px] font-label-sm text-on-surface shadow-xs">Customer Service</span>
+</div>
+<span class="text-[11px] text-secondary font-label-sm block mt-1">4 distinct categories identified</span>
+</td>
+<td class="py-4 px-6 align-top">
+<div class="relative min-w-[220px]">
+<select class="w-full bg-white border border-white/90 rounded-lg px-3 py-2 text-body-sm font-body-sm text-on-surface shadow-xs focus:ring-2 focus:ring-primary focus:outline-none">
+<option selected="">Source Category</option>
+<option>Domain Tag</option>
+<option>Triage Department</option>
+</select>
+</div>
+</td>
+<td class="py-4 px-6 align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container font-code-sm text-code-sm text-on-surface">
+<span class="material-symbols-outlined text-[13px] text-secondary" data-icon="category">category</span>
+                    Categorical (4 unique values)
+                  </span>
+</td>
+<td class="py-4 px-6 align-top">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+                    Matched ✓
+                  </span>
+</td>
+</tr>
+<!-- Row 3: timestamp (Missing column honesty notice) -->
+<tr class="hover:bg-white/60 transition-colors bg-[#FAF8F2]/60">
+<td class="py-4 px-6 align-top">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#A87522]" data-icon="schedule">schedule</span>
+<span class="font-code-sm text-body-md font-semibold text-[#A87522]">timestamp</span>
+</div>
+<span class="text-[11px] font-label-sm text-tertiary block mt-0.5">Missing from Source Header</span>
+</td>
+<td class="py-4 px-6 align-top max-w-sm">
+<div class="p-2 rounded-lg bg-white/80 border border-[#A87522]/20 text-[12px] text-secondary italic">
+                    (Column not present in CSV)
+                  </div>
+<span class="text-[11px] text-[#A87522] font-label-sm block mt-1">Default will fall back to Ingestion Date (Oct 24, 2026)</span>
+</td>
+<td class="py-4 px-6 align-top">
+<div class="relative min-w-[220px]">
+<select class="w-full bg-white border border-[#A87522]/40 rounded-lg px-3 py-2 text-body-sm font-body-sm text-on-surface shadow-xs focus:ring-2 focus:ring-[#A87522] focus:outline-none">
+<option selected="">Event Timestamp (Optional)</option>
+<option>System Ingestion Timestamp</option>
+<option>Ignore Timestamp</option>
+</select>
+</div>
+</td>
+<td class="py-4 px-6 align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#FAF3E7] font-code-sm text-code-sm text-[#A87522]">
+<span class="material-symbols-outlined text-[13px]" data-icon="calendar_today">calendar_today</span>
+                    DateTime
+                  </span>
+</td>
+<td class="py-4 px-6 align-top">
+<!-- Honesty Notice Badge -->
+<div class="inline-flex flex-col gap-1">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E7] text-[#A87522] border border-[#A87522]/30 font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="warning">warning</span>
+                      Missing Column
+                    </span>
+<p class="text-[11px] font-body-sm text-secondary leading-snug mt-1">
+<strong class="text-on-surface font-medium">Honesty Notice:</strong> Historical trendlines disabled per data integrity rules.
+                    </p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- ==================== 4. REPETITION & FREQUENCY INTELLIGENCE CARD ==================== -->
+<section class="glass-surface rounded-2xl p-6 border border-white/90 shadow-sm relative overflow-hidden">
+<!-- Ambient subtle glow -->
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex items-center justify-between gap-4 mb-4">
+<div class="flex items-center gap-2.5">
+<div class="h-8 w-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface">Repetition &amp; Frequency Intelligence</h2>
+<span class="font-body-sm text-body-sm text-secondary">Synthetic duplicate deduplication vs weighted customer friction modeling</span>
+</div>
+</div>
+<span class="font-code-sm text-code-sm bg-white border border-white px-3 py-1 rounded-full text-secondary shadow-xs">
+            Pattern Signature: High Congruence
+          </span>
+</div>
+<!-- Descriptive Callout Banner -->
+<div class="glass-surface-subtle border border-primary/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[22px] shrink-0 mt-0.5" data-icon="lightbulb">lightbulb</span>
+<div class="text-body-sm font-body-sm text-on-surface">
+<span class="font-semibold text-primary">Data Topology Insight:</span> Detected <strong>6,680 repeated statements</strong> out of 7,000 total rows (<strong>320 unique statements</strong>). The top repeated statement occurs <span class="font-semibold text-primary">88 times</span> across the ingestion stream.
+          </div>
+</div>
+<!-- Ingestion Mode Radio Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<!-- Card A: Selected (Preserve Full Frequency) -->
+<label class="relative glass-surface-elevated rounded-xl p-5 border-2 border-primary shadow-sm cursor-pointer block hover:bg-white transition-all">
+<div class="flex items-start justify-between gap-4 mb-3">
+<div class="flex items-center gap-3">
+<input checked="" class="h-4 w-4 text-primary focus:ring-primary border-outline-variant" name="ingestion_mode" type="radio"/>
+<div>
+<h3 class="font-headline-md text-body-lg font-semibold text-primary">Preserve Full Frequency (Recommended)</h3>
+<span class="text-[11px] font-label-sm text-secondary">Maintains volume-weighted friction impact</span>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold border border-primary/20">
+                Evidence-backed
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary pl-7">
+              Tracks repeated user complaints to prioritize high-friction issues while noting repetition count. Prevents artificial flattening of critical platform outages.
+            </p>
+<div class="mt-4 pl-7 flex items-center gap-4 text-xs font-code-sm text-on-surface">
+<span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-primary"></span> 7,000 Total Nodes</span>
+<span class="text-secondary">·</span>
+<span class="text-secondary">Weight Scalar: 1.0x</span>
+</div>
+</label>
+<!-- Card B: Collapse to Unique Verbatims -->
+<label class="relative glass-surface rounded-xl p-5 border border-white/80 shadow-xs cursor-pointer block hover:bg-white/80 transition-all opacity-85 hover:opacity-100">
+<div class="flex items-start justify-between gap-4 mb-3">
+<div class="flex items-center gap-3">
+<input class="h-4 w-4 text-primary focus:ring-primary border-outline-variant" name="ingestion_mode" type="radio"/>
+<div>
+<h3 class="font-headline-md text-body-lg font-medium text-on-surface">Collapse to Unique Verbatims</h3>
+<span class="text-[11px] font-label-sm text-secondary">Semantic deduplication mode</span>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm font-medium">
+                Flat Taxonomy
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary pl-7">
+              Ingests only the 320 unique rows, discarding frequency weighting. Suitable only for qualitative taxonomy design without volume impact metrics.
+            </p>
+<div class="mt-4 pl-7 flex items-center gap-4 text-xs font-code-sm text-secondary">
+<span>320 Collapsed Nodes</span>
+<span>·</span>
+<span class="text-error font-medium">Friction Frequency Discarded</span>
+</div>
+</label>
+</div>
+</section>
+<!-- ==================== 5. LIVE PARSED DATA PREVIEW ==================== -->
+<section class="glass-surface rounded-2xl border border-white/90 shadow-sm overflow-hidden">
+<div class="p-5 border-b border-surface-container-high/60 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="preview">preview</span>
+<div>
+<h2 class="font-headline-md text-body-lg font-semibold text-on-surface">Live Ingestion Preview (Sample Rows 1–5)</h2>
+<span class="font-body-sm text-body-sm text-secondary">Verify parsed token integrity prior to vectorization pipeline execution</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs font-code-sm text-secondary">
+<span>Buffer Format: JSON-L Stream</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-body-sm font-body-sm">
+<thead>
+<tr class="bg-surface-container-low/40 border-b border-surface-container-high/40 text-secondary font-label-sm text-label-sm">
+<th class="py-2.5 px-6 font-semibold w-20">RECORD ID</th>
+<th class="py-2.5 px-6 font-semibold">FEEDBACK TEXT (PARSED VERBATIM)</th>
+<th class="py-2.5 px-6 font-semibold w-56">CLASSIFIED CATEGORY</th>
+<th class="py-2.5 px-6 font-semibold w-32">PREVIEW STATUS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/30 font-body-sm">
+<tr class="hover:bg-white/40">
+<td class="py-3 px-6 font-code-sm text-code-sm text-secondary">R001</td>
+<td class="py-3 px-6 text-on-surface">"Cannot receive SMS verification code when logging in with 2FA..."</td>
+<td class="py-3 px-6">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface text-[11px] font-label-sm">Operational Issues</span>
+</td>
+<td class="py-3 px-6">
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span> Valid
+                  </span>
+</td>
+</tr>
+<tr class="hover:bg-white/40">
+<td class="py-3 px-6 font-code-sm text-code-sm text-secondary">R002</td>
+<td class="py-3 px-6 text-on-surface">"Received unsolicited payment requests from an unknown merchant identity."</td>
+<td class="py-3 px-6">
+<span class="px-2 py-0.5 rounded bg-[#FAF3E7] text-[#A87522] text-[11px] font-label-sm">Fraud &amp; Scam</span>
+</td>
+<td class="py-3 px-6">
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span> Valid
+                  </span>
+</td>
+</tr>
+<tr class="hover:bg-white/40">
+<td class="py-3 px-6 font-code-sm text-code-sm text-secondary">R003</td>
+<td class="py-3 px-6 text-on-surface">"Support representative was polite but unable to resolve subscription billing error."</td>
+<td class="py-3 px-6">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface text-[11px] font-label-sm">Customer Service</span>
+</td>
+<td class="py-3 px-6">
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span> Valid
+                  </span>
+</td>
+</tr>
+<tr class="hover:bg-white/40">
+<td class="py-3 px-6 font-code-sm text-code-sm text-secondary">R004</td>
+<td class="py-3 px-6 text-on-surface">"Cannot receive SMS verification code when logging in with 2FA..."</td>
+<td class="py-3 px-6">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface text-[11px] font-label-sm">Operational Issues</span>
+</td>
+<td class="py-3 px-6">
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span> Valid (Rep 2)
+                  </span>
+</td>
+</tr>
+<tr class="hover:bg-white/40">
+<td class="py-3 px-6 font-code-sm text-code-sm text-secondary">R005</td>
+<td class="py-3 px-6 text-on-surface">"Instant transfer timed out after debiting my connected banking card."</td>
+<td class="py-3 px-6">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface text-[11px] font-label-sm">Operational Issues</span>
+</td>
+<td class="py-3 px-6">
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span> Valid
+                  </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+<!-- ==================== 6. STICKY ACTION FOOTER BAR ==================== -->
+<footer class="fixed bottom-0 right-0 left-64 z-30 glass-surface-elevated px-8 py-3.5 border-t border-white flex items-center justify-between shadow-lg">
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-lg glass-surface hover:bg-white text-secondary hover:text-on-surface font-body-sm text-body-sm font-medium flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_back">arrow_back</span>
+          Back to Upload
+        </button>
+<button class="px-4 py-2 rounded-lg glass-surface hover:bg-white text-secondary hover:text-on-surface font-body-sm text-body-sm font-medium flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+          Download Ingestion Log
+        </button>
+</div>
+<div class="flex items-center gap-5">
+<div class="text-right hidden sm:block">
+<span class="text-[11px] font-label-sm text-secondary block">Ready to vectorize</span>
+<span class="font-code-sm text-code-sm font-medium text-primary">7,000 Records · High Reliability</span>
+</div>
+<!-- Primary CTA with specular highlight -->
+<button class="px-6 py-2.5 rounded-lg bg-primary-container hover:bg-primary text-white font-body-md text-body-md font-semibold flex items-center gap-2.5 primary-btn-shadow transition-all transform active:scale-[0.99]">
+<span class="material-symbols-outlined text-[20px]" data-icon="play_arrow">play_arrow</span>
+          Confirm Mapping &amp; Run AI Analysis (7,000 Records)
+        </button>
+</div>
+</footer>
+</div>
+</body></html>

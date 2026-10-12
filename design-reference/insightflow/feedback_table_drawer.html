@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InsightFlow - Verbatim Detail Inspection Drawer</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-high": "#e2ebe0",
+            "outline-variant": "#bfc9c2",
+            "outline": "#707973",
+            "on-tertiary-fixed": "#3c0700",
+            "surface-container-highest": "#dce5da",
+            "inverse-primary": "#96d3b7",
+            "on-primary-container": "#a1dec1",
+            "on-tertiary-fixed-variant": "#79301e",
+            "inverse-surface": "#2a322b",
+            "secondary-fixed-dim": "#c0c9c2",
+            "on-secondary-fixed-variant": "#404944",
+            "on-primary-fixed-variant": "#10513b",
+            "surface-container-lowest": "#ffffff",
+            "on-background": "#161d17",
+            "primary-fixed-dim": "#96d3b7",
+            "secondary": "#58605b",
+            "surface-bright": "#f3fcf1",
+            "on-primary": "#ffffff",
+            "on-secondary-fixed": "#151d19",
+            "porcelain-base": "#F8F8F5",
+            "error-container": "#ffdad6",
+            "primary-fixed": "#b2f0d2",
+            "on-secondary-container": "#5e6661",
+            "primary": "#084c36",
+            "on-error-container": "#93000a",
+            "surface-dim": "#d4dcd2",
+            "on-surface": "#161d17",
+            "primary-container": "#28644d",
+            "tertiary": "#732c1a",
+            "on-tertiary-container": "#ffc3b5",
+            "glass-surface-overlay": "rgba(255, 255, 255, 0.94)",
+            "surface-tint": "#2d6952",
+            "surface": "#f3fcf1",
+            "tertiary-fixed-dim": "#ffb4a2",
+            "error": "#ba1a1a",
+            "on-surface-variant": "#404944",
+            "frosted-border": "rgba(255, 255, 255, 0.90)",
+            "glass-surface-elevated": "rgba(255, 255, 255, 0.88)",
+            "tertiary-container": "#91422e",
+            "tertiary-fixed": "#ffdad2",
+            "ochre-warning": "#A87522",
+            "secondary-fixed": "#dce5de",
+            "surface-container-low": "#edf6eb",
+            "background": "#f3fcf1",
+            "secondary-container": "#dce5de",
+            "on-secondary": "#ffffff",
+            "inverse-on-surface": "#eaf3e8",
+            "glass-surface-subtle": "rgba(255, 255, 255, 0.76)",
+            "surface-container": "#e8f0e5",
+            "surface-variant": "#dce5da",
+            "on-primary-fixed": "#002115",
+            "on-error": "#ffffff",
+            "on-tertiary": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "margin": "1.5rem",
+            "margin-mobile": "1rem",
+            "gutter-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-lg": "1.25rem",
+            "gutter": "1rem",
+            "space-md": "0.75rem",
+            "space-xl": "1.75rem"
+          },
+          "fontFamily": {
+            "headline-xl": ["Geist"],
+            "display-lg-mobile": ["Geist"],
+            "body-sm": ["Geist"],
+            "body-lg": ["Geist"],
+            "headline-md": ["Geist"],
+            "body-md": ["Geist"],
+            "headline-lg": ["Geist"],
+            "label-md": ["Geist"],
+            "label-sm": ["Geist"],
+            "display-lg": ["Geist"]
+          },
+          "fontSize": {
+            "headline-xl": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-lg-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.025em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }],
+            "headline-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "body-md": ["13px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-lg": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "display-lg": ["38px", { "lineHeight": "46px", "letterSpacing": "-0.03em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #F8F8F5;
+      color: #161d17;
+      font-family: 'Geist', sans-serif;
+    }
+    .glass-panel-subtle {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.90);
+      box-shadow: 0 4px 20px -2px rgba(32, 40, 33, 0.03), 0 1px 3px rgba(32, 40, 33, 0.02);
+    }
+    .glass-panel-elevated {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 12px 32px -4px rgba(32, 40, 33, 0.06), 0 2px 6px rgba(32, 40, 33, 0.03);
+    }
+    .glass-drawer-level3 {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(28px) saturate(200%);
+      border-left: 1px solid rgba(255, 255, 255, 1.0);
+      box-shadow: -12px 0 36px -8px rgba(32, 40, 33, 0.08), -2px 0 8px rgba(32, 40, 33, 0.03);
+    }
+    .inner-bevel {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .inner-bevel-primary {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 8px rgba(40, 100, 77, 0.22);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(32, 40, 33, 0.12);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="h-full flex overflow-hidden antialiased select-none">
+<!-- ========================================================================= -->
+<!-- 1. LEFT NAVIGATION SIDEBAR                                                -->
+<!-- ========================================================================= -->
+<aside class="w-64 h-screen fixed left-0 top-0 z-40 flex flex-col justify-between glass-panel-subtle border-r border-frosted-border">
+<!-- Top Branding & Context -->
+<div class="p-4 space-y-4">
+<!-- App Brand Title -->
+<div class="flex items-center justify-between pb-3 border-b border-surface-container-high/60">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-sm inner-bevel-primary">
+<span class="material-symbols-outlined text-[18px]">bubble_chart</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-md text-headline-md tracking-tight text-primary">InsightFlow</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+</div>
+<p class="font-label-sm text-label-sm text-secondary">v2.4 Enterprise</p>
+</div>
+</div>
+</div>
+<!-- Workspace Selector Dropdown -->
+<div class="relative">
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/40 hover:bg-surface-container-lowest transition-all text-left">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[16px] text-primary">corporate_fare</span>
+<div class="truncate">
+<p class="font-label-xs text-[10px] text-secondary font-medium tracking-wide">WORKSPACE</p>
+<p class="font-label-md text-label-md text-on-surface font-semibold truncate">Build Battle 2026</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline">unfold_more</span>
+</button>
+</div>
+<!-- Navigation Tree -->
+<nav class="space-y-1 pt-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[18px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Feedback Inbox (Active State - Forest Green Pill) -->
+<a class="flex items-center justify-between px-3 py-2 rounded-lg bg-primary-container text-on-primary font-body-md text-body-md shadow-sm inner-bevel-primary" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px]">inbox</span>
+<span class="font-medium">Feedback Inbox</span>
+</div>
+<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary-fixed-dim text-on-primary-fixed">7k</span>
+</a>
+<!-- Issues & Triage -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[18px]">rule</span>
+<span>Issues &amp; Triage</span>
+</a>
+<!-- AI Recommendations -->
+<a class="flex items-center justify-between px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span>AI Recommendations</span>
+</div>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+</a>
+<!-- Reports & Exports -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+<span>Reports &amp; Exports</span>
+</a>
+<!-- Integrations -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+<span>Integrations</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Status Widget & Utilities -->
+<div class="p-4 space-y-3 border-t border-surface-container-high/60 bg-surface-container-low/30">
+<!-- Ingestion Flow Widget -->
+<div class="p-3 rounded-lg bg-surface-container-lowest/90 border border-outline-variant/30 shadow-xs space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+<span class="font-label-sm text-label-sm font-medium text-on-surface">Ingestion Flow</span>
+</div>
+<span class="font-label-sm text-[10px] text-primary font-semibold">100% CLEAN</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full w-full"></div>
+</div>
+<div class="flex justify-between items-center font-label-sm text-[10px] text-secondary">
+<span>7,000 / 7,000 items</span>
+<span class="text-primary font-medium">Synced</span>
+</div>
+</div>
+<!-- Collapse Sidebar Button -->
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded text-secondary hover:text-on-surface font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span>
+<span>Collapse Sidebar</span>
+</span>
+<span class="font-label-sm text-[10px] border border-outline-variant/40 rounded px-1 text-secondary">⌥B</span>
+</button>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- MAIN VIEWPORT WRAPPER (Offset by sidebar width 16rem = 256px)             -->
+<!-- ========================================================================= -->
+<div class="ml-64 flex-1 h-screen flex flex-col overflow-hidden relative">
+<!-- ========================================================================= -->
+<!-- 2. TOP HEADER BAR                                                         -->
+<!-- ========================================================================= -->
+<header class="h-16 flex-shrink-0 glass-panel-elevated px-6 flex items-center justify-between border-b border-frosted-border z-20">
+<!-- Left: Breadcrumb & Records count -->
+<div class="flex items-center gap-3">
+<nav class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span class="hover:text-on-surface cursor-pointer">Workspace</span>
+<span class="text-outline-variant">/</span>
+<span class="font-label-md text-label-md font-semibold text-on-surface">Feedback Stream</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">7,000 Records</span>
+</nav>
+</div>
+<!-- Center: Universal Verbatim Search -->
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+<input class="w-full pl-9 pr-14 py-1.5 text-body-sm font-body-sm bg-surface-container-lowest/80 border border-outline-variant/50 rounded-md focus:outline-none focus:ring-1.5 focus:ring-primary focus:bg-surface-container-lowest transition-all" placeholder="Search 7,000 verbatims, raw tokens, clusters..." type="text" value="Suspicious phishing message"/>
+<div class="absolute right-2.5 top-2 flex items-center">
+<span class="font-label-sm text-[10px] bg-surface-container-high/80 text-secondary border border-outline-variant/50 px-1.5 py-0.5 rounded font-medium">⌘K</span>
+</div>
+</div>
+<!-- Right: Action Bar & Profile -->
+<div class="flex items-center gap-3">
+<!-- Export Filtered Button (Secondary Glass) -->
+<button class="h-[34px] px-3.5 rounded-md glass-panel-subtle text-primary font-label-md text-label-md font-medium hover:bg-surface-container-lowest transition-all flex items-center gap-1.5 shadow-xs">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>Export Filtered</span>
+</button>
+<!-- Primary Action Button: + Manual Entry -->
+<button class="h-[34px] px-3.5 rounded-md bg-primary-container text-on-primary font-label-md text-label-md font-medium hover:bg-primary transition-all flex items-center gap-1.5 shadow-sm inner-bevel-primary">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Manual Entry</span>
+</button>
+<div class="h-5 w-[1px] bg-outline-variant/40 mx-1"></div>
+<!-- Notification Bell -->
+<button class="p-1.5 text-secondary hover:text-on-surface rounded-md hover:bg-surface-container-low transition-colors relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="w-1.5 h-1.5 bg-tertiary rounded-full absolute top-1 right-1"></span>
+</button>
+<!-- User Profile Avatar & Info -->
+<div class="flex items-center gap-2 pl-1 cursor-pointer">
+<img class="w-8 h-8 rounded-full border border-frosted-border object-cover" data-alt="Editorial portrait of Elena Vance, Lead Strategist, looking professionally into the camera against a neutral daylight background with soft architectural green tones, reflecting high intellectual calm and clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8oprXDW-8Efh24miOXjpXbIN2kOTVvbPzXVGPFKKJHBKFCrF9B39jMDPCwW-TmGpE2H-2Iyd48LGLFIa4-0Rb9AElAaHGOy8A9LREcFTLiaQNnISbqDJ1laBHc0HnGbNxJbPpANsZVHeHcHI4yF9d6r9rTkAafH_oQthZiua9iZ5R-wTA9fvYz1yP502ce8NPBNV5H9p3PK1B_G1g_bVQn7VzO3CcY5sULcpTjyQRmUg4i2JE1alhdV39gNcZymr_HQiv4iU6gBk"/>
+<div class="text-left hidden lg:block">
+<p class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Elena Vance</p>
+<p class="font-label-sm text-[10px] text-secondary leading-tight">Lead Strategist</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Filter Sub-Header Strip -->
+<div class="h-12 flex-shrink-0 px-6 flex items-center justify-between border-b border-surface-container-high/60 bg-porcelain-base/60 backdrop-blur-sm">
+<!-- Quick category filter pills -->
+<div class="flex items-center gap-2 overflow-x-auto py-1">
+<!-- Active Filter: All Categories -->
+<button class="h-7 px-3 rounded-full bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold border border-primary/20 shadow-xs flex items-center gap-1">
+<span>All Categories (7,000)</span>
+</button>
+<!-- Product Feedback -->
+<button class="h-7 px-3 rounded-full bg-surface-container-low/60 hover:bg-surface-container-lowest text-secondary hover:text-on-surface font-label-sm text-label-sm border border-transparent transition-all">
+          Product Feedback (2,450)
+        </button>
+<!-- Customer Service -->
+<button class="h-7 px-3 rounded-full bg-surface-container-low/60 hover:bg-surface-container-lowest text-secondary hover:text-on-surface font-label-sm text-label-sm border border-transparent transition-all">
+          Customer Service (1,820)
+        </button>
+<!-- Fraud & Scam -->
+<button class="h-7 px-3 rounded-full bg-surface-container-low/60 hover:bg-surface-container-lowest text-secondary hover:text-on-surface font-label-sm text-label-sm border border-transparent transition-all">
+          Fraud &amp; Scam (1,540)
+        </button>
+<!-- Operational Issues -->
+<button class="h-7 px-3 rounded-full bg-surface-container-low/60 hover:bg-surface-container-lowest text-secondary hover:text-on-surface font-label-sm text-label-sm border border-transparent transition-all">
+          Operational Issues (1,190)
+        </button>
+</div>
+<!-- Right Utility Controls -->
+<div class="flex items-center gap-2 flex-shrink-0">
+<!-- Sentiment multi-select filter dropdown button -->
+<button class="h-7 px-2.5 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-label-sm text-label-sm flex items-center gap-1.5 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[15px] text-secondary">filter_list</span>
+<span>Sentiment: All</span>
+<span class="material-symbols-outlined text-[14px] text-outline">arrow_drop_down</span>
+</button>
+<button class="h-7 px-2.5 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-label-sm text-label-sm flex items-center gap-1.5 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[15px] text-secondary">tune</span>
+<span>Parameters</span>
+</button>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- 3. MAIN WORKSPACE - EDITORIAL FEEDBACK DATA TABLE                         -->
+<!-- ========================================================================= -->
+<main class="flex-1 overflow-hidden p-6 flex flex-col pr-[484px]">
+<!-- Table Shell with High-Density Frosted Glass -->
+<div class="flex-1 flex flex-col rounded-xl glass-panel-elevated overflow-hidden border border-frosted-border shadow-md">
+<!-- Table Scroll Container -->
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<!-- Sticky Header -->
+<thead class="sticky top-0 z-10 bg-surface-container-low/90 backdrop-blur-md border-b border-surface-container-high/80">
+<tr class="font-label-sm text-label-sm text-secondary tracking-wider">
+<th class="py-3 px-4 font-semibold uppercase w-[38%]">VERBATIM FEEDBACK</th>
+<th class="py-3 px-3 font-semibold uppercase w-[14%]">CATEGORY</th>
+<th class="py-3 px-3 font-semibold uppercase w-[12%]">SENTIMENT</th>
+<th class="py-3 px-3 font-semibold uppercase w-[15%]">RECURRENCE</th>
+<th class="py-3 px-3 font-semibold uppercase w-[14%]">AI TOPIC CLUSTER</th>
+<th class="py-3 px-4 font-semibold uppercase text-right w-[7%]">ACTIONS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/60 font-body-sm text-body-sm text-on-surface">
+<!-- ROW 1 (ACTIVE / SELECTED ROW) -->
+<tr class="bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors border-l-4 border-l-primary cursor-pointer">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary mt-0.5 flex-shrink-0" data-weight="fill" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<span class="font-medium text-on-surface leading-snug">"Suspicious phishing message claiming to be from security team asking for wallet transfer"</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium bg-tertiary/10 text-tertiary border border-tertiary/20">
+                    Fraud &amp; Scam
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium bg-[#B65F49]/15 text-[#B65F49]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#B65F49]"></span>
+                    Negative
+                  </span>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-1.5">
+<span class="font-semibold text-tertiary">88 occurrences</span>
+<span class="text-[10px] text-tertiary bg-tertiary/10 px-1 rounded font-medium">Spike</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium truncate block max-w-[140px]" title="Phishing &amp; Impersonation">
+                    Phishing &amp; Impersonation
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary text-on-primary text-[11px] font-medium shadow-xs">
+<span class="material-symbols-outlined text-[13px]">visibility</span>
+<span>Inspect</span>
+</span>
+</td>
+</tr>
+<!-- ROW 2 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors cursor-pointer group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline mt-0.5 flex-shrink-0">format_quote</span>
+<span class="text-on-surface leading-snug">"Cannot receive SMS verification code when logging in from international numbers"</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium bg-surface-container-high text-secondary border border-outline-variant/40">
+                    Operational Issues
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium bg-[#B65F49]/15 text-[#B65F49]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#B65F49]"></span>
+                    Negative
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium">42 occurrences</span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium truncate block max-w-[140px]" title="Authentication &amp; SMS Gateway">
+                    Auth &amp; SMS Gateway
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="p-1 rounded text-secondary hover:text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- ROW 3 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors cursor-pointer group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline mt-0.5 flex-shrink-0">format_quote</span>
+<span class="text-on-surface leading-snug">"The analytics export took less than 2 seconds, amazing improvement over last quarter"</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium bg-primary-fixed/40 text-primary border border-primary/20">
+                    Product Feedback
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium bg-primary-container text-on-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-fixed"></span>
+                    Positive
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary">1 occurrence (Unique)</span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium truncate block max-w-[140px]" title="Performance &amp; Exporting">
+                    Performance &amp; Exporting
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="p-1 rounded text-secondary hover:text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- ROW 4 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors cursor-pointer group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline mt-0.5 flex-shrink-0">format_quote</span>
+<span class="text-on-surface leading-snug">"Customer service agent resolved my billing dispute within 10 minutes"</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium bg-surface-container-high text-secondary border border-outline-variant/40">
+                    Customer Service
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium bg-primary-container/20 text-primary border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                    Positive
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium">15 occurrences</span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium truncate block max-w-[140px]" title="Support Resolution">
+                    Support Resolution
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="p-1 rounded text-secondary hover:text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- ROW 5 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors cursor-pointer group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline mt-0.5 flex-shrink-0">format_quote</span>
+<span class="text-on-surface leading-snug">"Interface is clean but dark mode toggle is missing in accessibility preferences"</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium bg-primary-fixed/40 text-primary border border-primary/20">
+                    Product Feedback
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium bg-secondary-fixed text-on-secondary-fixed-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                    Neutral
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium">27 occurrences</span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium truncate block max-w-[140px]" title="UI &amp; Customization">
+                    UI &amp; Customization
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="p-1 rounded text-secondary hover:text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- ROW 6 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors cursor-pointer group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline mt-0.5 flex-shrink-0">format_quote</span>
+<span class="text-on-surface leading-snug">"Encountered double charging error during checkout with Stripe webhook delay"</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium bg-surface-container-high text-secondary border border-outline-variant/40">
+                    Operational Issues
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium bg-[#B65F49]/15 text-[#B65F49]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#B65F49]"></span>
+                    Negative
+                  </span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium">19 occurrences</span>
+</td>
+<td class="py-3 px-3">
+<span class="text-secondary font-medium truncate block max-w-[140px]" title="Checkout &amp; Gateway Billing">
+                    Checkout &amp; Billing
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="p-1 rounded text-secondary hover:text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Integrity Footer -->
+<div class="h-12 flex-shrink-0 px-4 flex items-center justify-between border-t border-surface-container-high/80 bg-surface-container-lowest/80 font-label-md text-label-md">
+<div class="flex items-center gap-2 text-secondary">
+<span>Showing 1-25 of 7,000 records (320 unique statements identified)</span>
+<span class="text-outline-variant">•</span>
+<span class="inline-flex items-center gap-1 text-primary font-medium">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span>Data Integrity Verified</span>
+</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-7 px-2.5 rounded border border-outline-variant/40 text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-40" disabled="">
+              Previous
+            </button>
+<span class="font-label-sm text-label-sm font-semibold text-primary px-2">Page 1 of 280</span>
+<button class="h-7 px-2.5 rounded border border-outline-variant/40 text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors">
+              Next
+            </button>
+</div>
+</div>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- 4. RIGHT SLIDE-OVER DETAIL DRAWER (VISIBLE IN OPEN STATE)                  -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 right-0 h-screen w-[460px] z-30 glass-drawer-level3 flex flex-col justify-between overflow-hidden">
+<!-- Drawer Header -->
+<div class="p-5 border-b border-surface-container-high/80 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-md bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-bold tracking-wider text-on-surface uppercase">VERBATIM INSPECTION</span>
+<span class="font-mono text-[11px] bg-surface-container-highest px-1.5 py-0.5 rounded text-secondary font-semibold">#FB-4092</span>
+</div>
+<p class="font-label-sm text-[11px] text-secondary">Individual Feedback Analysis Pane</p>
+</div>
+</div>
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Drawer Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
+<!-- Data Provenance / Integrity Indicator -->
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low/70 border border-outline-variant/30 text-primary">
+<span class="material-symbols-outlined text-[18px] text-primary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<div class="flex-1">
+<p class="font-label-sm text-label-sm font-semibold text-primary">Raw Source Verbatim</p>
+<p class="font-body-sm text-[11px] text-secondary leading-tight">Unaltered Customer Input • 100% Cryptographic Match</p>
+</div>
+<span class="font-label-sm text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-medium">SHA-256</span>
+</div>
+<!-- Large Verbatim Callout Card -->
+<div class="p-4 rounded-xl bg-porcelain-base border border-outline-variant/40 shadow-xs space-y-3">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm text-[10px] tracking-wider uppercase font-semibold text-secondary">Customer Statement</span>
+<button class="text-secondary hover:text-primary transition-colors flex items-center gap-1 text-[11px]">
+<span class="material-symbols-outlined text-[13px]">content_copy</span>
+<span>Copy</span>
+</button>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface font-medium leading-relaxed italic">
+            "Suspicious phishing message claiming to be from security team asking for wallet transfer"
+          </p>
+<div class="pt-2 border-t border-surface-container-high/60 flex items-center justify-between text-[11px] text-secondary">
+<span class="flex items-center gap-1 font-mono text-[10px]">
+<span class="material-symbols-outlined text-[13px]">dataset</span>
+<span>Batch-2026-CSV-A</span>
+</span>
+<span class="font-mono text-[10px]">Row #0140</span>
+</div>
+</div>
+<!-- Telemetry & Repetition Metadata Grid -->
+<div class="space-y-2">
+<p class="font-label-sm text-[11px] tracking-wider uppercase font-semibold text-secondary">Source Telemetry</p>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Category Tile -->
+<div class="p-3 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/30 space-y-1">
+<span class="font-label-sm text-[10px] text-secondary">CATEGORY CLASSIFIER</span>
+<p class="font-label-md text-label-md font-semibold text-tertiary flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                Fraud &amp; Scam
+              </p>
+</div>
+<!-- Ingestion Ledger -->
+<div class="p-3 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/30 space-y-1">
+<span class="font-label-sm text-[10px] text-secondary">INGESTION LEDGER</span>
+<p class="font-label-md text-label-md font-semibold text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+                Cleaned (Validated)
+              </p>
+</div>
+</div>
+<!-- Recurrence Metric Pane -->
+<div class="p-3 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/30 space-y-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[10px] text-secondary">EXACT RECURRENCE</span>
+<span class="font-label-sm text-[10px] font-semibold text-tertiary">HIGH SPIKE PATTERN</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-tertiary">88</span>
+<span class="font-body-sm text-body-sm text-secondary">identical occurrences across dataset</span>
+</div>
+<p class="font-body-sm text-[11px] text-secondary italic">
+              Note: Frequency indicates repeated campaign or automated template, requiring immediate security triage.
+            </p>
+</div>
+</div>
+<!-- AI Derived Intelligence Section (Machine Inference) -->
+<div class="p-4 rounded-xl bg-surface-container-low/40 border border-dashed border-primary/40 space-y-3 relative overflow-hidden">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide uppercase">✦ Model Inference &amp; Clustering</span>
+</div>
+<span class="font-mono text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">v3.1-Semantic</span>
+</div>
+<!-- Inferred Metrics -->
+<div class="space-y-2 pt-1 font-body-sm text-body-sm">
+<div class="flex items-center justify-between py-1 border-b border-surface-container-high/60">
+<span class="text-secondary">Inferred Sentiment:</span>
+<span class="font-semibold text-tertiary flex items-center gap-1">
+<span>Negative (Severe Friction)</span>
+<span class="font-mono text-[10px] text-secondary font-normal">[0.98 Conf.]</span>
+</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-surface-container-high/60">
+<span class="text-secondary">Semantic Topic:</span>
+<span class="font-semibold text-on-surface">Credential Phishing Attempt</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="text-secondary">Correlated Vector:</span>
+<span class="font-mono text-[11px] text-secondary">Cluster #08 (Phishing / Impersonation)</span>
+</div>
+</div>
+<!-- Triage Link -->
+<div class="pt-2">
+<a class="block p-2.5 rounded-lg bg-surface-container-lowest border border-tertiary/20 hover:border-tertiary/40 transition-colors" href="#">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[10px] text-tertiary font-bold tracking-wider uppercase">LINKED ACTIVE ISSUE</span>
+<span class="material-symbols-outlined text-[14px] text-tertiary">open_in_new</span>
+</div>
+<p class="font-label-md text-label-md font-semibold text-on-surface mt-0.5 truncate">
+                #ISSUE-04: Fraud &amp; Scam Security Spike
+              </p>
+<p class="font-body-sm text-[11px] text-secondary">88 verbatims currently contributing to this cluster</p>
+</a>
+</div>
+</div>
+<!-- Sentiment Distribution Visualizer Bar -->
+<div class="p-3 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/30 space-y-1.5">
+<div class="flex justify-between items-center font-label-sm text-[10px]">
+<span class="text-secondary uppercase">Cluster Sentiment Ratio</span>
+<span class="text-tertiary font-medium">96% Negative</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden flex">
+<div class="bg-[#B65F49] h-full" style="width: 96%"></div>
+<div class="bg-outline-variant h-full" style="width: 3%"></div>
+<div class="bg-primary h-full" style="width: 1%"></div>
+</div>
+</div>
+</div>
+<!-- Action Footer (Primary Forest Green + Supporting Actions) -->
+<div class="p-5 border-t border-surface-container-high/80 bg-surface-container-lowest/90 space-y-2">
+<button class="w-full h-[38px] rounded-md bg-primary-container text-on-primary font-label-md text-label-md font-medium hover:bg-primary transition-all flex items-center justify-center gap-2 shadow-sm inner-bevel-primary">
+<span class="material-symbols-outlined text-[17px]">link</span>
+<span>Link to Existing Issue</span>
+</button>
+<div class="grid grid-cols-2 gap-2">
+<button class="h-[36px] rounded-md glass-panel-subtle text-on-surface font-label-md text-label-md font-medium hover:bg-surface-container-low transition-colors flex items-center justify-center gap-1.5 border border-outline-variant/40">
+<span class="material-symbols-outlined text-[16px] text-secondary">bolt</span>
+<span>Create Linear Task</span>
+</button>
+<button class="h-[36px] rounded-md bg-tertiary/10 hover:bg-tertiary/20 text-tertiary font-label-md text-label-md font-medium transition-colors flex items-center justify-center gap-1.5 border border-tertiary/20">
+<span class="material-symbols-outlined text-[16px]">flag</span>
+<span>Flag for Review</span>
+</button>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

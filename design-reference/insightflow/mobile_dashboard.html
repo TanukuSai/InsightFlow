@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>InsightFlow — Executive Intelligence Dashboard</title>
+<!-- Google Fonts: Geist & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-container": "#a1dec1",
+            "on-tertiary": "#ffffff",
+            "on-error": "#ffffff",
+            "background": "#f3fcf1",
+            "surface-container-high": "#e2ebe0",
+            "on-tertiary-fixed": "#3c0700",
+            "tertiary-container": "#91422e",
+            "primary-container": "#28644d",
+            "on-surface-variant": "#404944",
+            "inverse-primary": "#96d3b7",
+            "surface-variant": "#dce5da",
+            "on-primary-fixed-variant": "#10513b",
+            "tertiary-fixed-dim": "#ffb4a2",
+            "on-error-container": "#93000a",
+            "primary": "#084c36",
+            "surface-container-low": "#edf6eb",
+            "on-surface": "#161d17",
+            "outline": "#707973",
+            "on-secondary-container": "#5e6661",
+            "tertiary-fixed": "#ffdad2",
+            "on-secondary-fixed": "#151d19",
+            "surface-tint": "#2d6952",
+            "on-secondary-fixed-variant": "#404944",
+            "surface-bright": "#f3fcf1",
+            "inverse-on-surface": "#eaf3e8",
+            "error-container": "#ffdad6",
+            "secondary": "#58605b",
+            "primary-fixed-dim": "#96d3b7",
+            "on-background": "#161d17",
+            "surface-dim": "#d4dcd2",
+            "secondary-container": "#dce5de",
+            "on-secondary": "#ffffff",
+            "primary-fixed": "#b2f0d2",
+            "surface": "#f3fcf1",
+            "secondary-fixed-dim": "#c0c9c2",
+            "secondary-fixed": "#dce5de",
+            "on-tertiary-container": "#ffc3b5",
+            "inverse-surface": "#2a322b",
+            "outline-variant": "#bfc9c2",
+            "tertiary": "#732c1a",
+            "surface-container-highest": "#dce5da",
+            "surface-container-lowest": "#ffffff",
+            "surface-container": "#e8f0e5",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed-variant": "#79301e",
+            "on-primary-fixed": "#002115",
+            "on-primary": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-2xs": "0.125rem",
+            "space-xs": "0.25rem",
+            "space-xl": "1.75rem",
+            "space-2xl": "2.5rem",
+            "space-sm": "0.5rem",
+            "gutter-lg": "1.5rem",
+            "gutter": "1rem",
+            "space-md": "0.75rem",
+            "margin": "1.5rem",
+            "space-lg": "1.25rem",
+            "margin-mobile": "1rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Geist", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "label-md": ["Geist", "sans-serif"],
+            "headline-xl": ["Geist", "sans-serif"],
+            "body-sm": ["Geist", "sans-serif"],
+            "body-lg": ["Geist", "sans-serif"],
+            "headline-lg": ["Geist", "sans-serif"],
+            "body-md": ["Geist", "sans-serif"],
+            "display-lg": ["Geist", "sans-serif"],
+            "label-sm": ["Geist", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "code-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-xl": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }],
+            "headline-lg": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "display-lg": ["38px", { "lineHeight": "46px", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Mobile-first glassmorphism & optical touch layers */
+    .glass-appbar {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 20px -2px rgba(32, 40, 33, 0.03);
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 20px -2px rgba(32, 40, 33, 0.04), 0 1px 3px rgba(32, 40, 33, 0.02);
+    }
+    .glass-tabbar {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-top: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 -4px 24px -2px rgba(32, 40, 33, 0.05);
+    }
+    .flip-card-inner {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-style: preserve-3d;
+    }
+    .flip-card.is-flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+    .flip-face-front, .flip-face-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .flip-face-back {
+      transform: rotateY(180deg);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#F8F8F5] text-on-surface antialiased font-body-md select-none overflow-x-hidden min-h-screen pb-28">
+<!-- ========================================================================= -->
+<!-- 1. FLOATING MOBILE APP BAR (STICKY TOP) -->
+<!-- ========================================================================= -->
+<header class="sticky top-0 z-50 glass-appbar px-4 py-3 flex items-center justify-between">
+<!-- Brand mark & Workspace Selector -->
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[19px]" data-icon="insights">insights</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5 leading-none">
+<span class="font-headline-md text-headline-md tracking-tight text-primary font-semibold">InsightFlow</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+</div>
+<button class="flex items-center gap-1 mt-0.5 text-secondary hover:text-on-surface transition-colors" type="button">
+<span class="font-code-sm text-code-sm text-[11px] tracking-tight text-secondary">Build Battle 2026</span>
+<span class="material-symbols-outlined text-[14px] text-secondary" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<!-- Trailing Action Icons -->
+<div class="flex items-center gap-1">
+<button aria-label="Search" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface hover:bg-white/60 active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="search">search</span>
+</button>
+<button aria-label="Filter Source" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface hover:bg-white/60 active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="tune">tune</span>
+</button>
+<button aria-label="Menu" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface hover:bg-white/60 active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[21px]" data-icon="menu">menu</span>
+</button>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE CONTAINER -->
+<!-- ========================================================================= -->
+<main class="max-w-[420px] mx-auto px-4 pt-4 space-y-4">
+<!-- ========================================================================= -->
+<!-- 2. MOBILE SEGMENTED MODE TOGGLE -->
+<!-- ========================================================================= -->
+<section class="glass-panel rounded-full p-1 flex items-center justify-between">
+<button class="flex-1 py-1.5 rounded-full text-center font-label-md text-label-md text-secondary hover:text-on-surface transition-all" id="toggle-balanced" type="button">
+        Balanced
+      </button>
+<button class="flex-1 py-1.5 rounded-full text-center font-label-md text-label-md bg-primary-container text-on-primary shadow-sm flex items-center justify-center gap-1 transition-all" id="toggle-prioritized" type="button">
+<span class="material-symbols-outlined text-[13px]" data-icon="auto_awesome">auto_awesome</span>
+<span>AI-Prioritized</span>
+</button>
+</section>
+<!-- ========================================================================= -->
+<!-- 3. VERTICALLY STACKED KPI CARDS -->
+<!-- ========================================================================= -->
+<section class="space-y-3">
+<!-- KPI CARD 1: Total Volume (With Flip Micro-Interaction) -->
+<div class="flip-card relative h-[142px] w-full cursor-pointer perspective-1000" id="kpi-flip-card">
+<div class="flip-card-inner relative w-full h-full rounded-2xl glass-panel p-4 flex flex-col justify-between">
+<!-- Front Face -->
+<div class="flip-face-front absolute inset-0 p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-secondary">TOTAL VOLUME</span>
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-[#E7F0E9] text-primary font-label-sm text-[10px] font-medium flex items-center gap-1">
+<span>Data Lineage Complete</span>
+<span class="material-symbols-outlined text-[11px]" data-icon="check">check</span>
+</span>
+<span class="material-symbols-outlined text-secondary text-[16px] hover:text-primary transition-colors" data-icon="swap_horiz">swap_horiz</span>
+</div>
+</div>
+<div>
+<div class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">7,000</div>
+<p class="font-body-sm text-body-sm text-secondary mt-0.5">320 Unique • 6,680 Repetitive</p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-black/[0.04]">
+<span class="font-code-sm text-code-sm text-secondary">Ingest Batch: CSV_SYNC_2026.04</span>
+<span class="font-code-sm text-code-sm text-primary font-medium">Tap to inspect lineage →</span>
+</div>
+</div>
+<!-- Back Face (Lineage Diagnostics) -->
+<div class="flip-face-back absolute inset-0 p-4 bg-white/95 rounded-2xl flex flex-col justify-between border border-primary/20">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-primary font-medium">Ingestion Telemetry</span>
+<span class="material-symbols-outlined text-secondary text-[16px]" data-icon="close">close</span>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between font-body-sm text-body-sm">
+<span class="text-secondary">Source Deduplication:</span>
+<span class="font-code-sm text-code-sm text-on-surface">95.4% redundancy</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm">
+<span class="text-secondary">Zero-Shot Clustering:</span>
+<span class="font-code-sm text-code-sm text-primary">k=10 convergence</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">Tap card again to flip back</span>
+</div>
+</div>
+</div>
+<!-- KPI CARD 2: Negative Friction -->
+<div class="glass-panel rounded-2xl p-4 space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#B65F49]"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-secondary">NEGATIVE FRICTION</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-[#B65F49]/10 text-[#B65F49] font-label-sm text-[10px] font-semibold">
+            Triage Required
+          </span>
+</div>
+<div>
+<div class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight flex items-baseline gap-2">
+<span>2,141</span>
+<span class="font-body-md text-body-md text-[#B65F49] font-medium">(30.6%)</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mt-0.5">30.6% of ingested dataset requiring triage</p>
+</div>
+<div class="w-full bg-black/[0.05] h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#B65F49] h-full rounded-full" style="width: 30.6%"></div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 4. FULL-WIDTH SENTIMENT DISTRIBUTION CARD -->
+<!-- ========================================================================= -->
+<section class="glass-panel rounded-2xl p-4 space-y-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Sentiment Spectrum</h2>
+<span class="px-2 py-0.5 rounded-full bg-[#E7F0E9] text-primary font-label-sm text-[10px] font-medium flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[11px]" data-icon="psychology">psychology</span>
+<span>Model Derived</span>
+</span>
+</div>
+<span class="font-code-sm text-code-sm text-secondary">Confidence 98.2%</span>
+</div>
+<!-- Segmented Bar -->
+<div class="space-y-1.5">
+<div class="w-full h-3 rounded-full overflow-hidden flex bg-black/[0.06] p-0.5 gap-0.5">
+<div class="bg-[#28644D] h-full rounded-l-full transition-all duration-500" style="width: 32.3%" title="Positive: 32.3%"></div>
+<div class="bg-[#C8CCC9] h-full transition-all duration-500" style="width: 36.8%" title="Neutral: 36.8%"></div>
+<div class="bg-[#B65F49] h-full rounded-r-full transition-all duration-500" style="width: 30.9%" title="Negative: 30.6%"></div>
+</div>
+<!-- 3-Column Stats Row -->
+<div class="grid grid-cols-3 gap-2 pt-1 border-t border-black/[0.04]">
+<div class="text-left">
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#28644D]"></span>
+<span class="font-label-sm text-[11px] text-secondary">Positive</span>
+</div>
+<div class="font-body-md text-body-md font-semibold text-on-surface mt-0.5">2,260</div>
+<div class="font-code-sm text-[10px] text-secondary">32.3%</div>
+</div>
+<div class="text-left border-l border-black/[0.05] pl-2">
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#8E9490]"></span>
+<span class="font-label-sm text-[11px] text-secondary">Neutral</span>
+</div>
+<div class="font-body-md text-body-md font-semibold text-on-surface mt-0.5">2,573</div>
+<div class="font-code-sm text-[10px] text-secondary">36.8%</div>
+</div>
+<div class="text-left border-l border-black/[0.05] pl-2">
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#B65F49]"></span>
+<span class="font-label-sm text-[11px] text-secondary">Negative</span>
+</div>
+<div class="font-body-md text-body-md font-semibold text-on-surface mt-0.5">2,141</div>
+<div class="font-code-sm text-[10px] text-secondary">30.6%</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 5. PRIORITY FRICTION ISSUES MOBILE LIST -->
+<!-- ========================================================================= -->
+<section class="space-y-3">
+<!-- Header -->
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="auto_awesome">auto_awesome</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Priority Issues</h2>
+<span class="font-code-sm text-code-sm px-1.5 py-0.5 rounded bg-black/[0.05] text-secondary">10</span>
+</div>
+<button class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/70 border border-black/[0.06] font-label-sm text-label-sm text-secondary hover:text-on-surface transition-colors" type="button">
+<span>Sort by Frequency</span>
+<span class="material-symbols-outlined text-[13px]" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<!-- Issue Card 1 -->
+<div class="glass-panel rounded-2xl p-4 space-y-3 hover:border-black/10 transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-[#B65F49]/10 text-[#B65F49] font-label-sm text-[10px] font-semibold tracking-wide">
+                Critical P0
+              </span>
+<span class="font-code-sm text-code-sm text-secondary">88 occurrences</span>
+</div>
+<h3 class="font-headline-md text-[16px] text-on-surface font-semibold leading-tight">
+              Phishing &amp; Impersonation Scam
+            </h3>
+</div>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded bg-black/[0.04] text-secondary whitespace-nowrap">
+            Fraud &amp; Scam
+          </span>
+</div>
+<!-- Verbatim quote preview -->
+<div class="p-2.5 rounded-xl bg-white/60 border border-black/[0.04] text-secondary font-body-sm text-body-sm italic relative">
+<span class="text-primary font-serif font-bold text-[14px]">“</span>Suspicious phishing message claiming to be from security team asking for wallet transfer...<span class="text-primary font-serif font-bold text-[14px]">”</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5 text-secondary font-code-sm text-code-sm">
+<span class="material-symbols-outlined text-[15px] text-[#B65F49]" data-icon="warning">warning</span>
+<span>Cluster Density: 98%</span>
+</div>
+<button class="px-3 py-1.5 rounded-full bg-white/80 border border-black/10 hover:bg-white text-on-surface font-label-md text-label-md font-medium shadow-xs flex items-center gap-1 active:scale-95 transition-all" type="button">
+<span>Inspect Dossier</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Issue Card 2 -->
+<div class="glass-panel rounded-2xl p-4 space-y-3 hover:border-black/10 transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-[#B65F49]/10 text-[#B65F49] font-label-sm text-[10px] font-semibold tracking-wide">
+                Critical P0
+              </span>
+<span class="font-code-sm text-code-sm text-secondary">42 occurrences</span>
+</div>
+<h3 class="font-headline-md text-[16px] text-on-surface font-semibold leading-tight">
+              International SMS OTP Timeout
+            </h3>
+</div>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded bg-black/[0.04] text-secondary whitespace-nowrap">
+            Operational Issues
+          </span>
+</div>
+<!-- Verbatim quote preview -->
+<div class="p-2.5 rounded-xl bg-white/60 border border-black/[0.04] text-secondary font-body-sm text-body-sm italic">
+<span class="text-primary font-serif font-bold text-[14px]">“</span>Delivery delay exceeding 300s window during EU peak onboarding hours...<span class="text-primary font-serif font-bold text-[14px]">”</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5 text-secondary font-code-sm text-code-sm">
+<span class="material-symbols-outlined text-[15px] text-[#B65F49]" data-icon="signal_disconnected">signal_disconnected</span>
+<span>Latency SLA breached</span>
+</div>
+<button class="px-3 py-1.5 rounded-full bg-white/80 border border-black/10 hover:bg-white text-on-surface font-label-md text-label-md font-medium shadow-xs flex items-center gap-1 active:scale-95 transition-all" type="button">
+<span>Inspect Dossier</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Issue Card 3 -->
+<div class="glass-panel rounded-2xl p-4 space-y-3 hover:border-black/10 transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-[#A87522]/10 text-[#A87522] font-label-sm text-[10px] font-semibold tracking-wide">
+                High Priority
+              </span>
+<span class="font-code-sm text-code-sm text-secondary">19 occurrences</span>
+</div>
+<h3 class="font-headline-md text-[16px] text-on-surface font-semibold leading-tight">
+              Double Billing Webhook Sync Failure
+            </h3>
+</div>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded bg-black/[0.04] text-secondary whitespace-nowrap">
+            Operational Issues
+          </span>
+</div>
+<!-- Verbatim quote preview -->
+<div class="p-2.5 rounded-xl bg-white/60 border border-black/[0.04] text-secondary font-body-sm text-body-sm italic">
+<span class="text-primary font-serif font-bold text-[14px]">“</span>Subscription invoice generated twice following stripe idempotency header retry...<span class="text-primary font-serif font-bold text-[14px]">”</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5 text-secondary font-code-sm text-code-sm">
+<span class="material-symbols-outlined text-[15px] text-[#A87522]" data-icon="sync_problem">sync_problem</span>
+<span>Revenue friction</span>
+</div>
+<button class="px-3 py-1.5 rounded-full bg-white/80 border border-black/10 hover:bg-white text-on-surface font-label-md text-label-md font-medium shadow-xs flex items-center gap-1 active:scale-95 transition-all" type="button">
+<span>Inspect Dossier</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 6. DATA INTEGRITY FOOTNOTE NOTICE -->
+<!-- ========================================================================= -->
+<section class="glass-panel rounded-xl p-3.5 flex items-start gap-3 border border-black/[0.06] bg-white/60">
+<div class="w-6 h-6 rounded-full bg-black/[0.04] flex items-center justify-center shrink-0 mt-0.5 text-secondary">
+<span class="material-symbols-outlined text-[16px]" data-icon="info">info</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-label-md text-label-md font-semibold text-on-surface">Data Integrity Notice</h4>
+<p class="font-body-sm text-[11px] leading-relaxed text-secondary">
+          No temporal timestamps found in source CSV; historical trend charts disabled to prevent hallucinated timelines.
+        </p>
+</div>
+</section>
+</main>
+<!-- ========================================================================= -->
+<!-- 7. BOTTOM STICKY FROSTED GLASS TAB BAR (MOBILE SAFE) -->
+<!-- ========================================================================= -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 glass-tabbar px-4 pt-2 pb-5">
+<div class="max-w-[420px] mx-auto grid grid-cols-4 items-center">
+<!-- Tab 1: Dashboard (ACTIVE) -->
+<a class="flex flex-col items-center justify-center gap-1 text-primary py-1 group" href="#dashboard">
+<div class="relative">
+<span class="material-symbols-outlined text-[22px]" data-icon="dashboard" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"></span>
+</div>
+<span class="font-label-sm text-[10px] font-semibold tracking-tight text-primary">Dashboard</span>
+</a>
+<!-- Tab 2: Feedback Inbox -->
+<a class="flex flex-col items-center justify-center gap-1 text-secondary hover:text-on-surface py-1 transition-colors" href="#feedback">
+<div class="relative">
+<span class="material-symbols-outlined text-[22px]" data-icon="chat_bubble">chat_bubble</span>
+<span class="absolute -top-1 -right-2 px-1 py-0.2 rounded-full bg-black/[0.08] text-[9px] font-code-sm text-secondary font-medium">7k</span>
+</div>
+<span class="font-label-sm text-[10px] font-medium tracking-tight">Feedback</span>
+</a>
+<!-- Tab 3: Issues -->
+<a class="flex flex-col items-center justify-center gap-1 text-secondary hover:text-on-surface py-1 transition-colors" href="#issues">
+<div class="relative">
+<span class="material-symbols-outlined text-[22px]" data-icon="scatter_plot">scatter_plot</span>
+<span class="absolute -top-1 -right-2.5 px-1 py-0.2 rounded-full bg-[#B65F49] text-[9px] font-code-sm text-white font-medium">10</span>
+</div>
+<span class="font-label-sm text-[10px] font-medium tracking-tight">Issues</span>
+</a>
+<!-- Tab 4: Reports -->
+<a class="flex flex-col items-center justify-center gap-1 text-secondary hover:text-on-surface py-1 transition-colors" href="#reports">
+<div class="relative">
+<span class="material-symbols-outlined text-[22px]" data-icon="donut_small">donut_small</span>
+</div>
+<span class="font-label-sm text-[10px] font-medium tracking-tight">Reports</span>
+</a>
+</div>
+</nav>
+<!-- ========================================================================= -->
+<!-- LIGHTWEIGHT INTERACTIVITY SCRIPTS -->
+<!-- ========================================================================= -->
+<script>
+    // Flip Card Micro-Interaction
+    const flipCard = document.getElementById('kpi-flip-card');
+    if (flipCard) {
+      flipCard.addEventListener('click', () => {
+        flipCard.classList.toggle('is-flipped');
+      });
+    }
+
+    // Segmented Switcher Active State Toggle
+    const btnBalanced = document.getElementById('toggle-balanced');
+    const btnPrioritized = document.getElementById('toggle-prioritized');
+
+    if (btnBalanced && btnPrioritized) {
+      btnBalanced.addEventListener('click', () => {
+        btnBalanced.className = 'flex-1 py-1.5 rounded-full text-center font-label-md text-label-md bg-primary-container text-on-primary shadow-sm flex items-center justify-center gap-1 transition-all';
+        btnPrioritized.className = 'flex-1 py-1.5 rounded-full text-center font-label-md text-label-md text-secondary hover:text-on-surface transition-all';
+      });
+
+      btnPrioritized.addEventListener('click', () => {
+        btnPrioritized.className = 'flex-1 py-1.5 rounded-full text-center font-label-md text-label-md bg-primary-container text-on-primary shadow-sm flex items-center justify-center gap-1 transition-all';
+        btnBalanced.className = 'flex-1 py-1.5 rounded-full text-center font-label-md text-label-md text-secondary hover:text-on-surface transition-all';
+      });
+    }
+  </script>
+</body></html>
