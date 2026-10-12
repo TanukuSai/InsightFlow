@@ -51,3 +51,14 @@ pnpm-debug.log*
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Prompts and internal plans
+*_Prompt.md
+*Prompt*.md
+*.prompt.md
+*plan*.md
+*Plan*.md
+InsightFlow_*.md
+!README.md
+!backend/README.md
+!frontend/README.md
