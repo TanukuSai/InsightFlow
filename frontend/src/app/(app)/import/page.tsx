@@ -75,12 +75,12 @@ export default function CsvImportPage() {
       />
 
       <div className="p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-8">
-        {/* Public Demo Notice */}
+        {/* Data Privacy Notice */}
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 shadow-2xs">
           <span className="text-base leading-none">⚠️</span>
           <div>
-            <strong className="font-bold">Public Demo Notice: </strong>
-            This is an open hackathon demonstration workspace. Upload only sample or anonymized customer feedback; data is stored in the public demo workspace and may be visible to other visitors.
+            <strong className="font-bold">Data Privacy Notice: </strong>
+            Upload authorized customer feedback records. Ensure personal identifiable information (PII) has been sanitized or removed prior to ingestion.
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export default function CsvImportPage() {
                   Dataset Successfully Ingested
                 </h2>
                 <p className="text-xs text-[#4D5765]">
-                  {summary.valid_rows.toLocaleString()} valid records processed into public demo workspace.
+                  {summary.valid_rows.toLocaleString()} valid records processed into workspace.
                 </p>
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function CsvImportPage() {
                   required
                   value={datasetName}
                   onChange={(e) => setDatasetName(e.target.value)}
-                  placeholder="e.g. Build Battle 2026 Customer Feedback"
+                  placeholder="e.g. Q1 Customer Feedback Batch"
                   className="w-full px-4 py-2.5 bg-[#F6F5F1] border border-[#E2E3DD] rounded-xl text-xs text-[#20252D] focus:outline-none focus:border-[#3656C8] focus:ring-1 focus:ring-[#3656C8]"
                 />
               </div>

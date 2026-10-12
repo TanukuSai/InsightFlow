@@ -429,7 +429,7 @@ class AdaptionService:
         if not job:
             raise HTTPException(status_code=404, detail="Adaption job not found.")
 
-        if job.status != "succeeded" or not job.adaption_dataset_id:
+        if job.operation_type != "adapt" or job.status != "succeeded" or not job.adaption_dataset_id:
             raise HTTPException(
                 status_code=400,
                 detail="Output download is only available for successfully completed Adaption jobs.",

@@ -153,7 +153,11 @@ async def start_adaption_run(
             job_specification=clean_spec,
             db=db,
         )
-        return AdaptionJobResponse.model_validate(job)
+        resp = AdaptionJobResponse.model_validate(job)
+        resp.output_download_available = bool(
+            job.operation_type == "adapt" and job.status == "succeeded" and job.adaption_dataset_id
+        )
+        return resp
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -186,7 +190,9 @@ async def list_adaption_jobs(
             if updated:
                 job = updated
         resp = AdaptionJobResponse.model_validate(job)
-        resp.output_download_available = bool(job.status == "succeeded" and job.adaption_dataset_id)
+        resp.output_download_available = bool(
+            job.operation_type == "adapt" and job.status == "succeeded" and job.adaption_dataset_id
+        )
         synced_jobs.append(resp)
 
     return synced_jobs
@@ -207,7 +213,9 @@ async def get_adaption_job(
         raise HTTPException(status_code=404, detail="Adaption job not found")
 
     resp = AdaptionJobResponse.model_validate(job)
-    resp.output_download_available = bool(job.status == "succeeded" and job.adaption_dataset_id)
+    resp.output_download_available = bool(
+        job.operation_type == "adapt" and job.status == "succeeded" and job.adaption_dataset_id
+    )
     return resp
 
 

@@ -183,7 +183,7 @@ export default function MarketingLandingPage() {
                 href="/dashboard"
                 className="px-6 py-3 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2 focus-visible-ring"
               >
-                <span>Explore the demo</span>
+                <span>Explore Workspace</span>
                 <span>→</span>
               </Link>
               <a
@@ -212,14 +212,14 @@ export default function MarketingLandingPage() {
                   Signal Observatory Engine
                 </h3>
                 <p className="text-xs text-[#C5CCD7] leading-relaxed">
-                  Aggregates imported feedback to isolate 320 unique exact feedback statements from 7,000 benchmark rows, identifying 6,680 repeated statement instances (95.4% exact duplicate rate in the Build Battle benchmark dataset).
+                  Aggregates imported feedback to isolate 320 unique exact feedback statements from 7,000 benchmark rows, identifying 6,680 repeated statement instances (95.4% exact duplicate rate in the benchmark dataset).
                 </p>
               </div>
 
               {/* Micro Metric Preview */}
               <div className="relative z-10 space-y-2 pt-4 border-t border-white/10">
                 <div className="text-[10px] uppercase font-bold text-[#9EB4FA] font-mono mb-1">
-                  Build Battle Benchmark (N=7,000 Rows)
+                  Benchmark Dataset (N=7,000 Rows)
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#C5CCD7]">Operational Issues</span>
@@ -506,7 +506,7 @@ export default function MarketingLandingPage() {
               Ready to turn customer feedback into action?
             </h2>
             <p className="text-sm sm:text-base text-[#C5CCD7] max-w-lg mx-auto leading-relaxed">
-              Experience InsightFlow with the preloaded Build Battle 2026 dataset, or ingest your custom feedback records via CSV.
+              Experience InsightFlow with the preloaded customer feedback dataset, or ingest your custom records via CSV.
             </p>
             <div className="pt-2">
               <Link

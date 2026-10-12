@@ -9,7 +9,7 @@ import { dashboardApi, issuesApi, feedbackApi, adaptionApi } from "@/lib/api/cli
 import { DashboardData, Issue, Feedback, AdaptionJobResponse, AdaptionConfigStatus } from "@/lib/api/types";
 
 import { useDataset } from "@/lib/context/DatasetContext";
-import { Sparkles, ArrowRight, Database, Cpu, CheckCircle2, MessageSquare, Layers } from "lucide-react";
+import { Sparkles, ArrowRight, Database, Cpu, CheckCircle2, MessageSquare, Layers, RotateCw, Clock, AlertCircle } from "lucide-react";
 
 // Category colors for the Signal Observatory palette (strictly distinct from sentiment)
 const CATEGORY_COLORS: Record<string, { bar: string; text: string; bg: string; border: string }> = {
@@ -49,12 +49,16 @@ export default function DashboardPage() {
       setIssues(issueList);
       setRecentFeedbacks(fbList.items || []);
 
-      // Non-blocking query for latest Adaption status and job
+      // Non-blocking query for latest Adaption status and job filtered by current dataset
       adaptionApi
         .listJobs()
         .then((jobs) => {
           if (jobs && jobs.length > 0) {
-            setLatestAdaptionJob(jobs[0]);
+            const datasetJobs = jobs.filter((j) => j.dataset_id === targetDatasetId);
+            // Prefer real adapt operations, else fall back to estimate
+            const adaptJob = datasetJobs.find((j) => j.operation_type === "adapt");
+            const estimateJob = datasetJobs.find((j) => j.operation_type === "estimate");
+            setLatestAdaptionJob(adaptJob || estimateJob || null);
           } else {
             setLatestAdaptionJob(null);
           }
@@ -118,7 +122,7 @@ export default function DashboardPage() {
           </div>
           <h2 className="text-base font-bold text-[#111827]">No Dataset Selected</h2>
           <p className="text-xs text-[#687386] leading-relaxed">
-            Please import a CSV dataset or select an active dataset from the header to view deduplication and intelligence telemetry.
+            Please import a CSV dataset or select an active dataset from the header to view deduplication and customer feedback analytics.
           </p>
           <Link
             href="/import"
@@ -139,7 +143,7 @@ export default function DashboardPage() {
           <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[#FFF1F0] text-[#FF6B61] flex items-center justify-center text-2xl font-bold">
             !
           </div>
-          <h2 className="text-lg font-bold text-[#111827] mb-2">Unable to Connect to Telemetry Engine</h2>
+          <h2 className="text-lg font-bold text-[#111827] mb-2">Unable to Connect to Analytics Engine</h2>
           <p className="text-xs text-[#687386] mb-6 leading-relaxed">{error || "Dataset could not be loaded."}</p>
           <button
             onClick={() => selectedDatasetId && loadDashboard(selectedDatasetId)}
@@ -272,12 +276,12 @@ export default function DashboardPage() {
         </div>
 
         {/* =========================================================================
-            ZONE C: KEY TELEMETRY KPI ROW (4 Intentional Cards with 3D Flip)
+            ZONE C: KEY KPI ROW (4 Intentional Cards with 3D Flip)
             ========================================================================= */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold tracking-wider uppercase text-[#687386]">
-              Key Intelligence Telemetry (N={totalRows.toLocaleString()})
+              Key Signal Analytics (N={totalRows.toLocaleString()})
             </h3>
             <span className="text-[11px] text-[#687386]">
               Click card or press Enter to inspect calculation provenance
@@ -851,17 +855,57 @@ export default function DashboardPage() {
               </div>
               <div className="text-xs font-bold text-[#20252D]">
                 {latestAdaptionJob ? (
-                  <span className="inline-flex items-center gap-1 text-[#2E7D68]">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Latest: {latestAdaptionJob.status.toLowerCase() === "succeeded" ? "Completed" : latestAdaptionJob.status.toLowerCase() === "pending" ? "Queued" : latestAdaptionJob.status.charAt(0).toUpperCase() + latestAdaptionJob.status.slice(1)}
-                  </span>
+                  (() => {
+                    const isAdapt = latestAdaptionJob.operation_type === "adapt";
+                    const status = latestAdaptionJob.status?.toLowerCase();
+                    const labelPrefix = isAdapt ? "Latest run: " : "Latest estimate: ";
+
+                    if (status === "succeeded") {
+                      return (
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>{labelPrefix}{isAdapt ? "Completed" : "Quote received"}</span>
+                        </span>
+                      );
+                    }
+                    if (status === "running") {
+                      return (
+                        <span className="inline-flex items-center gap-1.5 text-blue-700">
+                          <RotateCw className="w-3 h-3 text-blue-600 animate-spin shrink-0" />
+                          <span>{labelPrefix}Running</span>
+                        </span>
+                      );
+                    }
+                    if (status === "pending" || status === "queued") {
+                      return (
+                        <span className="inline-flex items-center gap-1.5 text-[#4D5765]">
+                          <Clock className="w-3 h-3 text-[#7B8491] shrink-0" />
+                          <span>{labelPrefix}Queued</span>
+                        </span>
+                      );
+                    }
+                    if (status === "failed") {
+                      return (
+                        <span className="inline-flex items-center gap-1.5 text-rose-700">
+                          <AlertCircle className="w-3 h-3 text-rose-600 shrink-0" />
+                          <span>{labelPrefix}Failed</span>
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="inline-flex items-center gap-1.5 text-[#4D5765]">
+                        <Clock className="w-3 h-3 text-[#7B8491] shrink-0" />
+                        <span>{labelPrefix}{latestAdaptionJob.status}</span>
+                      </span>
+                    );
+                  })()
                 ) : (
-                  "Ready to Configure"
+                  <span className="text-[#4D5765]">Ready to prepare</span>
                 )}
               </div>
               <p className="text-[11px] text-[#4D5765] leading-relaxed">
                 {adaptionStatus?.daily_runs_remaining !== undefined && adaptionStatus?.daily_runs_remaining !== null
-                  ? `${adaptionStatus.daily_runs_remaining}/${adaptionStatus.daily_runs_limit ?? 3} demo runs remaining today (UTC).`
+                  ? `${adaptionStatus.daily_runs_remaining}/${adaptionStatus.daily_runs_limit ?? 3} runs remaining today (UTC).`
                   : "Estimate compute, run bounded pipeline, and download output."}
               </p>
             </div>

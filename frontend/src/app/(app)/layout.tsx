@@ -8,7 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8F8F5] flex items-center justify-center text-xs text-[#7B8491]">Loading telemetry environment...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F8F8F5] flex items-center justify-center text-xs text-[#7B8491]">Loading workspace...</div>}>
       <DatasetProvider>
         <div className="min-h-screen bg-[#F8F8F5] text-[#202821] flex">
           {/* Sidebar Navigation */}

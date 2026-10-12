@@ -6,7 +6,7 @@ import { getActiveWorkspaceId, API_BASE_URL, healthApi } from "@/lib/api/client"
 import { RefreshCw, CheckCircle2, XCircle, AlertCircle, Server } from "lucide-react";
 
 export default function SettingsPage() {
-  const [workspaceName] = useState("InsightFlow Hackathon Demo Workspace");
+  const [workspaceName] = useState("InsightFlow Production Workspace");
   const [apiEndpoint, setApiEndpoint] = useState(API_BASE_URL || "");
   const [workspaceId, setWorkspaceId] = useState("ws-production-eval");
 
@@ -53,7 +53,7 @@ export default function SettingsPage() {
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">
       <AppHeader
         title="Settings & Workspace Information"
-        subtitle="Public demonstration configuration, telemetry engine, and backend connectivity"
+        subtitle="Workspace configuration, analytics engine, and backend connectivity"
       />
 
       <div className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-8">
@@ -61,10 +61,10 @@ export default function SettingsPage() {
         <div className="p-6 sm:p-8 solid-data rounded-3xl shadow-sm space-y-5 border-t-3 border-t-[#3656C8]">
           <div className="flex items-center justify-between pb-3 border-b border-[#E2E3DD]">
             <h2 className="text-base font-bold text-[#20252D]">
-              Public Demo Workspace
+              Workspace Details
             </h2>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#E8F3EE] text-[#2E7D68] border border-[#2E7D68]/20 font-mono">
-              Open Access
+              Active
             </span>
           </div>
 
@@ -92,7 +92,7 @@ export default function SettingsPage() {
                 className="w-full px-4 py-2.5 bg-[#F0F2F5] border border-[#E2E3DD] rounded-xl text-xs font-mono text-[#7B8491] cursor-not-allowed"
               />
               <span className="text-[10px] text-[#7B8491] mt-1 block">
-                InsightFlow operates as a single-workspace demonstration. All analytical pipelines bind server-side to <code className="px-1 py-0.5 bg-[#F0F2F5] rounded text-[#20252D] font-mono">{workspaceId}</code>.
+                All analytical pipelines bind server-side to workspace <code className="px-1 py-0.5 bg-[#F0F2F5] rounded text-[#20252D] font-mono">{workspaceId}</code>.
               </span>
             </div>
           </div>
@@ -198,39 +198,39 @@ export default function SettingsPage() {
             </div>
 
             <p className="text-[11px] text-[#7B8491]">
-              Live status query to backend endpoint <code className="px-1 py-0.5 bg-white rounded border border-[#E2E3DD] font-mono text-[#20252D]">/health</code>. Never shows fake continuous pulses.
+              Live status query to backend health endpoint.
             </p>
           </div>
         </div>
 
-        {/* Architecture & Truthfulness */}
+        {/* System Specifications */}
         <div className="p-6 sm:p-8 solid-data rounded-3xl shadow-sm space-y-5 border-t-3 border-t-[#8B6E9B]">
           <div className="flex items-center justify-between pb-3 border-b border-[#E2E3DD]">
             <div>
               <h2 className="text-base font-bold text-[#20252D]">
-                Data Model &amp; Demo Specifications
+                Data Model &amp; System Specifications
               </h2>
               <p className="text-xs text-[#7B8491]">
-                Zero-friction open evaluation with verbatim evidence traceability
+                Deterministic evidence traceability and customer feedback processing
               </p>
             </div>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#E9EDFC] text-[#3656C8] border border-[#3656C8]/20 font-mono">
-              Hackathon Demo
+              InsightFlow v2.2
             </span>
           </div>
 
           <div className="p-4 bg-[#F6F5F1] rounded-xl space-y-2.5 text-xs text-[#4D5765] border border-[#E2E3DD]">
             <div className="flex items-center justify-between">
               <span className="font-medium">Authentication Model:</span>
-              <span className="font-mono font-bold text-[#20252D]">Zero Auth / Direct Access</span>
+              <span className="font-mono font-bold text-[#20252D]">Single Tenant / Direct Access</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="font-medium">Data Ingestion:</span>
-              <span className="text-[#20252D]">CSV Upload &amp; Manual Feedback (Zero Scraping)</span>
+              <span className="text-[#20252D]">CSV Upload &amp; Direct Feedback Ingestion</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="font-medium">Evidence Grounding:</span>
-              <span className="text-[#20252D]">Verbatim Customer Quotes &amp; Strict Telemetry</span>
+              <span className="text-[#20252D]">Verbatim Customer Quotes &amp; Signal Provenance</span>
             </div>
           </div>
         </div>

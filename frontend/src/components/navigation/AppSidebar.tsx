@@ -159,9 +159,9 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
               href="/"
               className="text-[11px] font-semibold text-[var(--brand)] hover:underline focus-visible-ring"
             >
-              Public Demo ↗
+              Overview ↗
             </Link>
-            <span className="text-[10px] text-[var(--ink-muted)] font-mono">v2.2-judge</span>
+            <span className="text-[10px] text-[var(--ink-muted)] font-mono">v2.2</span>
           </div>
         </div>
       </aside>

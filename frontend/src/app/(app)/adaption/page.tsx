@@ -32,10 +32,12 @@ type StatusState =
   | "ready"
   | "key_missing"
   | "operations_disabled"
-  | "capacity_exhausted"
   | "unreachable";
 
-const formatJobStatus = (status: string) => {
+const formatJobStatus = (status: string, operationType?: string) => {
+  if (operationType === "estimate" && status?.toLowerCase() === "succeeded") {
+    return "Quote received";
+  }
   switch (status?.toLowerCase()) {
     case "succeeded":
       return "Completed";
@@ -113,19 +115,10 @@ export default function AdaptionLabPage() {
 
       if (st) {
         setStatusInfo(st);
-        if (!st.api_key_set) {
+        if (!st.configured || !st.api_key_set) {
           setStatusState("key_missing");
         } else if (!st.public_operations_enabled) {
           setStatusState("operations_disabled");
-        } else if (
-          st.daily_runs_remaining !== undefined &&
-          st.daily_runs_remaining !== null &&
-          st.daily_runs_remaining <= 0 &&
-          st.daily_estimates_remaining !== undefined &&
-          st.daily_estimates_remaining !== null &&
-          st.daily_estimates_remaining <= 0
-        ) {
-          setStatusState("capacity_exhausted");
         } else {
           setStatusState("ready");
         }
@@ -223,8 +216,9 @@ export default function AdaptionLabPage() {
       console.error("Estimate failed:", err);
       setErrorMessage(
         err?.message ||
-          "Estimate failed. If public daily demo quotas are reached or operations are disabled, see notice below."
+          "Estimate failed. If daily quota is reached or operations are unavailable, see status above."
       );
+      fetchStatusAndJobs();
     } finally {
       setIsEstimating(false);
     }
@@ -258,14 +252,15 @@ export default function AdaptionLabPage() {
         },
       });
 
-      setSuccessMessage(`Adaptive Data pipeline job launched: ID ${job.id}. Tracking live progress...`);
+      setSuccessMessage(`Support dataset pipeline job launched: #${job.id}. Tracking live progress...`);
       fetchStatusAndJobs();
     } catch (err: any) {
       console.error("Start run failed:", err);
       setErrorMessage(
         err?.message ||
-          "Could not launch Adaption pipeline. Check cloud guardrails and daily demo quota."
+          "Could not launch Adaption pipeline. Please check connection status and remaining quota."
       );
+      fetchStatusAndJobs();
     } finally {
       setIsStartingJob(false);
     }
@@ -289,17 +284,36 @@ export default function AdaptionLabPage() {
   const handleDownloadOutput = async (jobId: string) => {
     setDownloadingJobId(jobId);
     setErrorMessage(null);
+    setSuccessMessage(null);
     try {
       await adaptionApi.downloadJobOutput(jobId, `insightflow_adapted_${jobId}.csv`, "csv");
       setSuccessMessage(`Dataset for job #${jobId} downloaded successfully.`);
     } catch (err: any) {
+      setSuccessMessage(null);
       setErrorMessage(err?.message || "Failed to download adapted dataset artifact.");
     } finally {
       setDownloadingJobId(null);
     }
   };
 
-  const isOperationsReady = statusState === "ready";
+  const isOperationsReady =
+    statusState === "ready" &&
+    statusInfo?.configured === true &&
+    statusInfo?.api_key_set === true &&
+    statusInfo?.public_operations_enabled === true;
+
+  const hasEstimateQuota =
+    statusInfo?.daily_estimates_remaining === null ||
+    statusInfo?.daily_estimates_remaining === undefined ||
+    statusInfo.daily_estimates_remaining > 0;
+
+  const hasRunQuota =
+    statusInfo?.daily_runs_remaining === null ||
+    statusInfo?.daily_runs_remaining === undefined ||
+    statusInfo.daily_runs_remaining > 0;
+
+  const canEstimate = isOperationsReady && hasEstimateQuota;
+  const canRun = isOperationsReady && hasRunQuota;
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--canvas)]">
@@ -350,7 +364,7 @@ export default function AdaptionLabPage() {
                 {statusState === "ready" && (
                   <>
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>READY (Owner-Funded Demo)</span>
+                    <span>CONNECTION ACTIVE</span>
                   </>
                 )}
                 {statusState === "checking" && (
@@ -371,12 +385,6 @@ export default function AdaptionLabPage() {
                     <span>OPERATIONS DISABLED</span>
                   </>
                 )}
-                {statusState === "capacity_exhausted" && (
-                  <>
-                    <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-                    <span>DAILY DEMO CAPACITY EXHAUSTED</span>
-                  </>
-                )}
                 {statusState === "unreachable" && (
                   <>
                     <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
@@ -389,10 +397,10 @@ export default function AdaptionLabPage() {
             <div className="text-[10px] font-mono text-[var(--ink-muted)]">
               {statusInfo?.daily_runs_remaining !== undefined && statusInfo?.daily_runs_remaining !== null ? (
                 <span>
-                  Demo Quota: <strong className="text-[var(--ink)]">{statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3}</strong> runs · <strong className="text-[var(--ink)]">{statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10}</strong> estimates today (UTC)
+                  Quota: <strong className="text-[var(--ink)]">{statusInfo.daily_runs_remaining}/{statusInfo.daily_runs_limit ?? 3}</strong> runs · <strong className="text-[var(--ink)]">{statusInfo.daily_estimates_remaining ?? 0}/{statusInfo.daily_estimates_limit ?? 10}</strong> estimates remaining today (UTC)
                 </span>
               ) : (
-                <span>Judges never enter an API key</span>
+                <span>Pre-configured service</span>
               )}
             </div>
           </div>
@@ -434,7 +442,7 @@ export default function AdaptionLabPage() {
                   Prepare feedback sample
                 </h2>
                 <p className="text-[11px] text-[var(--ink-muted)]">
-                  Bound source dataset rows to safeguard demonstration credits
+                  Bound source dataset rows for support assistant alignment
                 </p>
               </div>
 
@@ -464,7 +472,7 @@ export default function AdaptionLabPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <label className="font-bold text-[var(--ink)]">
-                    Sample limit for Adaption Labs:
+                    Sample limit:
                   </label>
                   <span className="font-mono text-[var(--brand)] font-bold text-[11px]">
                     {maxRows} rows maximum
@@ -488,7 +496,7 @@ export default function AdaptionLabPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[var(--ink-muted)]">
-                  Clamped server-side to 1,000 rows to ensure predictable execution.
+                  Bounded to 1,000 rows maximum to ensure predictable execution.
                 </p>
               </div>
 
@@ -520,16 +528,16 @@ export default function AdaptionLabPage() {
                 </div>
               </div>
 
-              {/* External Data Transfer & Consent Notice */}
+              {/* Data Transfer & Consent Notice */}
               <div className="p-3.5 rounded-xl bg-[#FAF5E8] border border-amber-200/80 space-y-2">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
                   <div className="space-y-0.5 text-xs text-amber-950 leading-relaxed">
                     <div className="font-bold text-[11px]">
-                      External Data Transfer Notice
+                      Data Transfer Notice
                     </div>
                     <p className="text-[10px] text-amber-800 leading-snug">
-                      Bounded rows (up to {maxRows}) are transmitted to the external Adaption Labs API for estimation and adaptation. Estimates upload a quote sample; actual runs consume owner demo credits.
+                      Selected feedback rows (up to {maxRows}) will be sent to Adaption Labs for processing. An estimate evaluates the sample for credit and runtime forecasting without starting the adaptation run.
                     </p>
                   </div>
                 </div>
@@ -542,7 +550,7 @@ export default function AdaptionLabPage() {
                     className="mt-0.5 h-3.5 w-3.5 rounded border-amber-300 text-[var(--brand)] focus:ring-[var(--brand)]"
                   />
                   <span className="text-[11px] font-medium leading-tight">
-                    I acknowledge that up to {maxRows} feedback rows will be uploaded to Adaption Labs for processing.
+                    I understand that up to {maxRows} feedback rows will be sent to Adaption Labs for processing.
                   </span>
                 </label>
               </div>
@@ -552,10 +560,15 @@ export default function AdaptionLabPage() {
                 <button
                   type="button"
                   onClick={handleEstimate}
-                  disabled={isEstimating || !selectedDatasetId || !hasConsented || !isOperationsReady}
+                  disabled={isEstimating || !selectedDatasetId || !hasConsented || !canEstimate}
                   className="flex-1 py-2.5 px-4 bg-white border border-[var(--border-strong)] hover:border-[var(--brand)] text-[var(--ink)] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
                 >
-                  {isEstimating ? (
+                  {statusInfo?.daily_estimates_remaining === 0 ? (
+                    <>
+                      <Coins className="w-3.5 h-3.5 text-amber-600" />
+                      <span>No estimates remaining today</span>
+                    </>
+                  ) : isEstimating ? (
                     <>
                       <RotateCw className="w-3.5 h-3.5 animate-spin text-[var(--brand)]" />
                       <span>Querying Estimate...</span>
@@ -571,10 +584,15 @@ export default function AdaptionLabPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmModal(true)}
-                  disabled={isStartingJob || !selectedDatasetId || !hasConsented || !isOperationsReady}
+                  disabled={isStartingJob || !selectedDatasetId || !hasConsented || !canRun}
                   className="flex-1 py-2.5 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 focus-visible-ring disabled:opacity-50 cursor-pointer"
                 >
-                  {isStartingJob ? (
+                  {statusInfo?.daily_runs_remaining === 0 ? (
+                    <>
+                      <Play className="w-3.5 h-3.5 fill-current opacity-50" />
+                      <span>No runs remaining today</span>
+                    </>
+                  ) : isStartingJob ? (
                     <>
                       <RotateCw className="w-3.5 h-3.5 animate-spin" />
                       <span>Launching Run...</span>
@@ -708,6 +726,7 @@ export default function AdaptionLabPage() {
                   {jobs.slice(0, 5).map((job) => {
                     const isSuccess = job.status === "succeeded";
                     const isRunning = job.status === "running";
+                    const isEstimate = job.operation_type === "estimate";
 
                     return (
                       <div
@@ -722,14 +741,16 @@ export default function AdaptionLabPage() {
                           <span
                             className={`inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border ${
                               isSuccess
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                ? isEstimate
+                                  ? "bg-sky-50 text-sky-700 border-sky-200"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : isRunning
                                 ? "bg-blue-50 text-blue-700 border-blue-200 animate-pulse"
                                 : "bg-red-50 text-red-700 border-red-200"
                             }`}
                           >
                             {isRunning && <RotateCw className="w-2.5 h-2.5 animate-spin" />}
-                            {formatJobStatus(job.status)}
+                            {formatJobStatus(job.status, job.operation_type)}
                           </span>
                         </div>
 
@@ -803,7 +824,7 @@ export default function AdaptionLabPage() {
                 Launch Adaption Pipeline Run?
               </h3>
               <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
-                This will submit a bounded extraction ({maxRows} rows maximum) to Adaption Labs for Adaptive Data processing.
+                This will submit a bounded extraction ({maxRows} rows maximum) to Adaption Labs for processing.
               </p>
             </div>
 
@@ -835,7 +856,7 @@ export default function AdaptionLabPage() {
             </div>
 
             <p className="text-[11px] text-amber-900 bg-[#FAF5E8] p-3 rounded-xl border border-amber-200 leading-relaxed">
-              This action transmits bounded data to Adaption Labs and consumes demo credits configured on the backend.
+              This action transmits selected data to Adaption Labs and consumes provider compute credits.
             </p>
 
             <div className="flex gap-3">
@@ -894,25 +915,37 @@ export default function AdaptionLabPage() {
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold uppercase text-[var(--ink)]">
-                      {selectedJob.operation_type === "adapt" ? "Adaptation Pipeline Run" : "Cost Estimate"}
+                      {selectedJob.operation_type === "adapt" ? "Adaptation Pipeline Run" : "Cost & Time Estimate"}
                     </span>
-                    <span className="font-mono text-xs font-bold capitalize text-[var(--brand)]">
-                      {selectedJob.status}
+                    <span className="font-mono text-xs font-bold text-[var(--brand)]">
+                      {formatJobStatus(selectedJob.status, selectedJob.operation_type)}
                     </span>
                   </div>
                 </div>
 
                 <div className="p-3.5 bg-[#F6F5F1] rounded-2xl border border-[var(--border-subtle)] space-y-1">
                   <div className="text-[10px] font-bold uppercase font-mono text-[var(--ink-muted)]">
-                    Resource Consumption
+                    Resource Forecast
                   </div>
                   <div className="text-xs font-mono space-y-1 text-[var(--ink)]">
-                    <div>Estimated Credits: {selectedJob.estimated_credits ?? "N/A"}</div>
-                    <div>Estimated Minutes: {selectedJob.estimated_minutes ?? "N/A"}</div>
+                    <div>Estimated Credits: {selectedJob.estimated_credits !== null && selectedJob.estimated_credits !== undefined ? selectedJob.estimated_credits.toFixed(1) : "N/A"}</div>
+                    <div>Estimated Minutes: {selectedJob.estimated_minutes !== null && selectedJob.estimated_minutes !== undefined ? selectedJob.estimated_minutes.toFixed(1) : "N/A"}</div>
                   </div>
                 </div>
 
-                {selectedJob.output_download_available && (
+                {selectedJob.operation_type === "estimate" && selectedJob.status === "succeeded" && (
+                  <div className="p-3.5 bg-sky-50 rounded-2xl border border-sky-200/80 space-y-1">
+                    <div className="text-xs font-bold text-sky-900 flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-sky-600" />
+                      <span>Quote Forecast Received</span>
+                    </div>
+                    <p className="text-[10px] text-sky-800 leading-snug">
+                      This job generated a pre-flight compute estimate. No dataset adaptation run was initiated.
+                    </p>
+                  </div>
+                )}
+
+                {selectedJob.operation_type === "adapt" && selectedJob.output_download_available && (
                   <div className="p-3.5 bg-[#E8F3EE] rounded-2xl border border-[#2E7D68]/30 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-[#166534] flex items-center gap-1.5">
@@ -930,7 +963,7 @@ export default function AdaptionLabPage() {
                       </button>
                     </div>
                     <p className="text-[10px] text-[#2E7D68]">
-                      Streamed directly from Adaption Labs via backend datasets download endpoint.
+                      Processed dataset available for download.
                     </p>
                   </div>
                 )}
@@ -985,7 +1018,7 @@ export default function AdaptionLabPage() {
                 onClick={() => setSelectedJob(null)}
                 className="w-full py-2.5 bg-[#F6F5F1] hover:bg-[#EAE8E2] text-[var(--ink)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
               >
-                Close Dossier
+                Close Details
               </button>
             </div>
           </div>

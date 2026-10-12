@@ -243,3 +243,41 @@ async def test_adaption_download_running_job_rejected(client: AsyncClient, db_se
     dl_resp = await client.get("/api/v1/adaption/jobs/adj-test-running/download?format=csv")
     assert dl_resp.status_code == 400
     assert "Output download is only available for successfully completed Adaption jobs" in dl_resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_adaption_estimate_never_advertises_download(client: AsyncClient, db_session: AsyncSession, sample_csv_content: bytes, monkeypatch: pytest.MonkeyPatch):
+    """Verify estimate jobs with status=succeeded never have output_download_available=True and reject downloads."""
+    monkeypatch.setattr(settings, "ENABLE_PUBLIC_ADAPTION_OPERATIONS", True)
+    monkeypatch.setattr(settings, "ADAPTION_API_KEY", "adp_mock_key_12345")
+
+    files = {"file": ("feed.csv", sample_csv_content, "text/csv")}
+    imp_resp = await client.post("/api/v1/datasets/import", files=files)
+    dataset_id = imp_resp.json()["dataset_id"]
+
+    job = AdaptionJob(
+        id="adj-test-estimate-only",
+        workspace_id="ws-production-eval",
+        dataset_id=dataset_id,
+        adaption_dataset_id="adaption-ds-estimate-123",
+        operation_type="estimate",
+        status="succeeded",
+    )
+    db_session.add(job)
+    await db_session.commit()
+
+    # In job details
+    get_resp = await client.get("/api/v1/adaption/jobs/adj-test-estimate-only")
+    assert get_resp.status_code == 200
+    assert get_resp.json()["output_download_available"] is False
+
+    # In job listing
+    list_resp = await client.get("/api/v1/adaption/jobs")
+    assert list_resp.status_code == 200
+    estimate_job = next(j for j in list_resp.json() if j["id"] == "adj-test-estimate-only")
+    assert estimate_job["output_download_available"] is False
+
+    # In download endpoint
+    dl_resp = await client.get("/api/v1/adaption/jobs/adj-test-estimate-only/download?format=csv")
+    assert dl_resp.status_code == 400
+    assert "Output download is only available for successfully completed Adaption jobs" in dl_resp.json()["detail"]
