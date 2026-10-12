@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: insightflow-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PUBLIC_DEMO_WORKSPACE_ID
+        value: ws-production-eval
+      - key: CANONICAL_DATASET_ID
+        value: ds-796d15b9a096
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///./insightflow.db
+      - key: CORS_ALLOWED_ORIGINS
+        value: '["http://localhost:3000","https://frontend-bay-ten-95.vercel.app"]'
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "10"
+      - key: MAX_CSV_ROWS
+        value: "20000"
+      - key: ENABLE_PUBLIC_ADAPTION_OPERATIONS
+        value: "false"
