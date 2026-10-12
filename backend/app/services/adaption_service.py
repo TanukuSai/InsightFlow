@@ -342,6 +342,7 @@ class AdaptionService:
                 status="failed",
                 column_mapping=mapping,
                 job_specification=spec,
+                result_metadata={},
                 error_message=str(e),
                 completed_at=datetime.now(timezone.utc),
             )

@@ -48,11 +48,11 @@ class AdaptionJobResponse(BaseModel):
     adaption_run_id: Optional[str] = None
     operation_type: str
     status: str
-    column_mapping: Dict[str, Any]
-    job_specification: Dict[str, Any]
+    column_mapping: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    job_specification: Optional[Dict[str, Any]] = Field(default_factory=dict)
     estimated_credits: Optional[float] = None
     estimated_minutes: Optional[float] = None
-    result_metadata: Dict[str, Any]
+    result_metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
     error_message: Optional[str] = None
     output_download_available: bool = False
     created_at: datetime
