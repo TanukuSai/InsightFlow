@@ -117,3 +117,12 @@ def rate_limit_burst(request: Request):
         max_requests=settings.RATE_LIMIT_BURST_PER_MINUTE,
         window_seconds=60,
     )
+
+
+def rate_limit_auth(request: Request):
+    limiter.check(
+        request=request,
+        scope="auth-endpoints",
+        max_requests=30,
+        window_seconds=300,
+    )

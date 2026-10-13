@@ -2,33 +2,95 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getBackendBaseUrl,
   SESSION_COOKIE_NAME,
+  validateBffOrigin,
 } from "@/lib/server/bff";
 
 type RouteContext = {
   params: Promise<{ path: string[] }>;
 };
 
+const ALLOWED_ROUTE_PREFIXES = [
+  "health",
+  "ready",
+  "api/v1/datasets",
+  "api/v1/feedback",
+  "api/v1/issues",
+  "api/v1/recommendations",
+  "api/v1/reports",
+  "api/v1/adaption",
+];
+
+const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH", "PUT", "DELETE", "HEAD"]);
+
 async function handleProxy(req: NextRequest, context: RouteContext) {
   try {
+    // 1. Method verification
+    if (!ALLOWED_METHODS.has(req.method)) {
+      return NextResponse.json(
+        { detail: `HTTP method ${req.method} is not permitted.` },
+        { status: 405 }
+      );
+    }
+
+    // 2. Origin check on state-changing requests
+    if (!["GET", "HEAD"].includes(req.method)) {
+      if (!validateBffOrigin(req)) {
+        return NextResponse.json(
+          { detail: "Cross-origin mutation rejected." },
+          { status: 403 }
+        );
+      }
+    }
+
     const { path } = await context.params;
     if (!path || path.length === 0) {
       return NextResponse.json({ detail: "Missing target proxy path." }, { status: 400 });
     }
 
+    // 3. Traversal and injection defense
+    for (const segment of path) {
+      const decoded = decodeURIComponent(segment);
+      if (
+        decoded.includes("..") ||
+        decoded.includes("/") ||
+        decoded.includes("\\") ||
+        decoded.includes("\0") ||
+        segment.toLowerCase().includes("%2e") ||
+        segment.toLowerCase().includes("%2f") ||
+        segment.toLowerCase().includes("%5c")
+      ) {
+        return NextResponse.json(
+          { detail: "Path traversal or malformed path sequence rejected." },
+          { status: 400 }
+        );
+      }
+    }
+
     const normalizedPath = path.join("/");
 
-    // 1. Strict allowlist security check
-    const isPublic = normalizedPath === "health" || normalizedPath === "ready";
-    const isApiV1 = normalizedPath.startsWith("api/v1/");
+    // 4. Explicit rejection of auth paths through generic proxy
+    if (normalizedPath.startsWith("api/v1/auth")) {
+      return NextResponse.json(
+        { detail: "Direct proxying of auth endpoints is not allowed. Use BFF auth routes." },
+        { status: 403 }
+      );
+    }
 
-    if (!isPublic && !isApiV1) {
+    // 5. Strict allowlist verification
+    const isAllowed = ALLOWED_ROUTE_PREFIXES.some(
+      (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
+    );
+
+    if (!isAllowed) {
       return NextResponse.json(
         { detail: "Target path is not permitted by API proxy." },
         { status: 403 }
       );
     }
 
-    // 2. Validate session cookie for protected routes
+    const isPublic = normalizedPath === "health" || normalizedPath === "ready";
+
+    // 6. Validate session cookie for protected routes
     const sessionToken = req.cookies.get(SESSION_COOKIE_NAME)?.value;
     if (!isPublic && !sessionToken) {
       return NextResponse.json(
@@ -37,12 +99,12 @@ async function handleProxy(req: NextRequest, context: RouteContext) {
       );
     }
 
-    // 3. Assemble target backend URL
+    // 7. Assemble target backend URL safely
     const backendBase = getBackendBaseUrl();
     const query = req.nextUrl.search;
     const targetUrl = `${backendBase}/${normalizedPath}${query}`;
 
-    // 4. Prepare forward headers
+    // 8. Prepare forward headers (never forward arbitrary browser auth or tenant headers)
     const forwardHeaders = new Headers();
     const incomingContentType = req.headers.get("content-type");
     if (incomingContentType) {
@@ -58,7 +120,7 @@ async function handleProxy(req: NextRequest, context: RouteContext) {
       forwardHeaders.set("authorization", `Bearer ${sessionToken}`);
     }
 
-    // 5. Read body for mutating requests
+    // 9. Read body for mutating requests
     const hasBody = !["GET", "HEAD"].includes(req.method);
     const bodyBuffer = hasBody ? await req.arrayBuffer() : undefined;
 
@@ -70,7 +132,7 @@ async function handleProxy(req: NextRequest, context: RouteContext) {
       duplex: "half",
     });
 
-    // 6. Assemble response headers preserving downloads and error types
+    // 10. Assemble response headers preserving downloads and error types
     const responseHeaders = new Headers();
     const resContentType = backendRes.headers.get("content-type");
     if (resContentType) {

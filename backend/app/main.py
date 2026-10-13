@@ -14,17 +14,21 @@ from app.api.v1 import api_v1_router
 setup_logging()
 
 
+import uuid
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.APP_ENV}]...")
     # Initialize DB schema
     await init_db()
-    # Idempotent seed of canonical demo dataset
-    try:
-        async with AsyncSessionLocal() as session:
-            await seed_canonical_dataset_if_needed(session)
-    except Exception as e:
-        logger.warning(f"Database seeding check encountered error: {e}")
+    # Seed canonical demo dataset only if explicitly requested or in test environment
+    if settings.SEED_DEMO_DATA_ON_STARTUP or settings.APP_ENV == "test":
+        try:
+            async with AsyncSessionLocal() as session:
+                await seed_canonical_dataset_if_needed(session)
+        except Exception as e:
+            logger.warning(f"Database seeding check encountered error: {e}")
     yield
     logger.info("Shutting down InsightFlow API...")
     await async_engine.dispose()
@@ -51,14 +55,17 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {str(exc)}", exc_info=True)
+    correlation_id = f"err-{uuid.uuid4().hex[:12]}"
+    logger.error(
+        f"[{correlation_id}] Unhandled exception on {request.method} {request.url.path}: {str(exc)}",
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "code": "INTERNAL_SERVER_ERROR",
             "message": "An unexpected server error occurred. Please try again later.",
-            "detail": str(exc),
-            "path": request.url.path,
+            "request_id": correlation_id,
         },
     )
 

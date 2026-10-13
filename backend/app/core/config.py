@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    INSIGHTFLOW_BFF_SHARED_SECRET: str = ""
+    SEED_DEMO_DATA_ON_STARTUP: bool = False
 
     # Supabase Auth / Services
     SUPABASE_URL: str = ""
@@ -93,6 +95,16 @@ class Settings(BaseSettings):
             if app_env == "production":
                 raise ValueError("JWT_SECRET_KEY must be configured in production environment.")
             return "ephemeral-insightflow-dev-secret-key-at-least-32-chars-long"
+        return v
+
+    @field_validator("INSIGHTFLOW_BFF_SHARED_SECRET", mode="after")
+    @classmethod
+    def validate_bff_secret(cls, v: str) -> str:
+        if not v:
+            app_env = os.environ.get("APP_ENV", "development").lower()
+            if app_env == "production":
+                raise ValueError("INSIGHTFLOW_BFF_SHARED_SECRET must be configured in production environment.")
+            return "dev-bff-secret-insightflow-entropy-min-32-chars"
         return v
 
     model_config = SettingsConfigDict(

@@ -208,3 +208,25 @@ async def test_operator_create_test_account_script_idempotent():
     )
     assert ws_id_2 == ws_id
     assert pwd_2 is None  # Password not modified
+
+
+@pytest.mark.asyncio
+async def test_bff_shared_secret_enforcement(unauth_client: AsyncClient):
+    """Direct auth requests with missing or invalid BFF secret must be rejected when secret is supplied/tested."""
+    # Invalid secret must return 403
+    bad_resp = await unauth_client.post(
+        "/api/v1/auth/login",
+        json={"email": "operator_test@insightflow.ai", "password": "TestPassword123!@"},
+        headers={"X-BFF-Secret": "invalid-hacker-secret-value"},
+    )
+    assert bad_resp.status_code == 403
+    assert "Direct authentication bypass rejected" in bad_resp.json()["detail"]
+
+    # Valid secret must succeed
+    good_resp = await unauth_client.post(
+        "/api/v1/auth/login",
+        json={"email": "operator_test@insightflow.ai", "password": "TestPassword123!@"},
+        headers={"X-BFF-Secret": settings.INSIGHTFLOW_BFF_SHARED_SECRET},
+    )
+    assert good_resp.status_code == 200
+    assert "access_token" in good_resp.json()

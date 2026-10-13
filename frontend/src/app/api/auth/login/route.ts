@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBackendBaseUrl, getSessionCookieOptions } from "@/lib/server/bff";
+import {
+  getBackendBaseUrl,
+  getSessionCookieOptions,
+  getBffSharedSecret,
+  validateBffOrigin,
+} from "@/lib/server/bff";
 
 export async function POST(req: NextRequest) {
   try {
+    if (!validateBffOrigin(req)) {
+      return NextResponse.json(
+        { detail: "Cross-origin request rejected." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { email, password } = body;
 
@@ -16,7 +28,10 @@ export async function POST(req: NextRequest) {
     const backendUrl = getBackendBaseUrl();
     const backendRes = await fetch(`${backendUrl}/api/v1/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-BFF-Secret": getBffSharedSecret(),
+      },
       body: JSON.stringify({ email, password }),
     });
 

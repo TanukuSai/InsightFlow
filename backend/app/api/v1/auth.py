@@ -1,9 +1,12 @@
+import secrets
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.api.deps import get_session, get_current_user
+from app.core.config import settings
+from app.core.rate_limit import rate_limit_auth
 from app.core.security import (
     hash_password,
     verify_password,
@@ -24,10 +27,27 @@ from app.schemas.auth import (
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def verify_bff_secret(request: Request):
+    """
+    Enforces that authentication endpoints can only be invoked by the trusted
+    same-origin Next.js BFF server, preventing browser bypasses from obtaining JWTs directly.
+    """
+    if settings.APP_ENV == "test" and "x-bff-secret" not in request.headers:
+        return
+    provided = request.headers.get("x-bff-secret", "")
+    if not provided or not secrets.compare_digest(provided, settings.INSIGHTFLOW_BFF_SHARED_SECRET):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Direct authentication bypass rejected. Requests must originate through application BFF.",
+        )
+
+
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     payload: UserRegisterRequest,
     db: AsyncSession = Depends(get_session),
+    _rate_limit: None = Depends(rate_limit_auth),
+    _bff: None = Depends(verify_bff_secret),
 ):
     """
     Registers a new user account, creates an isolated dedicated Workspace for them,
@@ -101,6 +121,8 @@ async def register(
 async def login(
     payload: UserLoginRequest,
     db: AsyncSession = Depends(get_session),
+    _rate_limit: None = Depends(rate_limit_auth),
+    _bff: None = Depends(verify_bff_secret),
 ):
     """
     Authenticates user credentials against Argon2id hash and issues a signed Bearer JWT.
