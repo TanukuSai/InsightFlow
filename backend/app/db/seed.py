@@ -9,11 +9,13 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.workspace import Workspace
+from app.models.user import User
 from app.models.dataset import Dataset
 from app.models.feedback import Feedback
 from app.models.analysis import AnalysisJob
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.security import hash_password, normalize_email
 from app.services.analysis_service import AnalysisProvider
 from app.services.issue_service import IssueService
 from app.services.recommendation_service import RecommendationService
@@ -34,7 +36,7 @@ def resolve_canonical_csv_path() -> Path:
 async def seed_canonical_dataset_if_needed(db: AsyncSession, workspace_id: Optional[str] = None):
     """
     Idempotently seeds the canonical customer feedback dataset, feedback records,
-    rule-based baseline analysis, issue dossiers, and recommendations
+    rule-based baseline analysis, issue dossiers, recommendations, and evaluator user account
     into a fresh or unseeded database.
     """
     target_ws_id = workspace_id or settings.PUBLIC_DEMO_WORKSPACE_ID
@@ -50,6 +52,27 @@ async def seed_canonical_dataset_if_needed(db: AsyncSession, workspace_id: Optio
         )
         db.add(ws)
         await db.flush()
+
+    # Ensure canonical evaluator user exists
+    eval_email = normalize_email("evaluator@insightflow.local")
+    user_stmt = select(User).where(User.email == eval_email)
+    user_res = await db.execute(user_stmt)
+    existing_user = user_res.scalar_one_or_none()
+    if not existing_user:
+        eval_user = User(
+            id="usr-evaluator-seed",
+            email=eval_email,
+            hashed_password=hash_password("f#6O6&BzM$8he*!q"),
+            full_name="Build Battle Evaluator",
+            workspace_id=target_ws_id,
+            role="owner",
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        db.add(eval_user)
+        await db.commit()
+        logger.info("Seeded canonical evaluator account: evaluator@insightflow.local")
 
     stmt = select(Dataset).where(Dataset.id == settings.CANONICAL_DATASET_ID)
     res = await db.execute(stmt)
