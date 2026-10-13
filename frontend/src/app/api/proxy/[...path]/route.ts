@@ -12,8 +12,10 @@ type RouteContext = {
 const ALLOWED_ROUTE_PREFIXES = [
   "health",
   "ready",
+  "api/v1/dashboard",
   "api/v1/datasets",
   "api/v1/feedback",
+  "api/v1/analysis",
   "api/v1/issues",
   "api/v1/recommendations",
   "api/v1/reports",
