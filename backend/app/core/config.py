@@ -15,14 +15,14 @@ class Settings(BaseSettings):
     CANONICAL_DATASET_ID: str = "ds-796d15b9a096"
 
     # Database
-    DATABASE_URL: str = f"sqlite+aiosqlite:///{(Path(__file__).resolve().parent.parent.parent / 'insightflow.db').as_posix()}"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres.ulqysmxopkkizydttqqp:snR5wSmlX2318ldd2j3sSAWZvUwV@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
 
     # Authentication & JWT
     JWT_SECRET_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    INSIGHTFLOW_BFF_SHARED_SECRET: str = ""
-    SEED_DEMO_DATA_ON_STARTUP: bool = False
+    INSIGHTFLOW_BFF_SHARED_SECRET: str = "insightflow-production-bff-secret-secure-32-chars-key-2026"
+    SEED_DEMO_DATA_ON_STARTUP: bool = True
 
     # Supabase Auth / Services
     SUPABASE_URL: str = ""

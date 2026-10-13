@@ -5,6 +5,10 @@ from app.core.config import settings
 engine_kwargs = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
+elif "postgresql" in settings.DATABASE_URL:
+    engine_kwargs["connect_args"] = {
+        "server_settings": {"search_path": "insightflow,public"}
+    }
 
 async_engine = create_async_engine(
     settings.DATABASE_URL,
