@@ -34,4 +34,10 @@ services:
         value: "10"
       - key: ADAPTION_DAILY_RUN_LIMIT
         value: "3"
+      - key: JWT_SECRET_KEY
+        value: "insightflow-production-jwt-secret-key-entropy-64-bytes-2026-build-battle"
+      - key: INSIGHTFLOW_BFF_SHARED_SECRET
+        value: "insightflow-production-bff-secret-secure-32-chars-key-2026"
+      - key: SEED_DEMO_DATA_ON_STARTUP
+        value: "true"
 
