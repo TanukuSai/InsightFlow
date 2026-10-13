@@ -4,8 +4,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import PublicNav from "@/components/navigation/PublicNav";
 import DataFieldCanvas, { DotFieldStage } from "@/components/background/DataFieldCanvas";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export default function MarketingLandingPage() {
+  const { user } = useAuth();
   const [scrollProgress, setScrollProgress] = useState<number>(1.0);
   const [activeStage, setActiveStage] = useState<DotFieldStage>(1);
 
@@ -180,7 +182,7 @@ export default function MarketingLandingPage() {
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
-                href="/dashboard"
+                href={user ? "/dashboard" : "/login?returnUrl=/dashboard"}
                 className="px-6 py-3 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2 focus-visible-ring"
               >
                 <span>Explore Workspace</span>
@@ -241,7 +243,7 @@ export default function MarketingLandingPage() {
 
               <div className="relative z-10 pt-2">
                 <Link
-                  href="/dashboard"
+                  href={user ? "/dashboard" : "/login?returnUrl=/dashboard"}
                   className="w-full block text-center py-2 bg-white/10 hover:bg-white/15 text-[#F7F8FA] text-xs font-bold rounded-xl border border-white/12 transition-colors"
                 >
                   Enter Workspace Dashboard →
@@ -424,7 +426,7 @@ export default function MarketingLandingPage() {
               </p>
             </div>
             <Link
-              href="/dashboard"
+              href={user ? "/dashboard" : "/login?returnUrl=/dashboard"}
               className="text-xs font-bold text-[var(--brand)] hover:underline inline-flex items-center gap-1 focus-visible-ring"
             >
               Open Dashboard View →
@@ -444,7 +446,7 @@ export default function MarketingLandingPage() {
               </p>
             </div>
             <Link
-              href="/feedback"
+              href={user ? "/feedback" : "/login?returnUrl=/feedback"}
               className="text-xs font-bold text-[#5876B8] hover:underline inline-flex items-center gap-1 focus-visible-ring"
             >
               Explore Feedback Stream →
@@ -464,7 +466,7 @@ export default function MarketingLandingPage() {
               </p>
             </div>
             <Link
-              href="/issues"
+              href={user ? "/issues" : "/login?returnUrl=/issues"}
               className="text-xs font-bold text-[#8B6E9B] hover:underline inline-flex items-center gap-1 focus-visible-ring"
             >
               Review Issue Dossiers →
@@ -484,7 +486,7 @@ export default function MarketingLandingPage() {
               </p>
             </div>
             <Link
-              href="/reports"
+              href={user ? "/reports" : "/login?returnUrl=/reports"}
               className="text-xs font-bold text-[#B58A43] hover:underline inline-flex items-center gap-1 focus-visible-ring"
             >
               Generate Reports →
@@ -510,7 +512,7 @@ export default function MarketingLandingPage() {
             </p>
             <div className="pt-2">
               <Link
-                href="/dashboard"
+                href={user ? "/dashboard" : "/login?returnUrl=/dashboard"}
                 className="px-8 py-3.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-sm font-bold rounded-xl shadow-lg transition-all inline-block focus-visible-ring"
               >
                 Launch Live Workspace →

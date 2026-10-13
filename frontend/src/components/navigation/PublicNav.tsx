@@ -2,10 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Activity } from "lucide-react";
+import { Activity, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export default function PublicNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <header className="fixed top-4 left-0 right-0 z-50 px-4 sm:px-8 max-w-6xl mx-auto">
@@ -41,12 +43,39 @@ export default function PublicNav() {
 
         {/* Actions */}
         <div className="flex items-center gap-2.5">
-          <Link
-            href="/dashboard"
-            className="px-4 py-1.5 bg-[#4F63FF] hover:bg-[#3C4FE6] text-white text-xs font-bold rounded-full shadow-xs transition-all focus-visible-ring"
-          >
-            Launch Workspace →
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="px-4 py-1.5 bg-[#4F63FF] hover:bg-[#3C4FE6] text-white text-xs font-bold rounded-full shadow-xs transition-all focus-visible-ring"
+              >
+                Go to Workspace →
+              </Link>
+              <button
+                onClick={() => logout()}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#DDE2E9] bg-white hover:bg-[#FFF1F0] text-xs font-semibold text-[#C6534D] transition-colors focus-visible-ring cursor-pointer"
+                title="Sign out of workspace"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign out</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-[#687386] hover:text-[#111827] transition-colors focus-visible-ring"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/login?returnUrl=/dashboard"
+                className="px-4 py-1.5 bg-[#4F63FF] hover:bg-[#3C4FE6] text-white text-xs font-bold rounded-full shadow-xs transition-all focus-visible-ring"
+              >
+                Launch Workspace →
+              </Link>
+            </>
+          )}
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -82,13 +111,44 @@ export default function PublicNav() {
           >
             Data Honesty
           </a>
-          <Link
-            href="/dashboard"
-            onClick={() => setMobileMenuOpen(false)}
-            className="py-1.5 font-bold text-[#4F63FF]"
-          >
-            Enter Dashboard ↗
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5 font-bold text-[#4F63FF]"
+              >
+                Enter Dashboard ↗
+              </Link>
+              <button
+                onClick={async () => {
+                  setMobileMenuOpen(false);
+                  await logout();
+                }}
+                className="py-1.5 font-semibold text-[#C6534D] flex items-center gap-1.5 text-left cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign out</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5 font-semibold text-[#111827]"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/login?returnUrl=/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5 font-bold text-[#4F63FF]"
+              >
+                Launch Workspace ↗
+              </Link>
+            </>
+          )}
         </div>
       )}
     </header>

@@ -41,7 +41,6 @@ function LoginForm() {
       await login(email.trim(), password);
       router.push(returnUrl);
     } catch (err: any) {
-      console.error("Login attempt failed:", err);
       setErrorMessage(
         err?.message || "Invalid credentials. Please verify your email and password."
       );

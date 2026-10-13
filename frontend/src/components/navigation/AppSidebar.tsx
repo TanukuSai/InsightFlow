@@ -162,11 +162,12 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
               </div>
               <button
                 onClick={() => logout()}
-                className="p-1.5 rounded-lg text-[#C6534D] hover:bg-[#FFF1F0] transition-colors shrink-0 cursor-pointer"
-                title="Sign out"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-[#C6534D] bg-[#FFF1F0] hover:bg-[#FFE5E3] transition-colors shrink-0 cursor-pointer border border-[#FF6B61]/30 shadow-2xs"
+                title="Sign out of workspace session"
                 aria-label="Sign out"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 text-[#C6534D]" />
+                <span>Sign out</span>
               </button>
             </div>
           )}

@@ -4,10 +4,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import AppHeader from "@/components/navigation/AppHeader";
 import { healthApi } from "@/lib/api/client";
 import { useAuth } from "@/lib/context/AuthContext";
-import { RefreshCw, CheckCircle2, XCircle, AlertCircle, Server } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, AlertCircle, Server, LogOut } from "lucide-react";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const workspaceName = user?.full_name ? `${user.full_name}'s Workspace` : "InsightFlow Workspace";
   const workspaceId = user?.workspace_id || "Active Workspace";
   const apiEndpoint = "/api/proxy (Same-Origin BFF Gateway)";
@@ -50,6 +50,39 @@ export default function SettingsPage() {
       />
 
       <div className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-8">
+        {/* Account & Session Section */}
+        <div className="p-6 sm:p-8 solid-data rounded-3xl shadow-sm space-y-4 border-t-3 border-t-[#C6534D]">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E3DD]">
+            <div>
+              <h2 className="text-base font-bold text-[#20252D]">
+                Account &amp; Session
+              </h2>
+              <p className="text-xs text-[#7B8491]">
+                Active identity and authentication status
+              </p>
+            </div>
+            <button
+              onClick={() => logout()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#C6534D] bg-[#FFF1F0] border border-[#FF6B61]/30 hover:bg-[#FFE5E3] transition cursor-pointer shadow-2xs"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign out</span>
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[#E2E3DD]">
+              <span className="text-[10px] text-[#7B8491] font-medium uppercase tracking-wider block">Signed in user</span>
+              <span className="font-semibold text-[#20252D] mt-0.5 block truncate">{user?.full_name || "Operator"}</span>
+              <span className="font-mono text-[#7B8491] text-[11px] block truncate">{user?.email}</span>
+            </div>
+            <div className="p-3 bg-[#F6F5F1] rounded-xl border border-[#E2E3DD]">
+              <span className="text-[10px] text-[#7B8491] font-medium uppercase tracking-wider block">Session type</span>
+              <span className="font-semibold text-[#20252D] mt-0.5 block">Same-Origin BFF HttpOnly Cookie</span>
+              <span className="text-[#2E7D68] text-[11px] font-bold block">Protected</span>
+            </div>
+          </div>
+        </div>
+
         {/* Workspace Settings */}
         <div className="p-6 sm:p-8 solid-data rounded-3xl shadow-sm space-y-5 border-t-3 border-t-[#3656C8]">
           <div className="flex items-center justify-between pb-3 border-b border-[#E2E3DD]">

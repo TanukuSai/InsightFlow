@@ -148,7 +148,7 @@ export default function AppHeader({
                     setDropdownOpen(false);
                     await logout();
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 text-[#C6534D] hover:bg-[#FFF1F0] rounded-lg font-semibold transition-colors text-left"
+                  className="w-full flex items-center gap-2 px-2.5 py-2 text-[#C6534D] hover:bg-[#FFF1F0] rounded-lg font-semibold transition-colors text-left cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign out</span>
@@ -157,6 +157,17 @@ export default function AppHeader({
             </div>
           )}
         </div>
+
+        {/* Dedicated Fast Sign Out Button */}
+        <button
+          onClick={() => logout()}
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#DDE2E9] bg-white hover:bg-[#FFF1F0] text-xs font-semibold text-[#C6534D] transition-colors focus-visible-ring cursor-pointer shadow-2xs"
+          title="Sign out of workspace session"
+          aria-label="Sign out of workspace"
+        >
+          <LogOut className="w-3.5 h-3.5 text-[#C6534D]" />
+          <span>Sign out</span>
+        </button>
       </div>
     </header>
   );
