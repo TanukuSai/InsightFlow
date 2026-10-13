@@ -28,6 +28,20 @@ CREATE TABLE IF NOT EXISTS workspaces (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(64) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    workspace_id VARCHAR(64) REFERENCES workspaces(id) ON DELETE CASCADE,
+    role VARCHAR(32) DEFAULT 'member',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS ix_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS ix_users_workspace_id ON users(workspace_id);
+
 CREATE TABLE IF NOT EXISTS datasets (
     id VARCHAR(64) PRIMARY KEY,
     workspace_id VARCHAR(64) NOT NULL,

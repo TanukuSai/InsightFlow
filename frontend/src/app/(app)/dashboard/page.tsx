@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import AppHeader from "@/components/navigation/AppHeader";
 import DataFieldCanvas from "@/components/background/DataFieldCanvas";
 import { dashboardApi, issuesApi, feedbackApi, adaptionApi } from "@/lib/api/client";
@@ -39,10 +38,10 @@ const CATEGORY_COLORS: Record<string, { bar: string; text: string; bg: string; b
   "Fraud and Scam": { bar: "#8B6E9B", text: "#6E4D7F", bg: "#F6F0F8", border: "#E0D2E5" },
   "Product Feedback": { bar: "#5876B8", text: "#3B5899", bg: "#EEF3FA", border: "#CCD8EE" },
   "Customer Service": { bar: "#B58A43", text: "#966C28", bg: "#FAF5E8", border: "#EDE0BF" },
+  "Multiple categories": { bar: "#6C7786", text: "#4D5765", bg: "#F0F2F5", border: "#CCD0D7" },
 };
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { selectedDatasetId, loading: datasetLoading } = useDataset();
 
   const [data, setData] = useState<DashboardData | null>(null);
@@ -983,25 +982,29 @@ export default function DashboardPage() {
 
                         <div className="pt-1 flex items-center justify-between text-[11px]">
                           <span className="text-[#7B8491]">Exact text match</span>
-                          <button
-                            onClick={async () => {
-                              if (item.sample_feedback_ids && item.sample_feedback_ids.length > 0) {
-                                try {
-                                  const fb = await feedbackApi.get(item.sample_feedback_ids[0]);
-                                  setSelectedFeedback(fb);
-                                  return;
-                                } catch (err) {
-                                  console.error("Failed to load feedback record:", err);
-                                }
-                              }
-                              router.push(
-                                `/feedback?search=${encodeURIComponent(item.statement.slice(0, 40))}`
-                              );
-                            }}
-                            className="text-[#3656C8] font-bold hover:underline inline-flex items-center gap-1 focus-visible-ring"
-                          >
-                            <span>View matching comments ({item.count}) →</span>
-                          </button>
+                          <div className="flex items-center gap-3">
+                            {item.sample_feedback_ids && item.sample_feedback_ids.length > 0 && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const fb = await feedbackApi.get(item.sample_feedback_ids![0]);
+                                    setSelectedFeedback(fb);
+                                  } catch (err) {
+                                    console.error("Failed to load feedback record:", err);
+                                  }
+                                }}
+                                className="text-[#505966] hover:text-[#20252D] font-medium hover:underline inline-flex items-center gap-1 focus-visible-ring cursor-pointer"
+                              >
+                                Preview sample
+                              </button>
+                            )}
+                            <Link
+                              href={`/feedback?exact_text=${encodeURIComponent(item.statement)}`}
+                              className="text-[#3656C8] font-bold hover:underline inline-flex items-center gap-1 focus-visible-ring"
+                            >
+                              <span>View all {item.count} copies →</span>
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     );

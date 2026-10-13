@@ -10,31 +10,31 @@ RECOMMENDATION_TEMPLATES = {
     "Fraud & Payment Scams": {
         "action": "Implement strict seller vetting and automate payment anomaly detection for off-platform payment solicitations.",
         "rationale": "Direct reports indicate sellers demand unverified payments after order placement, indicating account compromise or malicious vendor onboarding.",
-        "expected_benefit": "Drastic reduction in scam incidents and restoration of buyer trust.",
+        "expected_benefit": "Hypothesis to validate: Potential reduction in reported off-platform payment solicitations upon tightening vendor onboarding.",
         "priority": "Critical",
     },
     "Damaged Packaging": {
         "action": "Audit warehouse packaging protocols and mandate transit-grade cushioning for vulnerable SKUs.",
         "rationale": "High recurrence of crushed and opened parcels suggests inadequate parcel packing standards at regional fulfillment hubs.",
-        "expected_benefit": "Decreased customer returns, lower replacement shipping costs, and improved unboxing satisfaction.",
+        "expected_benefit": "Hypothesis to validate: Potential decrease in damaged packaging claims if transit cushioning standards are improved.",
         "priority": "High",
     },
     "Order Fulfillment & Missing Items": {
         "action": "Deploy barcode-scan verification before parcel sealing to eliminate item omission errors.",
         "rationale": "Customer complaints consistently point to omitted or incorrectly dispatched items, pointing to manual pick-and-pack errors.",
-        "expected_benefit": "Improved order accuracy rate and reduction in inbound support tickets.",
+        "expected_benefit": "Hypothesis to validate: Potential reduction in omitted item complaints through packing verification steps.",
         "priority": "High",
     },
     "Website & App Stability": {
         "action": "Conduct load profiling on the checkout pipeline and resolve client-side state crashes during high-traffic windows.",
         "rationale": "Shoppers report application termination and order submission crashes during checkout.",
-        "expected_benefit": "Higher completed checkout conversions and eliminated checkout drop-offs.",
+        "expected_benefit": "Hypothesis to validate: Potential reduction in checkout disruption reports upon resolving stability bottlenecks.",
         "priority": "High",
     },
     "Customer Support Delays": {
         "action": "Implement priority routing for fraud and delivery complaints with an SLA target under 2 hours.",
         "rationale": "Prolonged response times compound customer anxiety when dealing with lost or stolen orders.",
-        "expected_benefit": "Faster resolution times and lower escalation rates.",
+        "expected_benefit": "Hypothesis to validate: Potential decrease in queue times and faster triage response for urgent issues.",
         "priority": "Medium",
     },
 }
@@ -68,7 +68,7 @@ class RecommendationService:
                 template = {
                     "action": f"Conduct a root-cause investigation into complaints regarding {issue.category}.",
                     "rationale": f"Issue exhibits {issue.supporting_count} customer reports requiring targeted operational review.",
-                    "expected_benefit": "Identifies process bottlenecks and improves customer retention.",
+                    "expected_benefit": f"Hypothesis to validate: Targeted operational review to identify underlying factors and reduce similar {issue.category} complaints.",
                     "priority": issue.priority,
                 }
 

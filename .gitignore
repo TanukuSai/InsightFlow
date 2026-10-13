@@ -45,6 +45,9 @@ backend/data/ds-*.csv
 .env.test.local
 .env.production.local
 .env*.local
+*credentials*
+*.credentials
+*credential*
 
 # Vercel
 .vercel

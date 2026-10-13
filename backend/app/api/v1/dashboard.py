@@ -24,7 +24,7 @@ async def get_dashboard_data(
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    # Fetch Dataset
+    # 1. Fetch Dataset strictly scoped to current_user's workspace
     ds_stmt = select(Dataset).where(
         Dataset.id == dataset_id,
         Dataset.workspace_id == current_user.workspace_id,
@@ -36,7 +36,7 @@ async def get_dashboard_data(
             detail=f"Dataset {dataset_id} not found in workspace",
         )
 
-    # Fetch Feedbacks summary
+    # 2. Fetch all valid feedback records
     fb_stmt = select(Feedback).where(
         Feedback.dataset_id == dataset_id,
         Feedback.workspace_id == current_user.workspace_id,
@@ -44,6 +44,17 @@ async def get_dashboard_data(
     fb_res = await db.execute(fb_stmt)
     all_feedbacks = fb_res.scalars().all()
 
+    # 3. Denominators & Core Metric Invariants
+    valid_count = len(all_feedbacks)
+    if dataset.valid_rows is not None and dataset.valid_rows > 0:
+        valid_rows = dataset.valid_rows
+    else:
+        valid_rows = valid_count
+
+    total_source = dataset.row_count if dataset.row_count is not None and dataset.row_count >= valid_rows else valid_rows
+    invalid_rows = dataset.invalid_rows if dataset.invalid_rows is not None else max(0, total_source - valid_rows)
+
+    # 4. Sentiment coverage & mix calculation
     sentiment_counter = Counter()
     analyzed_count = 0
     sentiment_score_sum = 0.0
@@ -58,6 +69,7 @@ async def get_dashboard_data(
     sentiment_dist = None
     avg_sentiment_score = None
     analysis_status = "unanalysed"
+    sentiment_coverage_pct = round((analyzed_count / valid_rows) * 100, 1) if valid_rows > 0 else 0.0
 
     if analyzed_count > 0:
         sentiment_dist = SentimentDistribution(
@@ -67,13 +79,14 @@ async def get_dashboard_data(
             mixed=sentiment_counter.get("mixed", 0),
             unknown=sentiment_counter.get("unknown", 0),
             total_analyzed=analyzed_count,
+            coverage_pct=sentiment_coverage_pct,
         )
         avg_sentiment_score = round(sentiment_score_sum / analyzed_count, 3)
-        analysis_status = "completed" if analyzed_count >= len(all_feedbacks) else "partial"
+        analysis_status = "completed" if analyzed_count >= valid_rows else "partial"
     elif dataset.status == "analyzing":
         analysis_status = "analyzing"
 
-    # Fetch Issues
+    # 5. Fetch Issues sorted by Priority heuristic
     issue_stmt = (
         select(Issue)
         .where(
@@ -93,7 +106,7 @@ async def get_dashboard_data(
     )
     issue_items = (await db.execute(issue_stmt)).scalars().all()
 
-    # Fetch Recommendations
+    # 6. Fetch Recommendations
     rec_stmt = (
         select(Recommendation)
         .where(
@@ -105,37 +118,40 @@ async def get_dashboard_data(
     )
     rec_items = (await db.execute(rec_stmt)).scalars().all()
 
-    # Top recurring statements (Pareto repeat analysis)
+    # 7. Exact-repeat frequency & multi-category resolution
     stmt_counter = Counter()
-    stmt_cats = {}
+    stmt_cats = defaultdict(set)
     stmt_ids = defaultdict(list)
     for fb in all_feedbacks:
         stmt_counter[fb.original_text] += 1
-        if fb.original_text not in stmt_cats:
-            stmt_cats[fb.original_text] = fb.source_category or "Uncategorized"
+        cat = fb.source_category or "Uncategorized"
+        stmt_cats[fb.original_text].add(cat)
         if len(stmt_ids[fb.original_text]) < 10:
             stmt_ids[fb.original_text].append(fb.id)
 
-    top_repeated_statements = [
-        RepeatedStatement(
-            statement=text,
-            category=stmt_cats[text],
-            count=count,
-            extra_duplicates=max(0, count - 1),
-            sample_feedback_ids=stmt_ids[text],
-        )
-        for text, count in stmt_counter.most_common(5)
-        if count > 1
-    ]
+    top_repeated_statements = []
+    for text, count in stmt_counter.most_common(5):
+        if count > 1:
+            cats = stmt_cats[text]
+            category_label = "Multiple categories" if len(cats) > 1 else next(iter(cats))
+            share_pct = round((count / valid_rows) * 100, 1) if valid_rows > 0 else 0.0
+            top_repeated_statements.append(
+                RepeatedStatement(
+                    statement=text,
+                    category=category_label,
+                    count=count,
+                    extra_duplicates=count - 1,
+                    dataset_share_pct=share_pct,
+                    sample_feedback_ids=stmt_ids[text],
+                )
+            )
 
-    # Metrics denominators & duplicate counts
-    valid_rows = dataset.valid_rows if dataset.valid_rows is not None else len(all_feedbacks)
-    invalid_rows = dataset.invalid_rows if dataset.invalid_rows is not None else max(0, dataset.row_count - valid_rows)
+    distinct_comment_texts = len(stmt_counter)
+    extra_duplicate_copies = sum(cnt - 1 for cnt in stmt_counter.values() if cnt > 1)
+    comments_in_repeated_groups = sum(cnt for cnt in stmt_counter.values() if cnt > 1)
+
     category_distribution = dataset.category_distribution or {}
     total_categorized_rows = sum(category_distribution.values())
-    rows_in_repeated_groups = sum(cnt for cnt in stmt_counter.values() if cnt > 1)
-    extra_duplicate_occurrences = sum(cnt - 1 for cnt in stmt_counter.values() if cnt > 1)
-    repeated_rows = dataset.repeat_feedback_count if dataset.repeat_feedback_count is not None else extra_duplicate_occurrences
 
     # Sample feedbacks in source order
     sample_feedbacks = all_feedbacks[:15]
@@ -143,20 +159,27 @@ async def get_dashboard_data(
     return DashboardResponse(
         dataset_id=dataset.id,
         dataset_name=dataset.name,
-        total_source_rows=dataset.row_count,
+        total_source_rows=total_source,
         valid_rows=valid_rows,
+        valid_feedback_count=valid_rows,
         invalid_rows=invalid_rows,
-        unique_exact_statements=dataset.unique_feedback_count if dataset.unique_feedback_count else len(stmt_counter),
-        repeated_rows=repeated_rows,
-        extra_duplicate_occurrences=extra_duplicate_occurrences,
-        rows_in_repeated_groups=rows_in_repeated_groups,
+        invalid_source_rows=invalid_rows,
+        unique_exact_statements=distinct_comment_texts,
+        distinct_comment_texts=distinct_comment_texts,
+        repeated_rows=extra_duplicate_copies,
+        extra_duplicate_occurrences=extra_duplicate_copies,
+        extra_duplicate_copies=extra_duplicate_copies,
+        rows_in_repeated_groups=comments_in_repeated_groups,
+        comments_in_repeated_groups=comments_in_repeated_groups,
         total_categorized_rows=total_categorized_rows,
         has_timestamps=False,
         temporal_available=False,
-        temporal_message="Dataset does not contain valid timestamp data. Historical trend charts are unavailable.",
+        temporal_message="Dataset does not contain verified timestamp data. Historical trend charts are unavailable.",
         analysis_status=analysis_status,
         analysis_provider="rule-based baseline" if analyzed_count > 0 else None,
         analysis_model="lexicon-rules-v1.0" if analyzed_count > 0 else None,
+        sentiment_analyzed_count=analyzed_count,
+        sentiment_coverage_pct=sentiment_coverage_pct,
         source_category_distribution=category_distribution,
         sentiment_distribution=sentiment_dist,
         average_sentiment_score=avg_sentiment_score,

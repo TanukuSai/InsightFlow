@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import html
 import uuid
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
@@ -57,9 +58,14 @@ class ReportService:
         feedbacks = fb_res.scalars().all()
 
         sentiment_counts = {}
+        analyzed_count = 0
         for fb in feedbacks:
             if fb.sentiment_label:
                 sentiment_counts[fb.sentiment_label] = sentiment_counts.get(fb.sentiment_label, 0) + 1
+                analyzed_count += 1
+
+        valid_rows = dataset.valid_rows if dataset.valid_rows is not None else len(feedbacks)
+        coverage_pct = round((analyzed_count / valid_rows) * 100, 1) if valid_rows > 0 else 0.0
 
         summary_payload = {
             "report_id": report_id,
@@ -68,19 +74,25 @@ class ReportService:
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "source_statistics": {
                 "total_source_rows": dataset.row_count,
-                "valid_feedback_records": dataset.valid_rows,
+                "valid_feedback_records": valid_rows,
                 "invalid_excluded_rows": dataset.invalid_rows,
                 "distinct_exact_comment_texts": dataset.unique_feedback_count,
                 "extra_duplicate_occurrences": dataset.repeat_feedback_count,
                 "has_timestamps": dataset.has_timestamps,
                 # compatibility keys
                 "total_rows": dataset.row_count,
-                "valid_rows": dataset.valid_rows,
+                "valid_rows": valid_rows,
                 "invalid_rows": dataset.invalid_rows,
                 "unique_statements": dataset.unique_feedback_count,
                 "repeated_rows": dataset.repeat_feedback_count,
             },
-            "category_distribution": dataset.category_distribution,
+            "category_distribution": dataset.category_distribution or {},
+            "sentiment_summary": {
+                "sentiment_distribution": sentiment_counts if sentiment_counts else {},
+                "sentiment_analyzed_count": analyzed_count,
+                "sentiment_coverage_pct": coverage_pct,
+                "estimation_method": "Rule-based lexicon and pattern heuristic (directional estimate, not calibrated model)",
+            },
             "sentiment_distribution": sentiment_counts if sentiment_counts else "Analysis not yet executed",
             "top_issues": [
                 {
@@ -206,8 +218,8 @@ class ReportService:
 
         # Header Title
         elements.append(Paragraph(f"<b>InsightFlow</b> | Decision Intelligence Report", body_style))
-        elements.append(Paragraph(title, title_style))
-        elements.append(Paragraph(f"Generated: {data['generated_at']} | Scope: {data['dataset_name']}", body_style))
+        elements.append(Paragraph(html.escape(str(title)), title_style))
+        elements.append(Paragraph(f"Generated: {html.escape(str(data['generated_at']))} | Scope: {html.escape(str(data['dataset_name']))}", body_style))
         elements.append(Spacer(1, 10))
         elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#3b82f6"), spaceAfter=14))
 
@@ -245,19 +257,19 @@ class ReportService:
         elements.append(Spacer(1, 14))
 
         # Top Issues
-        elements.append(Paragraph("Key Discovered Issues & Complaint Clusters", h2_style))
+        elements.append(Paragraph("Key Discovered Issues &amp; Complaint Clusters", h2_style))
         issue_rows = [[
             Paragraph("<b>Priority</b>", bold_style),
-            Paragraph("<b>Issue & Evidence</b>", bold_style),
+            Paragraph("<b>Issue &amp; Evidence</b>", bold_style),
             Paragraph("<b>Category</b>", bold_style),
             Paragraph("<b>Supporting Rows</b>", bold_style),
         ]]
 
         for iss in data["top_issues"][:6]:
             prio_color = "#dc2626" if iss["priority"] == "Critical" else ("#ea580c" if iss["priority"] == "High" else "#2563eb")
-            prio_cell = Paragraph(f"<font color='{prio_color}'><b>{iss['priority']}</b></font>", body_style)
-            desc_cell = Paragraph(f"<b>{iss['title']}</b><br/>{iss['summary']}", body_style)
-            cat_cell = Paragraph(iss["category"], body_style)
+            prio_cell = Paragraph(f"<font color='{prio_color}'><b>{html.escape(str(iss['priority']))}</b></font>", body_style)
+            desc_cell = Paragraph(f"<b>{html.escape(str(iss['title']))}</b><br/>{html.escape(str(iss['summary']))}", body_style)
+            cat_cell = Paragraph(html.escape(str(iss["category"])), body_style)
             count_cell = Paragraph(f"{iss['supporting_count']} ({iss['unique_supporting_count']} unique)", body_style)
             issue_rows.append([prio_cell, desc_cell, cat_cell, count_cell])
 
@@ -277,16 +289,16 @@ class ReportService:
         elements.append(Paragraph("Intelligent Actionable Recommendations", h2_style))
         rec_rows = [[
             Paragraph("<b>Priority</b>", bold_style),
-            Paragraph("<b>Recommended Action & Strategic Rationale</b>", bold_style),
+            Paragraph("<b>Recommended Action &amp; Strategic Rationale</b>", bold_style),
             Paragraph("<b>Expected Qualitative Benefit</b>", bold_style),
         ]]
 
         for rec in data["actionable_recommendations"][:5]:
             prio_color = "#dc2626" if rec["priority"] == "Critical" else ("#ea580c" if rec["priority"] == "High" else "#2563eb")
             rec_rows.append([
-                Paragraph(f"<font color='{prio_color}'><b>{rec['priority']}</b></font>", body_style),
-                Paragraph(f"<b>{rec['action']}</b><br/><font color='#64748b'>{rec['rationale']}</font>", body_style),
-                Paragraph(rec["expected_benefit"] or "Operational optimization", body_style),
+                Paragraph(f"<font color='{prio_color}'><b>{html.escape(str(rec['priority']))}</b></font>", body_style),
+                Paragraph(f"<b>{html.escape(str(rec['action']))}</b><br/><font color='#64748b'>{html.escape(str(rec['rationale']))}</font>", body_style),
+                Paragraph(html.escape(str(rec["expected_benefit"] or "Operational optimization")), body_style),
             ])
 
         rec_table = Table(rec_rows, colWidths=[65, 305, 170])
@@ -302,8 +314,8 @@ class ReportService:
         elements.append(Spacer(1, 14))
 
         # Limitations & Governance
-        elements.append(Paragraph("System Governance & Analysis Limitations", h2_style))
+        elements.append(Paragraph("System Governance &amp; Analysis Limitations", h2_style))
         for lim in data["methodology_and_limitations"]:
-            elements.append(Paragraph(f"• {lim}", body_style))
+            elements.append(Paragraph(f"• {html.escape(str(lim))}", body_style))
 
         doc.build(elements)

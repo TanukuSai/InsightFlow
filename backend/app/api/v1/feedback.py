@@ -19,6 +19,7 @@ async def list_feedback(
     category: Optional[str] = Query(None),
     sentiment: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    exact_text: Optional[str] = Query(None),
     analysis_status: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
@@ -35,7 +36,9 @@ async def list_feedback(
         query = query.where(Feedback.sentiment_label == sentiment)
     if analysis_status:
         query = query.where(Feedback.analysis_status == analysis_status)
-    if search:
+    if exact_text:
+        query = query.where(Feedback.original_text == exact_text)
+    elif search:
         query = query.where(Feedback.original_text.ilike(f"%{search}%"))
 
     # Total count

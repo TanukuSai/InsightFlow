@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 from app.schemas.issue import IssueResponse
@@ -13,6 +13,7 @@ class SentimentDistribution(BaseModel):
     mixed: int = 0
     unknown: int = 0
     total_analyzed: int = 0
+    coverage_pct: Optional[float] = None
 
 
 class RepeatedStatement(BaseModel):
@@ -20,6 +21,7 @@ class RepeatedStatement(BaseModel):
     category: str
     count: int
     extra_duplicates: int = 0
+    dataset_share_pct: float = 0.0
     sample_feedback_ids: List[str] = []
 
 
@@ -28,19 +30,26 @@ class DashboardResponse(BaseModel):
     dataset_name: str
     total_source_rows: int
     valid_rows: int = 0
+    valid_feedback_count: int = 0
     invalid_rows: int = 0
-    unique_exact_statements: int
-    repeated_rows: int
+    invalid_source_rows: int = 0
+    unique_exact_statements: int = 0
+    distinct_comment_texts: int = 0
+    repeated_rows: int = 0
     extra_duplicate_occurrences: int = 0
+    extra_duplicate_copies: int = 0
     rows_in_repeated_groups: int = 0
+    comments_in_repeated_groups: int = 0
     total_categorized_rows: int = 0
-    has_timestamps: bool
-    temporal_available: bool
+    has_timestamps: bool = False
+    temporal_available: bool = False
     temporal_message: str
 
     analysis_status: str  # unanalysed, analyzing, completed, partial, failed
     analysis_provider: Optional[str] = None
     analysis_model: Optional[str] = None
+    sentiment_analyzed_count: int = 0
+    sentiment_coverage_pct: Optional[float] = None
 
     source_category_distribution: Dict[str, int]
     sentiment_distribution: Optional[SentimentDistribution] = None

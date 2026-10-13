@@ -6,6 +6,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.models.workspace import Workspace
 from app.models.dataset import Dataset
 from app.models.feedback import Feedback
 from app.models.analysis import AnalysisJob
@@ -28,12 +29,26 @@ def resolve_canonical_csv_path() -> Path:
     return candidates[0]
 
 
-async def seed_canonical_dataset_if_needed(db: AsyncSession):
+async def seed_canonical_dataset_if_needed(db: AsyncSession, workspace_id: Optional[str] = None):
     """
-    Idempotently seeds the canonical Build Battle dataset, feedback records,
+    Idempotently seeds the canonical customer feedback dataset, feedback records,
     rule-based baseline analysis, issue dossiers, and recommendations
     into a fresh or unseeded database.
     """
+    target_ws_id = workspace_id or settings.PUBLIC_DEMO_WORKSPACE_ID
+
+    # Ensure Workspace exists
+    ws_stmt = select(Workspace).where(Workspace.id == target_ws_id)
+    ws_res = await db.execute(ws_stmt)
+    if not ws_res.scalar_one_or_none():
+        ws = Workspace(
+            id=target_ws_id,
+            name="Customer Intelligence Workspace",
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(ws)
+        await db.flush()
+
     stmt = select(Dataset).where(Dataset.id == settings.CANONICAL_DATASET_ID)
     res = await db.execute(stmt)
     existing = res.scalar_one_or_none()
@@ -46,7 +61,7 @@ async def seed_canonical_dataset_if_needed(db: AsyncSession):
         logger.warning(f"Canonical seed CSV not found at {csv_path}. Skipping automatic seed.")
         return
 
-    logger.info(f"Seeding canonical dataset from {csv_path}...")
+    logger.info(f"Seeding canonical dataset from {csv_path} into workspace {target_ws_id}...")
 
     # Read and parse CSV
     raw_records = []
@@ -87,8 +102,8 @@ async def seed_canonical_dataset_if_needed(db: AsyncSession):
     # 1. Create canonical Dataset entity
     dataset = Dataset(
         id=settings.CANONICAL_DATASET_ID,
-        workspace_id=settings.PUBLIC_DEMO_WORKSPACE_ID,
-        name="Build Battle 2026 Hackathon Dataset",
+        workspace_id=target_ws_id,
+        name="Customer Feedback Sample",
         original_filename="BuildBattle_2026_Customer_Feedback_Dataset.csv",
         row_count=total_count,
         valid_rows=total_count,
@@ -121,7 +136,7 @@ async def seed_canonical_dataset_if_needed(db: AsyncSession):
 
             fb = Feedback(
                 id=f"fb-{uuid.uuid4().hex[:12]}",
-                workspace_id=settings.PUBLIC_DEMO_WORKSPACE_ID,
+                workspace_id=target_ws_id,
                 dataset_id=dataset.id,
                 original_text=text,
                 source_category=category,
@@ -140,7 +155,7 @@ async def seed_canonical_dataset_if_needed(db: AsyncSession):
     # 3. Create precomputed AnalysisJob record
     analysis_job = AnalysisJob(
         id=f"aj-{uuid.uuid4().hex[:12]}",
-        workspace_id=settings.PUBLIC_DEMO_WORKSPACE_ID,
+        workspace_id=target_ws_id,
         dataset_id=dataset.id,
         status="succeeded",
         total_items=total_count,
@@ -164,12 +179,12 @@ async def seed_canonical_dataset_if_needed(db: AsyncSession):
     logger.info("Extracting issue dossiers and generating recommendations for seeded dataset...")
     issues = await IssueService.extract_and_link_issues(
         dataset_id=dataset.id,
-        workspace_id=settings.PUBLIC_DEMO_WORKSPACE_ID,
+        workspace_id=target_ws_id,
         db=db,
     )
     await RecommendationService.generate_recommendations_for_issues(
         dataset_id=dataset.id,
-        workspace_id=settings.PUBLIC_DEMO_WORKSPACE_ID,
+        workspace_id=target_ws_id,
         issues=issues,
         db=db,
     )

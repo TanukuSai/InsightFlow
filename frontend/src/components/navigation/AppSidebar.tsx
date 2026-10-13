@@ -15,8 +15,10 @@ import {
   X,
   Activity,
   Layers,
+  LogOut,
 } from "lucide-react";
 import { useDataset } from "@/lib/context/DatasetContext";
+import { useAuth } from "@/lib/context/AuthContext";
 
 interface AppSidebarProps {
   isOpen?: boolean;
@@ -26,6 +28,7 @@ interface AppSidebarProps {
 export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) {
   const pathname = usePathname();
   const { selectedDataset, loading: datasetLoading } = useDataset();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -147,7 +150,28 @@ export default function AppSidebar({ isOpen = true, onClose }: AppSidebarProps) 
             </Link>
           )}
 
-          <div className="mt-3 pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between">
+          {user && (
+            <div className="mt-3 pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
+              <div className="min-w-0 pr-2">
+                <div className="font-semibold text-[var(--ink)] truncate" title={user.full_name || user.email}>
+                  {user.full_name || user.email}
+                </div>
+                <div className="text-[10px] text-[var(--ink-muted)] truncate font-mono">
+                  {user.email}
+                </div>
+              </div>
+              <button
+                onClick={() => logout()}
+                className="p-1.5 rounded-lg text-[#C6534D] hover:bg-[#FFF1F0] transition-colors shrink-0 cursor-pointer"
+                title="Sign out"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          <div className="mt-2.5 pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between">
             <Link
               href="/"
               className="text-[11px] font-semibold text-[var(--brand)] hover:underline focus-visible-ring"

@@ -21,6 +21,7 @@ export default function FeedbackExplorerPage() {
   const querySearch = searchParams.get("search") || "";
   const queryCategory = searchParams.get("category") || "";
   const querySentiment = searchParams.get("sentiment") || "";
+  const queryExactText = searchParams.get("exact_text") || "";
 
   const { selectedDatasetId, selectedDataset, loading: datasetLoading } = useDataset();
 
@@ -34,6 +35,7 @@ export default function FeedbackExplorerPage() {
   const [search, setSearch] = useState(querySearch);
   const [category, setCategory] = useState(queryCategory);
   const [sentiment, setSentiment] = useState(querySentiment);
+  const [exactText, setExactText] = useState(queryExactText);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,11 +48,13 @@ export default function FeedbackExplorerPage() {
     const s = searchParams.get("search") || "";
     const c = searchParams.get("category") || "";
     const sm = searchParams.get("sentiment") || "";
+    const et = searchParams.get("exact_text") || "";
     const id = searchParams.get("id") || "";
 
     setSearch(s);
     setCategory(c);
     setSentiment(sm);
+    setExactText(et);
     setPage(1);
 
     if (id) {
@@ -88,6 +92,7 @@ export default function FeedbackExplorerPage() {
         category: category || undefined,
         sentiment: sentiment || undefined,
         search: search.trim() || undefined,
+        exactText: exactText.trim() || undefined,
       });
 
       setFeedbacks(res.items || []);
@@ -99,7 +104,7 @@ export default function FeedbackExplorerPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDatasetId, page, pageSize, category, sentiment, search]);
+  }, [selectedDatasetId, page, pageSize, category, sentiment, search, exactText]);
 
   useEffect(() => {
     if (selectedDatasetId) {
@@ -121,6 +126,7 @@ export default function FeedbackExplorerPage() {
     setSearch("");
     setCategory("");
     setSentiment("");
+    setExactText("");
     setPage(1);
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", window.location.pathname);
@@ -220,7 +226,7 @@ export default function FeedbackExplorerPage() {
               Apply Filter
             </button>
 
-            {(search || category || sentiment) && (
+            {(search || category || sentiment || exactText) && (
               <button
                 type="button"
                 onClick={handleResetFilters}
@@ -230,6 +236,35 @@ export default function FeedbackExplorerPage() {
               </button>
             )}
           </form>
+
+          {exactText && (
+            <div className="flex items-center gap-2 p-2.5 px-3 bg-[#EEF3FA] border border-[#CCD8EE] rounded-xl text-xs text-[#3B5899]">
+              <span className="font-medium">
+                Filtering by exact repeated statement: <strong>&ldquo;{exactText}&rdquo;</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setExactText("");
+                  setPage(1);
+                  if (typeof window !== "undefined") {
+                    const p = new URLSearchParams(window.location.search);
+                    p.delete("exact_text");
+                    window.history.replaceState(
+                      null,
+                      "",
+                      `${window.location.pathname}${p.toString() ? `?${p.toString()}` : ""}`
+                    );
+                  }
+                }}
+                className="p-0.5 hover:bg-[#CCD8EE] rounded font-bold ml-auto cursor-pointer"
+                title="Remove exact statement filter"
+                aria-label="Remove exact statement filter"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Result Count and Active Filters */}
           <div className="flex items-center justify-between text-xs text-[#687386] pt-2 border-t border-[#DDE2E9]">

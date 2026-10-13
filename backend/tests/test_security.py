@@ -1,30 +1,30 @@
 import pytest
 from httpx import AsyncClient
 from app.core.config import settings
-from app.core.security import verify_token, PublicDemoContext
+from app.core.security import AuthenticatedUser
 
 
-def test_public_demo_context_contract():
-    """Verify that PublicDemoContext always binds to the authoritative demo workspace."""
-    ctx = verify_token()
-    assert isinstance(ctx, PublicDemoContext)
-    assert ctx.workspace_id == settings.PUBLIC_DEMO_WORKSPACE_ID
-    assert ctx.is_demo is True
-
-    # Untrusted headers must be ignored and bound strictly to PUBLIC_DEMO_WORKSPACE_ID
-    spoofed_ctx = verify_token(
-        authorization="Bearer malicious-or-spoofed-token",
-        x_workspace_id="workspace-attacker-tenant",
+def test_authenticated_user_contract():
+    """Verify that AuthenticatedUser model has required attributes."""
+    user = AuthenticatedUser(
+        id="usr-test",
+        email="test@insightflow.ai",
+        full_name="Test User",
+        workspace_id=settings.PUBLIC_DEMO_WORKSPACE_ID,
+        role="owner",
+        is_active=True,
     )
-    assert spoofed_ctx.workspace_id == settings.PUBLIC_DEMO_WORKSPACE_ID
+    assert user.workspace_id == settings.PUBLIC_DEMO_WORKSPACE_ID
+    assert user.email == "test@insightflow.ai"
+    assert user.is_active is True
 
 
 @pytest.mark.asyncio
-async def test_endpoints_accessible_without_auth_headers(client: AsyncClient):
-    """Verify that all public demo endpoints succeed with zero tokens or credentials."""
-    resp = await client.get("/api/v1/datasets")
-    assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
+async def test_unauthenticated_request_rejected(unauth_client: AsyncClient):
+    """Verify that endpoints fail closed with 401 when no token is supplied."""
+    resp = await unauth_client.get("/api/v1/datasets")
+    assert resp.status_code == 401
+    assert "authentication required" in resp.json()["detail"].lower()
 
 
 @pytest.mark.asyncio
@@ -33,7 +33,7 @@ async def test_untrusted_workspace_headers_are_safely_bound(
 ):
     """
     Verify that callers passing arbitrary or spoofed X-Workspace-Id headers
-    do not cause 401/403 errors and are safely bound to the single demo workspace.
+    cannot override their server-verified workspace.
     """
     headers_spoofed = {"X-Workspace-Id": "arbitrary-spoofed-workspace"}
 
@@ -52,7 +52,7 @@ async def test_untrusted_workspace_headers_are_safely_bound(
 
 @pytest.mark.asyncio
 async def test_canonical_dataset_protected_from_deletion(client: AsyncClient):
-    """The canonical seed dataset can never be deleted by public clients."""
+    """The canonical seed dataset can never be deleted."""
     resp = await client.delete(f"/api/v1/datasets/{settings.CANONICAL_DATASET_ID}")
     assert resp.status_code == 403
     assert "canonical" in resp.json()["detail"].lower()
@@ -62,7 +62,7 @@ async def test_canonical_dataset_protected_from_deletion(client: AsyncClient):
 async def test_anonymous_dataset_deletion_disabled(
     client: AsyncClient, sample_csv_content: bytes
 ):
-    """Anonymous visitors cannot delete datasets in the shared demo workspace."""
+    """In the evaluation workspace, dataset deletion requires admin key."""
     files = {"file": ("custom.csv", sample_csv_content, "text/csv")}
     resp = await client.post("/api/v1/datasets/import", files=files)
     dataset_id = resp.json()["dataset_id"]

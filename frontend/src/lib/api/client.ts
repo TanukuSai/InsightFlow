@@ -13,39 +13,8 @@ import {
   AdaptionEstimateResponse,
   AdaptionRunRequest,
   AdaptionJobResponse,
+  User,
 } from "./types";
-
-function resolveApiBaseUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/+$/, "");
-  }
-
-  // Development environment allows localhost fallback
-  if (process.env.NODE_ENV !== "production") {
-    return "http://127.0.0.1:8000";
-  }
-
-  // In production, do not silently fallback to localhost!
-  return "";
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
-const DEFAULT_WORKSPACE =
-  process.env.NEXT_PUBLIC_DEFAULT_WORKSPACE || "ws-production-eval";
-
-export function getActiveWorkspaceId(): string {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("insightflow_workspace_id") || DEFAULT_WORKSPACE;
-  }
-  return DEFAULT_WORKSPACE;
-}
-
-export function setActiveWorkspaceId(workspaceId: string): void {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("insightflow_workspace_id", workspaceId);
-  }
-}
 
 class ApiError extends Error {
   status: number;
@@ -59,27 +28,27 @@ class ApiError extends Error {
   }
 }
 
+function resolveRequestUrl(endpoint: string): string {
+  // Direct authentication endpoints on Next.js BFF
+  if (endpoint.startsWith("/api/auth/")) {
+    return endpoint;
+  }
+  // Data and health endpoints routed through same-origin authenticated proxy
+  if (endpoint.startsWith("/api/v1/") || endpoint.startsWith("/health")) {
+    return `/api/proxy${endpoint}`;
+  }
+  return endpoint;
+}
+
 async function fetchJson<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  if (!API_BASE_URL) {
-    throw new ApiError(
-      "Production API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL in your deployment environment variables.",
-      500,
-      { code: "API_CONFIGURATION_MISSING" }
-    );
-  }
-
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = resolveRequestUrl(endpoint);
   const headers = new Headers(options.headers || {});
 
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
-  }
-
-  if (!headers.has("X-Workspace-Id")) {
-    headers.set("X-Workspace-Id", getActiveWorkspaceId());
   }
 
   const response = await fetch(url, {
@@ -92,8 +61,22 @@ async function fetchJson<T>(
     try {
       errorDetails = await response.json();
     } catch {
-      // not json
+      // response is not JSON
     }
+
+    // Redirect to login if unauthenticated on client
+    if (response.status === 401 && typeof window !== "undefined") {
+      const path = window.location.pathname;
+      if (
+        !path.startsWith("/login") &&
+        !path.startsWith("/register") &&
+        path !== "/"
+      ) {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.assign(`/login?returnUrl=${encodeURIComponent(path)}`);
+      }
+    }
+
     const message =
       errorDetails?.detail ||
       errorDetails?.message ||
@@ -103,6 +86,39 @@ async function fetchJson<T>(
 
   return response.json() as Promise<T>;
 }
+
+// -------------------------------------------------------------
+// 0. AUTHENTICATION & SESSION API (BFF Same-Origin)
+// -------------------------------------------------------------
+export const authApi = {
+  login: async (email: string, password: string): Promise<{ user: User }> => {
+    return fetchJson<{ user: User }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+  },
+
+  register: async (data: {
+    email: string;
+    password: string;
+    full_name?: string;
+  }): Promise<{ user: User }> => {
+    return fetchJson<{ user: User }>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  me: async (): Promise<{ user: User }> => {
+    return fetchJson<{ user: User }>("/api/auth/me");
+  },
+
+  logout: async (): Promise<{ success: boolean }> => {
+    return fetchJson<{ success: boolean }>("/api/auth/logout", {
+      method: "POST",
+    });
+  },
+};
 
 // -------------------------------------------------------------
 // 1. DATASETS & CSV IMPORT API
@@ -150,6 +166,7 @@ export const feedbackApi = {
     category?: string;
     sentiment?: string;
     search?: string;
+    exactText?: string;
   }): Promise<FeedbackListResponse> => {
     const query = new URLSearchParams();
     if (params.datasetId) query.set("dataset_id", params.datasetId);
@@ -157,7 +174,8 @@ export const feedbackApi = {
     if (params.pageSize) query.set("page_size", params.pageSize.toString());
     if (params.category) query.set("category", params.category);
     if (params.sentiment) query.set("sentiment", params.sentiment);
-    if (params.search) query.set("search", params.search);
+    if (params.exactText) query.set("exact_text", params.exactText);
+    else if (params.search) query.set("search", params.search);
 
     const queryString = query.toString();
     const endpoint = `/api/v1/feedback${queryString ? `?${queryString}` : ""}`;
@@ -293,22 +311,12 @@ export const reportsApi = {
   },
 
   getExportUrl: (reportId: string): string => {
-    return `${API_BASE_URL}/api/v1/reports/${reportId}/export`;
+    return `/api/proxy/api/v1/reports/${reportId}/export`;
   },
 
   download: async (reportId: string, filename: string): Promise<void> => {
-    if (!API_BASE_URL) {
-      throw new ApiError(
-        "Production API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.",
-        500
-      );
-    }
-
-    const url = `${API_BASE_URL}/api/v1/reports/${reportId}/export`;
-    const headers = new Headers();
-    headers.set("X-Workspace-Id", getActiveWorkspaceId());
-
-    const response = await fetch(url, { headers });
+    const url = `/api/proxy/api/v1/reports/${reportId}/export`;
+    const response = await fetch(url);
     if (!response.ok) {
       let message = `Export download failed with status ${response.status}`;
       try {
@@ -369,18 +377,8 @@ export const adaptionApi = {
     filename: string = `adaption_output_${jobId}.csv`,
     format: string = "csv"
   ): Promise<void> => {
-    if (!API_BASE_URL) {
-      throw new ApiError(
-        "Production API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.",
-        500
-      );
-    }
-
-    const url = `${API_BASE_URL}/api/v1/adaption/jobs/${jobId}/download?format=${format}`;
-    const headers = new Headers();
-    headers.set("X-Workspace-Id", getActiveWorkspaceId());
-
-    const response = await fetch(url, { headers });
+    const url = `/api/proxy/api/v1/adaption/jobs/${jobId}/download?format=${format}`;
+    const response = await fetch(url);
     if (!response.ok) {
       let message = `Output download failed with status ${response.status}`;
       try {
@@ -411,5 +409,4 @@ export const healthApi = {
   },
 };
 
-export { ApiError, API_BASE_URL, DEFAULT_WORKSPACE };
-
+export { ApiError };

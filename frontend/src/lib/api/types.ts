@@ -92,11 +92,21 @@ export interface Recommendation {
   proposed_action?: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  workspace_id: string;
+  role: string;
+  created_at?: string;
+}
+
 export interface RepeatedStatement {
   statement: string;
   category: string;
   count: number;
   extra_duplicates?: number;
+  dataset_share_pct?: number;
   sample_feedback_ids?: string[];
 }
 
@@ -104,12 +114,17 @@ export interface DashboardData {
   dataset_id: string;
   dataset_name: string;
   total_source_rows: number;
-  valid_rows?: number;
-  invalid_rows?: number;
+  valid_rows: number;
+  valid_feedback_count?: number;
+  invalid_rows: number;
+  invalid_source_rows?: number;
   unique_exact_statements: number;
+  distinct_comment_texts?: number;
   repeated_rows: number;
   extra_duplicate_occurrences?: number;
+  extra_duplicate_copies?: number;
   rows_in_repeated_groups?: number;
+  comments_in_repeated_groups?: number;
   total_categorized_rows?: number;
   has_timestamps: boolean;
   temporal_available: boolean;
@@ -117,6 +132,8 @@ export interface DashboardData {
   analysis_status: string;
   analysis_provider?: string;
   analysis_model?: string;
+  sentiment_analyzed_count?: number;
+  sentiment_coverage_pct?: number;
   source_category_distribution: Record<string, number>;
   sentiment_distribution?: SentimentDistribution;
   average_sentiment_score?: number;

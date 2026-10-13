@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Menu, Plus, AlertCircle } from "lucide-react";
+import { Menu, Plus, AlertCircle, LogOut, ChevronDown } from "lucide-react";
 import { useDataset } from "@/lib/context/DatasetContext";
+import { useAuth } from "@/lib/context/AuthContext";
 
 interface AppHeaderProps {
   title: string;
@@ -19,6 +20,35 @@ export default function AppHeader({
   actions,
 }: AppHeaderProps) {
   const { datasets, selectedDatasetId, setSelectedDatasetId, loading } = useDataset();
+  const { user, logout } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  const initials = user?.full_name
+    ? user.full_name
+        .split(" ")
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : user?.email
+    ? user.email.slice(0, 2).toUpperCase()
+    : "IF";
 
   return (
     <header className="sticky top-0 z-30 h-16 glass-nav-bar px-4 sm:px-8 flex items-center justify-between gap-4">
@@ -84,9 +114,48 @@ export default function AppHeader({
           <span className="hidden sm:inline">Import feedback</span>
         </Link>
 
-        {/* User / Workspace Badge */}
-        <div className="w-8 h-8 rounded-full bg-[#172033] border border-[var(--border-subtle)] flex items-center justify-center text-xs font-bold text-[#F7F8FA] shadow-2xs font-mono">
-          IF
+        {/* User / Workspace Profile Popover */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-[#F2F4F6] transition-colors focus-visible-ring"
+            aria-label="User Account Menu"
+            aria-expanded={dropdownOpen}
+          >
+            <div className="w-8 h-8 rounded-full bg-[#172033] border border-[var(--border-subtle)] flex items-center justify-center text-xs font-bold text-[#F7F8FA] shadow-2xs font-mono">
+              {initials}
+            </div>
+            <ChevronDown className="w-3 h-3 text-[#727B86] hidden sm:block" />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white border border-[#E2E3DD] rounded-xl shadow-lg p-3 z-50 text-xs">
+              <div className="pb-2.5 border-b border-[#E2E3DD]">
+                <div className="font-bold text-[#20252D] truncate">
+                  {user?.full_name || "Workspace User"}
+                </div>
+                <div className="text-[11px] text-[#727B86] truncate mt-0.5 font-mono">
+                  {user?.email}
+                </div>
+                <div className="mt-1.5 inline-flex items-center px-2 py-0.5 bg-[#F6F5F1] text-[#505966] text-[10px] font-mono rounded">
+                  WS: {user?.workspace_id?.slice(0, 14)}...
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={async () => {
+                    setDropdownOpen(false);
+                    await logout();
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-2 text-[#C6534D] hover:bg-[#FFF1F0] rounded-lg font-semibold transition-colors text-left"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

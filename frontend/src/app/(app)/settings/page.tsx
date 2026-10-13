@@ -1,31 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import AppHeader from "@/components/navigation/AppHeader";
-import { getActiveWorkspaceId, API_BASE_URL, healthApi } from "@/lib/api/client";
+import { healthApi } from "@/lib/api/client";
+import { useAuth } from "@/lib/context/AuthContext";
 import { RefreshCw, CheckCircle2, XCircle, AlertCircle, Server } from "lucide-react";
 
 export default function SettingsPage() {
-  const [workspaceName] = useState("InsightFlow Production Workspace");
-  const [apiEndpoint, setApiEndpoint] = useState(API_BASE_URL || "");
-  const [workspaceId, setWorkspaceId] = useState("ws-production-eval");
+  const { user } = useAuth();
+  const workspaceName = user?.full_name ? `${user.full_name}'s Workspace` : "InsightFlow Workspace";
+  const workspaceId = user?.workspace_id || "Active Workspace";
+  const apiEndpoint = "/api/proxy (Same-Origin BFF Gateway)";
 
   const [healthStatus, setHealthStatus] = useState<"checking" | "reachable" | "unreachable" | "not_configured">("checking");
   const [healthDetails, setHealthDetails] = useState<{ status?: string; database?: string; app?: string; environment?: string } | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [isPinging, setIsPinging] = useState(false);
 
-  const checkConnection = async () => {
+  const checkConnection = useCallback(async () => {
     setIsPinging(true);
     setHealthStatus("checking");
     try {
-      if (typeof window !== "undefined" && !API_BASE_URL && process.env.NODE_ENV === "production") {
-        setHealthStatus("not_configured");
-        setHealthDetails(null);
-        setLastChecked(new Date());
-        setIsPinging(false);
-        return;
-      }
       const data = await healthApi.check();
       if (data && (data.status === "ok" || data.status === "degraded")) {
         setHealthStatus("reachable");
@@ -41,13 +36,11 @@ export default function SettingsPage() {
       setLastChecked(new Date());
       setIsPinging(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    setWorkspaceId(getActiveWorkspaceId());
-    setApiEndpoint(API_BASE_URL || "");
     checkConnection();
-  }, []);
+  }, [checkConnection]);
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--bg-paper)]">

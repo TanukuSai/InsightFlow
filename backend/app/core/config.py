@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = f"sqlite+aiosqlite:///{(Path(__file__).resolve().parent.parent.parent / 'insightflow.db').as_posix()}"
 
+    # Authentication & JWT
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
     # Supabase Auth / Services
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
@@ -79,6 +84,16 @@ class Settings(BaseSettings):
             "http://localhost:3001",
             "http://127.0.0.1:3001",
         ]
+
+    @field_validator("JWT_SECRET_KEY", mode="after")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        if not v:
+            app_env = os.environ.get("APP_ENV", "development").lower()
+            if app_env == "production":
+                raise ValueError("JWT_SECRET_KEY must be configured in production environment.")
+            return "ephemeral-insightflow-dev-secret-key-at-least-32-chars-long"
+        return v
 
     model_config = SettingsConfigDict(
         env_file=str(Path(__file__).resolve().parent.parent.parent / ".env"),

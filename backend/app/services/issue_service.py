@@ -61,29 +61,29 @@ class IssueService:
             # Determine objective priority and explanation
             if "scam" in topic.lower() or "fraud" in topic.lower() or majority_category == "Fraud and Scam":
                 priority = "Critical"
-                explanation = "Rule-based classification: Assigned Critical priority due to fraud and payment scam keywords requiring urgent review."
-                title = f"Urgent Triage: {topic}"
-                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) detailing suspicious seller interactions and payment diversion."
+                explanation = "Rule-based triage flag: Assigned Critical priority based on fraud/payment scam keywords. Flagged for operational review, not a verified fraud finding."
+                title = f"Triage Review: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) containing fraud-related or seller complaint phrasing."
             elif "damage" in topic.lower() or "missing" in topic.lower() or "wrong item" in topic.lower():
                 priority = "High"
-                explanation = "Rule-based classification: Assigned High priority due to fulfillment, damage, or missing item keywords."
+                explanation = "Rule-based triage flag: Assigned High priority based on fulfillment, damage, or missing item keywords."
                 title = f"Fulfillment Triage: {topic}"
-                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) regarding damaged packaging and missing order contents."
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) reporting packaging damage, delivery issues, or missing contents."
             elif "crash" in topic.lower() or "stability" in topic.lower():
                 priority = "High"
-                explanation = "Rule-based classification: Assigned High priority due to platform stability and crash keywords."
-                title = f"Reliability Triage: {topic}"
-                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) reporting portal or checkout disruptions."
+                explanation = "Rule-based triage flag: Assigned High priority based on application stability or checkout disruption keywords."
+                title = f"System Stability: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) mentioning errors, crashes, or loading freezes."
             elif "support" in topic.lower() or "delay" in topic.lower():
                 priority = "Medium"
-                explanation = "Rule-based classification: Assigned Medium priority due to customer support queue and response delay keywords."
-                title = f"Support Operations Triage: {topic}"
-                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) citing support queue delays and ticket response times."
+                explanation = "Rule-based triage flag: Assigned Medium priority based on customer service queue and response delay keywords."
+                title = f"Support Operations: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) citing response times or support queue delays."
             else:
                 priority = "Low"
-                explanation = "Rule-based classification: Assigned Low priority for general product usability and feature feedback."
+                explanation = "Rule-based triage flag: Assigned Low priority for general feedback and feature usability comments."
                 title = f"Product Feedback: {topic}"
-                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) covering product features and daily usability."
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) covering general product and feature usability."
 
             issue_id = f"iss-{uuid.uuid4().hex[:12]}"
             issue = Issue(
