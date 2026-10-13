@@ -1,6 +1,8 @@
+from __future__ import annotations
 import csv
 import os
 import uuid
+from typing import Optional
 from pathlib import Path
 from collections import Counter
 from datetime import datetime, timezone
