@@ -15,8 +15,8 @@ function LoginForm() {
 
   const { user, loading: authLoading, login } = useAuth();
 
-  const [email, setEmail] = useState("evaluator@insightflow.local");
-  const [password, setPassword] = useState("f#6O6&BzM$8he*!q");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -74,22 +74,6 @@ function LoginForm() {
           <div className="flex-1 font-medium leading-relaxed">{errorMessage}</div>
         </div>
       )}
-
-      {/* Quick Fill Demo Credentials */}
-      <div className="mb-6 p-3 bg-[#EEF2FF] border border-[#C7D2FE] rounded-xl flex items-center justify-between gap-2 text-xs text-[#3730A3]">
-        <span className="font-medium">Evaluator test account</span>
-        <button
-          type="button"
-          onClick={() => {
-            setEmail("evaluator@insightflow.local");
-            setPassword("f#6O6&BzM$8he*!q");
-            setErrorMessage(null);
-          }}
-          className="px-2.5 py-1 bg-[#4338CA] hover:bg-[#3730A3] text-white font-semibold text-[11px] rounded-lg transition-colors cursor-pointer shadow-xs"
-        >
-          Auto-fill
-        </button>
-      </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
