@@ -23,7 +23,7 @@ function resolveApiBaseUrl(): string {
 
   // Development environment allows localhost fallback
   if (process.env.NODE_ENV !== "production") {
-    return "http://127.0.0.1:8001";
+    return "http://127.0.0.1:8000";
   }
 
   // In production, do not silently fallback to localhost!

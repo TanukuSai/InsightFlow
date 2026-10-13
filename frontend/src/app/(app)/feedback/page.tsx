@@ -18,7 +18,9 @@ const CATEGORY_STYLES: Record<string, string> = {
 
 export default function FeedbackExplorerPage() {
   const searchParams = useSearchParams();
-  const initialSearch = searchParams.get("search") || "";
+  const querySearch = searchParams.get("search") || "";
+  const queryCategory = searchParams.get("category") || "";
+  const querySentiment = searchParams.get("sentiment") || "";
 
   const { selectedDatasetId, selectedDataset, loading: datasetLoading } = useDataset();
 
@@ -29,15 +31,37 @@ export default function FeedbackExplorerPage() {
   const pageSize = 15;
 
   // Filters
-  const [search, setSearch] = useState(initialSearch);
-  const [category, setCategory] = useState("");
-  const [sentiment, setSentiment] = useState("");
+  const [search, setSearch] = useState(querySearch);
+  const [category, setCategory] = useState(queryCategory);
+  const [sentiment, setSentiment] = useState(querySentiment);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Detail drawer
   const [activeFeedback, setActiveFeedback] = useState<Feedback | null>(null);
+
+  // Sync state when URL search parameters change
+  useEffect(() => {
+    const s = searchParams.get("search") || "";
+    const c = searchParams.get("category") || "";
+    const sm = searchParams.get("sentiment") || "";
+    const id = searchParams.get("id") || "";
+
+    setSearch(s);
+    setCategory(c);
+    setSentiment(sm);
+    setPage(1);
+
+    if (id) {
+      feedbackApi
+        .get(id)
+        .then((fb) => {
+          if (fb) setActiveFeedback(fb);
+        })
+        .catch((err) => console.error("Could not load feedback from query ID:", err));
+    }
+  }, [searchParams]);
 
   // Manual Add Feedback Modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -98,6 +122,9 @@ export default function FeedbackExplorerPage() {
     setCategory("");
     setSentiment("");
     setPage(1);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
   };
 
   const handleAddFeedback = async (e: React.FormEvent) => {
@@ -182,6 +209,8 @@ export default function FeedbackExplorerPage() {
               <option value="positive">Positive</option>
               <option value="neutral">Neutral</option>
               <option value="negative">Negative</option>
+              <option value="mixed">Mixed</option>
+              <option value="unknown">Unknown / Unclassified</option>
             </select>
 
             <button

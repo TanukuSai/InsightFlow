@@ -96,6 +96,7 @@ export interface RepeatedStatement {
   statement: string;
   category: string;
   count: number;
+  extra_duplicates?: number;
   sample_feedback_ids?: string[];
 }
 
@@ -103,8 +104,13 @@ export interface DashboardData {
   dataset_id: string;
   dataset_name: string;
   total_source_rows: number;
+  valid_rows?: number;
+  invalid_rows?: number;
   unique_exact_statements: number;
   repeated_rows: number;
+  extra_duplicate_occurrences?: number;
+  rows_in_repeated_groups?: number;
+  total_categorized_rows?: number;
   has_timestamps: boolean;
   temporal_available: boolean;
   temporal_message?: string;

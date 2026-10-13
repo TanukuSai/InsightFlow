@@ -121,11 +121,21 @@ async def get_dashboard_data(
             statement=text,
             category=stmt_cats[text],
             count=count,
+            extra_duplicates=max(0, count - 1),
             sample_feedback_ids=stmt_ids[text],
         )
         for text, count in stmt_counter.most_common(5)
         if count > 1
     ]
+
+    # Metrics denominators & duplicate counts
+    valid_rows = dataset.valid_rows if dataset.valid_rows is not None else len(all_feedbacks)
+    invalid_rows = dataset.invalid_rows if dataset.invalid_rows is not None else max(0, dataset.row_count - valid_rows)
+    category_distribution = dataset.category_distribution or {}
+    total_categorized_rows = sum(category_distribution.values())
+    rows_in_repeated_groups = sum(cnt for cnt in stmt_counter.values() if cnt > 1)
+    extra_duplicate_occurrences = sum(cnt - 1 for cnt in stmt_counter.values() if cnt > 1)
+    repeated_rows = dataset.repeat_feedback_count if dataset.repeat_feedback_count is not None else extra_duplicate_occurrences
 
     # Sample feedbacks in source order
     sample_feedbacks = all_feedbacks[:15]
@@ -134,15 +144,20 @@ async def get_dashboard_data(
         dataset_id=dataset.id,
         dataset_name=dataset.name,
         total_source_rows=dataset.row_count,
-        unique_exact_statements=dataset.unique_feedback_count,
-        repeated_rows=dataset.repeat_feedback_count,
+        valid_rows=valid_rows,
+        invalid_rows=invalid_rows,
+        unique_exact_statements=dataset.unique_feedback_count if dataset.unique_feedback_count else len(stmt_counter),
+        repeated_rows=repeated_rows,
+        extra_duplicate_occurrences=extra_duplicate_occurrences,
+        rows_in_repeated_groups=rows_in_repeated_groups,
+        total_categorized_rows=total_categorized_rows,
         has_timestamps=False,
         temporal_available=False,
         temporal_message="Dataset does not contain valid timestamp data. Historical trend charts are unavailable.",
         analysis_status=analysis_status,
         analysis_provider="rule-based baseline" if analyzed_count > 0 else None,
         analysis_model="lexicon-rules-v1.0" if analyzed_count > 0 else None,
-        source_category_distribution=dataset.category_distribution or {},
+        source_category_distribution=category_distribution,
         sentiment_distribution=sentiment_dist,
         average_sentiment_score=avg_sentiment_score,
         top_recurring_issues=[IssueResponse.model_validate(iss) for iss in issue_items],
@@ -153,6 +168,7 @@ async def get_dashboard_data(
             "Source category information is strictly distinct from derived sentiment.",
             "Historical temporal trend graphs are withheld because source rows lack verified timestamps.",
             "Repeated exact statements are counted distinctly to avoid conflating message duplication with separate customers.",
+            "Sentiment is estimated using a rule-based keyword heuristic and serves as a directional scan, not ground truth.",
         ],
         last_updated=datetime.now(timezone.utc),
     )

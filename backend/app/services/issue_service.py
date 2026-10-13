@@ -61,29 +61,29 @@ class IssueService:
             # Determine objective priority and explanation
             if "scam" in topic.lower() or "fraud" in topic.lower() or majority_category == "Fraud and Scam":
                 priority = "Critical"
-                explanation = "Direct risk of customer financial loss and severe trust erosion. Immediate intervention required."
-                title = f"Systemic Risk: {topic}"
-                summary = f"Identified {total_supporting} customer reports ({unique_texts} distinct statements) detailing fraudulent interactions and suspicious seller payment demands."
+                explanation = "Rule-based classification: Assigned Critical priority due to fraud and payment scam keywords requiring urgent review."
+                title = f"Urgent Triage: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) detailing suspicious seller interactions and payment diversion."
             elif "damage" in topic.lower() or "missing" in topic.lower() or "wrong item" in topic.lower():
                 priority = "High"
-                explanation = "Direct operational fulfillment failure leading to customer dissatisfaction, returns, and refund costs."
-                title = f"Fulfillment Failure: {topic}"
-                summary = f"Fulfillment bottlenecks resulting in {total_supporting} complaints regarding damaged packaging and missing order contents."
+                explanation = "Rule-based classification: Assigned High priority due to fulfillment, damage, or missing item keywords."
+                title = f"Fulfillment Triage: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) regarding damaged packaging and missing order contents."
             elif "crash" in topic.lower() or "stability" in topic.lower():
                 priority = "High"
-                explanation = "Digital platform crashes prevent orders from completing, directly reducing conversion rates."
-                title = f"Platform Reliability: {topic}"
-                summary = f"{total_supporting} reports of portal and checkout failures obstructing customer transactions."
+                explanation = "Rule-based classification: Assigned High priority due to platform stability and crash keywords."
+                title = f"Reliability Triage: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) reporting portal or checkout disruptions."
             elif "support" in topic.lower() or "delay" in topic.lower():
                 priority = "Medium"
-                explanation = "Support responsiveness delays amplify customer frustration during escalations."
-                title = f"Support Operations: {topic}"
-                summary = f"{total_supporting} customers reported delayed ticket handling and unresponsive agent queues."
+                explanation = "Rule-based classification: Assigned Medium priority due to customer support queue and response delay keywords."
+                title = f"Support Operations Triage: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) citing support queue delays and ticket response times."
             else:
                 priority = "Low"
-                explanation = "General product and usability feedback providing opportunities for iterative optimization."
-                title = f"Product Trend: {topic}"
-                summary = f"Feedback pattern covering {total_supporting} statements on product features and daily usability."
+                explanation = "Rule-based classification: Assigned Low priority for general product usability and feature feedback."
+                title = f"Product Feedback: {topic}"
+                summary = f"Grouped {total_supporting} feedback records ({unique_texts} distinct comment texts) covering product features and daily usability."
 
             issue_id = f"iss-{uuid.uuid4().hex[:12]}"
             issue = Issue(

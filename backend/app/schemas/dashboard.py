@@ -19,6 +19,7 @@ class RepeatedStatement(BaseModel):
     statement: str
     category: str
     count: int
+    extra_duplicates: int = 0
     sample_feedback_ids: List[str] = []
 
 
@@ -26,8 +27,13 @@ class DashboardResponse(BaseModel):
     dataset_id: str
     dataset_name: str
     total_source_rows: int
+    valid_rows: int = 0
+    invalid_rows: int = 0
     unique_exact_statements: int
     repeated_rows: int
+    extra_duplicate_occurrences: int = 0
+    rows_in_repeated_groups: int = 0
+    total_categorized_rows: int = 0
     has_timestamps: bool
     temporal_available: bool
     temporal_message: str

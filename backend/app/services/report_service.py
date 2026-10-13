@@ -67,12 +67,18 @@ class ReportService:
             "dataset_name": dataset.name,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "source_statistics": {
+                "total_source_rows": dataset.row_count,
+                "valid_feedback_records": dataset.valid_rows,
+                "invalid_excluded_rows": dataset.invalid_rows,
+                "distinct_exact_comment_texts": dataset.unique_feedback_count,
+                "extra_duplicate_occurrences": dataset.repeat_feedback_count,
+                "has_timestamps": dataset.has_timestamps,
+                # compatibility keys
                 "total_rows": dataset.row_count,
                 "valid_rows": dataset.valid_rows,
                 "invalid_rows": dataset.invalid_rows,
                 "unique_statements": dataset.unique_feedback_count,
                 "repeated_rows": dataset.repeat_feedback_count,
-                "has_timestamps": dataset.has_timestamps,
             },
             "category_distribution": dataset.category_distribution,
             "sentiment_distribution": sentiment_counts if sentiment_counts else "Analysis not yet executed",
@@ -98,9 +104,10 @@ class ReportService:
                 for rec in recommendations
             ],
             "methodology_and_limitations": [
-                "Source categories represent original CSV labels and are distinct from derived sentiment.",
-                "Dataset does not provide valid timestamps; trend predictions are withheld to preserve data fidelity.",
-                "High repeated statement counts represent frequent customer pain points rather than verified distinct customer IDs.",
+                "Source categories represent original CSV tags and are strictly distinct from derived sentiment.",
+                "Tone is estimated using a rule-based lexicon and pattern heuristic for directional scanning, not a calibrated model or ground truth.",
+                "Dataset does not provide valid timestamps; trend graphs are withheld to preserve data fidelity.",
+                "Extra duplicate occurrences measure identical phrasing in source rows and do not represent verified unique customer counts.",
             ],
         }
 
@@ -116,9 +123,12 @@ class ReportService:
                 writer = csv.writer(f)
                 writer.writerow(["Section", "Item Title / Metric", "Value / Detail", "Priority / Category"])
                 writer.writerow(["Metadata", "Dataset Name", dataset.name, ""])
-                writer.writerow(["Metadata", "Total Rows", str(dataset.row_count), ""])
-                writer.writerow(["Metadata", "Unique Statements", str(dataset.unique_feedback_count), ""])
-                writer.writerow(["Metadata", "Repeated Rows", str(dataset.repeat_feedback_count), ""])
+                writer.writerow(["Metadata", "Total Source Rows", str(dataset.row_count), ""])
+                writer.writerow(["Metadata", "Valid Feedback Records", str(dataset.valid_rows), ""])
+                writer.writerow(["Metadata", "Excluded / Invalid Rows", str(dataset.invalid_rows), ""])
+                writer.writerow(["Metadata", "Distinct Exact Comment Texts", str(dataset.unique_feedback_count), ""])
+                writer.writerow(["Metadata", "Extra Duplicate Occurrences", str(dataset.repeat_feedback_count), ""])
+                writer.writerow(["Metadata", "Timestamp Availability", "Unavailable (CSV standard)", ""])
 
                 for cat, count in (dataset.category_distribution or {}).items():
                     writer.writerow(["Source Category", cat, str(count), ""])
@@ -205,25 +215,31 @@ class ReportService:
         stats = data["source_statistics"]
         stats_data = [
             [
-                Paragraph("<b>Total Rows</b>", body_style),
-                Paragraph(str(stats["total_rows"]), bold_style),
-                Paragraph("<b>Unique Statements</b>", body_style),
-                Paragraph(str(stats["unique_statements"]), bold_style),
+                Paragraph("<b>Total Source Rows</b>", body_style),
+                Paragraph(str(stats.get("total_source_rows", stats.get("total_rows", 0))), bold_style),
+                Paragraph("<b>Valid Feedback Records</b>", body_style),
+                Paragraph(str(stats.get("valid_feedback_records", stats.get("valid_rows", 0))), bold_style),
             ],
             [
-                Paragraph("<b>Repeated Statements</b>", body_style),
-                Paragraph(str(stats["repeated_rows"]), bold_style),
-                Paragraph("<b>Temporal Data</b>", body_style),
+                Paragraph("<b>Excluded / Invalid Rows</b>", body_style),
+                Paragraph(str(stats.get("invalid_excluded_rows", stats.get("invalid_rows", 0))), bold_style),
+                Paragraph("<b>Distinct Comment Texts</b>", body_style),
+                Paragraph(str(stats.get("distinct_exact_comment_texts", stats.get("unique_statements", 0))), bold_style),
+            ],
+            [
+                Paragraph("<b>Extra Duplicate Occurrences</b>", body_style),
+                Paragraph(str(stats.get("extra_duplicate_occurrences", stats.get("repeated_rows", 0))), bold_style),
+                Paragraph("<b>Timestamp Availability</b>", body_style),
                 Paragraph("Unavailable (CSV standard)", body_style),
             ],
         ]
-        stats_table = Table(stats_data, colWidths=[130, 130, 130, 150])
+        stats_table = Table(stats_data, colWidths=[140, 130, 140, 130])
         stats_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
             ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
             ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
         ]))
         elements.append(stats_table)
         elements.append(Spacer(1, 14))

@@ -284,7 +284,7 @@ export default function IssuesTriagePage() {
 
                   <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD] space-y-1.5">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#3656C8]">
-                      Priority rationale
+                      Priority rationale (rule-based triage)
                     </h4>
                     <p className="text-xs text-[#4D5765] leading-relaxed">
                       {selectedIssue.priority_explanation}
@@ -292,23 +292,34 @@ export default function IssuesTriagePage() {
                   </div>
 
                   {/* Evidence Metrics */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
-                      <div className="text-[11px] text-[#7B8491] font-medium">
-                        Related comments
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
+                        <div className="text-[11px] text-[#7B8491] font-medium">
+                          Supporting feedback records
+                        </div>
+                        <div className="text-xl font-extrabold text-[#20252D] mt-1 font-mono">
+                          {selectedIssue.supporting_count}
+                        </div>
                       </div>
-                      <div className="text-xl font-extrabold text-[#20252D] mt-1 font-mono">
-                        {selectedIssue.supporting_count}
+                      <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
+                        <div className="text-[11px] text-[#7B8491] font-medium">
+                          Distinct exact comment texts
+                        </div>
+                        <div className="text-xl font-extrabold text-[#5876B8] mt-1 font-mono">
+                          {selectedIssue.unique_supporting_count}
+                        </div>
                       </div>
                     </div>
-                    <div className="p-4 bg-[#F6F5F1] rounded-2xl border border-[#E2E3DD]">
-                      <div className="text-[11px] text-[#7B8491] font-medium">
-                        Distinct comments
-                      </div>
-                      <div className="text-xl font-extrabold text-[#5876B8] mt-1 font-mono">
-                        {selectedIssue.unique_supporting_count}
-                      </div>
+                    <div className="text-[11px] text-[#687386]">
+                      Counts reflect feedback records in this dataset. Verbatim repetition does not prove unique individual submitters.
                     </div>
+                    <Link
+                      href={`/feedback?category=${encodeURIComponent(selectedIssue.category)}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#3656C8] hover:underline focus-visible-ring"
+                    >
+                      <span>Inspect supporting records in {selectedIssue.category} →</span>
+                    </Link>
                   </div>
 
                   {/* Status Lifecycle Controls */}
